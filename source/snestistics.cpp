@@ -6,6 +6,96 @@
 #include <map>
 #include "snesops.h"
 
+struct Options {
+	Options() {
+		allowPrediction = false;
+		printHexOpcode = false;
+		printProgramCounter = false;
+		printFileAdress = false;
+		printDataJumpsAsComments = true;
+		romOffset = 512;
+		outFile = "result.asm";
+		calculatedSize = 8*0x20000; // 8mbit LoROM
+	}
+
+	int romOffset; // 512 for SMC, 0 for SFC
+	int calculatedSize; // Size of ROM
+	bool printDataJumpsAsComments;
+	bool printHexOpcode;
+	bool printProgramCounter;
+	bool printFileAdress;
+	bool allowPrediction;
+
+	std::string romFile;
+	std::string outFile;
+	std::string traceFile;
+	std::string asmHeaderFile;
+};
+
+bool parseBool(const char * const s) {
+	return (strcmp(s, "true")==0) || (strcmp(s, "on")==0);
+}
+int parseInt(const char * const s) {
+	return atoi(s);
+}
+
+bool parseOptions(const int argc, const char * const argv[], Options &options) {
+
+	for (int k=1; k<argc; k++) {
+		
+		// Make sure we have a pair of strings
+		const std::string cmd(argv[k]);
+		const char * opt = "";
+			
+		if (k != argc-1) {
+			opt = argv[k+1];
+		}
+
+		// All the doubles
+		if (cmd=="-romfile") {
+			options.romFile = opt;
+			k++;
+		} else if (cmd == "-asmheaderfile") {
+			options.asmHeaderFile = opt;
+			k++;
+		} else if (cmd == "-out") {
+			options.outFile = opt;
+			k++;
+		} else if (cmd == "-tracefile") {
+			options.traceFile = opt;
+			k++;
+		} else if (cmd == "-sfc") {
+			options.romOffset = 0;
+		} else if (cmd == "-smc") {
+			options.romOffset = 512;
+		} else if (cmd == "-predict") {
+			options.allowPrediction = parseBool(opt);
+			k++;
+		} else if (cmd == "-cs") {
+			options.calculatedSize = parseInt(opt);
+			k++;
+		}
+	}
+
+	bool error = false;
+
+	if (options.romFile.length()==0) {
+		printf("No romfile specified with -romfile\n");
+		error = true;
+	}
+	if (options.traceFile.length()==0) {
+		printf("No traceFile specified with -traceFile\n");
+		error = true;
+	}
+
+	if (error) {
+		// TODO: Print syntax
+		return false;
+	}
+
+	return true;
+}
+
 void fillLabels(std::map<Pointer, std::string> &labels) {
 	
 	// Fill in our nice labels
@@ -38,19 +128,6 @@ void fillLabels(std::map<Pointer, std::string> &labels) {
     labels[Pointer(0x00D231)] = "load_stuff_1";
 }
 
-void emitFileStart(FILE *fout) {
-	fprintf(fout, ".MEMORYMAP\n");
-	fprintf(fout, "  SLOTSIZE $8000\n");
-	fprintf(fout, "  DEFAULTSLOT 0\n");
-	fprintf(fout, "  SLOT 0 $8000\n");
-	fprintf(fout, ".ENDME\n");
-	fprintf(fout, "\n");
-	fprintf(fout, ".ROMBANKSIZE $8000\n");
-	fprintf(fout, ".ROMBANKS 32\n");
-	fprintf(fout, ".BACKGROUND \"zelda3org.sfc\"\n");
-	fprintf(fout, ".EMPTYFILL $00\n");
-	fprintf(fout, "\n");
-}
 void emitSectionStart(FILE *fout, const Pointer pc, int *sectionCounter) {
 	fprintf(fout, ".BANK $%02X SLOT 0\n", pc>>16);
 	fprintf(fout, ".ORG $%04X-$8000\n", pc&0xffff);
@@ -68,9 +145,9 @@ std::string getLabelName(const Pointer p) {
     return hej;
 }
 
-void visitOp(const Pointer pc, const uint16_t ps, const bool predict, const std::set<Pointer> &knownOps, std::set<Pointer> &predictOps, std::map<Pointer, std::string> &labels, std::vector<uint16_t> &statusRegArray, const std::vector<uint8_t> &romdata, const size_t calculatedSize) {
+void visitOp(const Options &options, const Pointer pc, const uint16_t ps, const bool predict, const std::set<Pointer> &knownOps, std::set<Pointer> &predictOps, std::map<Pointer, std::string> &labels, std::vector<uint16_t> &statusRegArray, const std::vector<uint8_t> &romdata) {
     
-    const uint32_t romAdr = 512 + getRomOffset(pc, calculatedSize); // +512 due to SMB-header
+    const uint32_t romAdr = options.romOffset + getRomOffset(pc, options.calculatedSize);
     const uint8_t ih = romdata[romAdr];
         
     char pretty[16];
@@ -79,9 +156,11 @@ void visitOp(const Pointer pc, const uint16_t ps, const bool predict, const std:
     const int nb = processArg(pc, ih, &romdata[romAdr], pretty, labelPretty, &jumpDest, ps, 0);
 
 	// Make sure this op is not "inside" a valid op
-	for (int k=1; k<nb; k++) {
-		if (knownOps.find(pc+k) != knownOps.end()) {
-			return;
+	if (predict) {
+		for (int k=1; k<nb; k++) {
+			if (knownOps.find(pc+k) != knownOps.end()) {
+				return;
+			}
 		}
 	}
         
@@ -90,6 +169,10 @@ void visitOp(const Pointer pc, const uint16_t ps, const bool predict, const std:
             labels[jumpDest] = getLabelName(jumpDest);
         }
     }
+
+	if (!options.allowPrediction) {
+		return;
+	}
 
     if (predict) {
         predictOps.insert(pc);
@@ -120,31 +203,53 @@ void visitOp(const Pointer pc, const uint16_t ps, const bool predict, const std:
 
     if (knownOps.find(next) == knownOps.end() && predictOps.find(next)==predictOps.end()) {
         // Not visited yet
-        visitOp(next, next_ps, true, knownOps, predictOps, labels, statusRegArray, romdata, calculatedSize);
+        visitOp(options, next, next_ps, true, knownOps, predictOps, labels, statusRegArray, romdata);
     }
  }
 
-int main() {
+bool readFile(const std::string &filename, std::vector<uint8_t> &result) {
+	if (filename.length()==0) {
+		return true;
+	}
 
-	initLookupTables();
-
-	const std::string romFile("zelda3org.smc");
-	FILE *f = fopen(romFile.c_str(), "rb");
+	FILE *f = fopen(filename.c_str(), "rb");
 	if (f==0) {
-		printf("Could not open ROM-file '%s'\n", romFile.c_str());
-		return 1;
+		printf("Could not open the file '%s' for reading\n", filename.c_str());
+		return false;
 	}
 	fseek(f, 0, SEEK_END);
 	const int fileSize = ftell(f);
 	fseek(f, 0, SEEK_SET);
-	std::vector<uint8_t> romdata(fileSize);
-	fread(&romdata[0], 1, fileSize, f);
+	result.resize(fileSize);
+	fread(&result[0], 1, fileSize, f);
 	fclose(f);
+	return true;
+}
 
-	const int calculatedSize = 8*0x20000;
+int main(const int argc, const char * const argv[]) {
+
+	Options options;
+	if (!parseOptions(argc, argv, options)) {
+		return 1;
+	}
+
+	initLookupTables();
+
+	std::vector<uint8_t> romdata;
+	if (!readFile(options.romFile, romdata)) {
+		return 2;
+	}
+	std::vector<uint8_t> asmHeader;
+	if (!readFile(options.asmHeaderFile, asmHeader)) {
+		return 2;
+	}
 
 	// We can assume that all PC are saved in order
-	FILE *f2 = fopen("zelda3.snestrace", "rb");
+	FILE *f2 = fopen(options.traceFile.c_str(), "rb");
+	if (!f2) {
+		printf("Could not open trace-file '%s'\n", options.romFile.c_str());
+		return 2;
+	}
 
 	std::set<Pointer> ops;
 	std::map<Pointer, std::string> labels;
@@ -187,7 +292,7 @@ int main() {
     
 	// Determine all labels that we need for the determinisic jumps
 	for (auto it = begin(ops); it != end(ops); ++it) {
-        visitOp(*it, opStatus[*it], false, ops, predictOps, labels, opStatus, romdata, calculatedSize);
+        visitOp(options, *it, opStatus[*it], false, ops, predictOps, labels, opStatus, romdata);
 	}
 
     // Make all predicted ops real ops
@@ -195,16 +300,16 @@ int main() {
         ops.insert(*it);
     }
     
-	// TODO: Add in non-deterministic jumps that we could put in comments.. paths taken
-
 	// Overwrite some of the predetermined labels with user-defined friendly names
-	// TODO: Make sure they are unique?
 	fillLabels(labels);
 
-	FILE *fout = fopen("zelda3.gen.asm", "wt");
-	assert(fout);
+	FILE *fout = fopen(options.outFile.c_str(), "wb");
+	if (!fout) {
+		printf("Could not open %s for writing result\n", options.outFile.c_str());
+		return 3;
+	}
 
-	emitFileStart(fout);
+	fwrite(&asmHeader[0], asmHeader.size(), 1, fout);
 
 	Pointer next(0);
 
@@ -216,7 +321,7 @@ int main() {
 
 	for (auto it = begin(ops); it != end(ops); ++it) {
 		const Pointer pc = *it;
-		const uint32_t romAdr = 512 + getRomOffset(pc, calculatedSize); // +512 due to SMB-header
+		const uint32_t romAdr = options.romOffset + getRomOffset(pc, options.calculatedSize);
 		const uint8_t ih = romdata[romAdr];
         
 		if (pc != next) {
@@ -229,23 +334,17 @@ int main() {
 
 				if (!firstSection) {
 					emitSectionEnd(fout);
+					fprintf(fout, "\n; %d bytes gap\n\n", gap);
 				}
 				firstSection = false;
                 
-				// If this is violated, then we most likely predicted wrongly...
-				// Perhaps it wasn't code after all?
-				//assert(pc>next);
-				
-
-				fprintf(fout, "\n; %d bytes gap\n\n", gap);
-
 				emitSectionStart(fout,pc,&sectionCounter);
 			} else {
 
 				fprintf(fout, "\n");
 				fprintf(fout, ".DB ");
 				for (Pointer p = next; p<pc; p++) {
-					const uint32_t pr = 512 + getRomOffset(p, calculatedSize); // +512 due to SMB-header
+					const uint32_t pr = options.romOffset + getRomOffset(p, options.calculatedSize);
 					if (p !=next) {
 						fprintf(fout, ",");
 					}
@@ -276,18 +375,29 @@ int main() {
 			numBits = needBits;
 		}
 
-		fprintf(fout, "\t/* %06X " , pc);
-        
-		for (int k=0; k<numBytes; k++) {
-			fprintf(fout, "%02X ", romdata[romAdr+k]);
-		}
-		for (int k=0; k<4-numBytes; k++) {
-			fprintf(fout, "   ");
+		fprintf(fout, "\t");
+		if (options.printHexOpcode || options.printProgramCounter || options.printFileAdress) {
+			fprintf(fout, "/* ");
+
+			if (options.printProgramCounter) {
+				fprintf(fout, "%06X " , pc);
+			}
+			if (options.printFileAdress) {
+				fprintf(fout, "%06X " , romAdr);
+			}
+			if (options.printHexOpcode) {
+				for (int k=0; k<numBytes; k++) {
+					fprintf(fout, "%02X ", romdata[romAdr+k]);
+				}
+				for (int k=0; k<4-numBytes; k++) {
+					fprintf(fout, "   ");
+				}
+			}
+
+			fprintf(fout, "*/ ");
 		}
 
-		fprintf(fout, "*/ ");
-
-		if (false && jumps[ih] && jumpDest != 0 && ops.find(jumpDest) != ops.end()) {
+		if (jumps[ih] && jumpDest != 0 && ops.find(jumpDest) != ops.end()) {
 			fprintf(fout, "%s ", S9xMnemonics[ih]);
 			fprintf(fout, labelPretty, labels[jumpDest].c_str());
 			fprintf(fout, "");
@@ -304,7 +414,7 @@ int main() {
 			if (recordedJumps != takenJumps.end()) {
 				for (auto pit = recordedJumps->second.begin(); pit != recordedJumps->second.end(); ++pit) {
 					const Pointer p = *pit;
-					if (false && ops.find(p) != ops.end() && labels.find(p) != labels.end()) {
+					if (ops.find(p) != ops.end() && labels.find(p) != labels.end()) {
 						fprintf(fout, " ; %s [%06X]", labels[p].c_str(), p);
 					} else {
 						fprintf(fout, " ; %06X", p);
