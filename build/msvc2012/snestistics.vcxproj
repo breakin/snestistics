@@ -69,6 +69,7 @@
     <ClCompile Include="..\..\source\snestistics.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\source\cmdoptions.h" />
     <ClInclude Include="..\..\source\snesops.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
