@@ -144,7 +144,7 @@ int main() {
 	const int calculatedSize = 8*0x20000;
 
 	// We can assume that all PC are saved in order
-	FILE *f2 = fopen("debug.binary", "rb");
+	FILE *f2 = fopen("zelda3.snestrace", "rb");
 
 	std::set<Pointer> ops;
 	std::map<Pointer, std::string> labels;
@@ -276,7 +276,7 @@ int main() {
 			numBits = needBits;
 		}
 
-		fprintf(fout, "\t/* %06X %06X " , pc, romAdr-512);
+		fprintf(fout, "\t/* %06X " , pc);
         
 		for (int k=0; k<numBytes; k++) {
 			fprintf(fout, "%02X ", romdata[romAdr+k]);
