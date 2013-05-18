@@ -25,6 +25,7 @@ struct Options {
 	bool allowPrediction;
 
 	std::string romFile;
+	std::string labelsFile;
 	std::string outFile;
 	std::string traceFile;
 	std::string asmHeaderFile;
@@ -62,6 +63,9 @@ bool parseOptions(const int argc, const char * const argv[], Options &options) {
 			k++;
 		} else if (cmd == "-tracefile") {
 			options.traceFile = opt;
+			k++;
+		} else if (cmd == "-labelsfile") {
+			options.labelsFile = opt;
 			k++;
 		} else if (cmd == "-sfc") {
 			options.romOffset = 0;

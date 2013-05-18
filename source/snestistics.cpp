@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <cassert>
+#include <fstream>
 #include <map>
 #include "snesops.h"
 #include "cmdoptions.h"
@@ -10,38 +11,51 @@
 /*
 	Currently most of this code assumes that we are dealing with a LoROM SNES-game.
 	It also assumes that all code is executed from ROM, ie no self-modifying code and no changing code.
+
+	NOTE: WLA DX seems most comfortable with at most 256 sections
+	      Short breaks between sections is filled using .DB instead of starting new sections.
 */
 
-void fillLabels(std::map<Pointer, std::string> &labels) {
-	
-	// Fill in our nice labels
-	labels[Pointer(0x008000)] = "entry";
-	labels[Pointer(0x00E766)] = "decompress_tableA_dest7f4000_indexY";
-	labels[Pointer(0x00E75C)] = "decompress_tableA_dest7f4600_indexY";
-    labels[Pointer(0x00E76E)] =	"decompress_tableA_nodest_indexY",
-	labels[Pointer(0x00E783)] = "decompressTableB_indexY";
-	labels[Pointer(0x00E33B)] = "decompressTableA_AndCopy2048_2118";
-	labels[Pointer(0x00E33E)] = "copy2048_to_vram_2118";
-	labels[Pointer(0x00E783)] = "decompressTableB_indexY";
-	labels[Pointer(0x00E79E)] = "decompress";
-	labels[Pointer(0x00E7A3)] = "decompress_main";
-	labels[Pointer(0x00E7AD)] = "decompress_getcodelen";
-	labels[Pointer(0x00E7BF)] = "decompress_getlongcount";
-	labels[Pointer(0x00E7D1)] = "decompress_notlongcount";
-	labels[Pointer(0x00E7E1)] = "repeat_single_incrementing";
-	labels[Pointer(0x00E7EF)] = "decompress_transfer_source";
-	labels[Pointer(0x00E7FE)] = "decompress_repeat_single";
-	labels[Pointer(0x00E80B)] = "decompress_repeat_alt";
-	labels[Pointer(0x00E825)] = "decompress_transfer_dest";
-	labels[Pointer(0x00E843)] = "decompress_readsourcebyte";
-	labels[Pointer(0x00D54E)] = "decompress_and_unpack_image_tableA";
-	labels[Pointer(0x00D553)] = "unpack_image_source7f4000";
-	labels[Pointer(0x00D561)] = "unpack_image";
-	labels[Pointer(0x00D5CE)] = "unpack_image2_inner";
-	labels[Pointer(0x00D61C)] = "unpack_image_inner";
-    
-    // Things under investigation
-    labels[Pointer(0x00D231)] = "load_stuff_1";
+typedef std::map<Pointer, std::pair<std::string,std::string>> LabelsMap;
+
+bool fillLabels(const std::string &labelsFile, LabelsMap &labels) {
+
+	if (labelsFile.length()==0) {
+		return true;
+	}
+
+	std::ifstream f;
+	f.open(labelsFile);
+
+	std::string comment;
+
+	while (!f.eof()) {
+		char buf[4096];
+		f.getline(buf, 4096);
+
+		if (strlen(buf)==0) {
+			continue;
+		}
+		if (buf[0]==';') {
+			if (comment.length() !=0) {
+				comment = comment + "\n" + buf;
+			} else {
+				comment = buf;
+			}
+		} else {
+			char labelName[4096];
+			memset(labelName, 0, 4096);
+			Pointer pc;
+			sscanf(buf, "%06X \"%[^\"]", &pc, labelName);
+
+			// TODO: Validate labelName
+
+			labels[pc] = std::make_pair(labelName, comment);
+			comment.clear();
+		}
+	}
+
+	return true;
 }
 
 void emitSectionStart(FILE *fout, const Pointer pc, int *sectionCounter) {
@@ -61,7 +75,7 @@ std::string getLabelName(const Pointer p) {
     return hej;
 }
 
-void visitOp(const Options &options, const Pointer pc, const uint16_t ps, const bool predict, const std::set<Pointer> &knownOps, std::set<Pointer> &predictOps, std::map<Pointer, std::string> &labels, std::vector<uint16_t> &statusRegArray, const std::vector<uint8_t> &romdata) {
+void visitOp(const Options &options, const Pointer pc, const uint16_t ps, const bool predict, const std::set<Pointer> &knownOps, std::set<Pointer> &predictOps, LabelsMap &labels, std::vector<uint16_t> &statusRegArray, const std::vector<uint8_t> &romdata) {
     
     const uint32_t romAdr = options.romOffset + getRomOffset(pc, options.calculatedSize);
     const uint8_t ih = romdata[romAdr];
@@ -82,7 +96,7 @@ void visitOp(const Options &options, const Pointer pc, const uint16_t ps, const 
         
     if (jumps[ih]) {
         if (jumpDest != 0) {
-            labels[jumpDest] = getLabelName(jumpDest);
+            labels[jumpDest] = std::make_pair(getLabelName(jumpDest), "");
         }
     }
 
@@ -168,7 +182,7 @@ int main(const int argc, const char * const argv[]) {
 	}
 
 	std::set<Pointer> ops;
-	std::map<Pointer, std::string> labels;
+	LabelsMap labels;
 	std::vector<uint16_t> opStatus;
 
 	opStatus.resize(256*65536, 0xffff);
@@ -195,7 +209,7 @@ int main(const int argc, const char * const argv[]) {
 			fread(&t, sizeof(Pointer), 1, f2);
 			takenJumps[p].insert(t);
 			
-			labels[t]=getLabelName(t);
+			labels[t] = std::make_pair(getLabelName(t), std::string(""));
 
 		} else {
 			assert(false);
@@ -217,7 +231,9 @@ int main(const int argc, const char * const argv[]) {
     }
     
 	// Overwrite some of the predetermined labels with user-defined friendly names
-	fillLabels(labels);
+	if (!fillLabels(options.labelsFile, labels)) {
+		return 3;
+	}
 
 	FILE *fout = fopen(options.outFile.c_str(), "wb");
 	if (!fout) {
@@ -273,7 +289,8 @@ int main(const int argc, const char * const argv[]) {
 
 		auto labelIt = labels.find(pc);
 		if (labelIt != labels.end()) {
-			fprintf(fout, "\n%s:\n\n", labelIt->second.c_str());
+			fprintf(fout, "\n%s\n", labelIt->second.second.c_str());
+			fprintf(fout, "%s:\n\n", labelIt->second.first.c_str());
 		}
 
 		Pointer jumpDest(0);
@@ -315,7 +332,7 @@ int main(const int argc, const char * const argv[]) {
 
 		if (jumps[ih] && jumpDest != 0 && ops.find(jumpDest) != ops.end()) {
 			fprintf(fout, "%s ", S9xMnemonics[ih]);
-			fprintf(fout, labelPretty, labels[jumpDest].c_str());
+			fprintf(fout, labelPretty, labels[jumpDest].first.c_str());
 			fprintf(fout, "");
 		} else {
 			fprintf(fout, "%s %s", S9xMnemonics[ih], pretty);
@@ -331,7 +348,7 @@ int main(const int argc, const char * const argv[]) {
 				for (auto pit = recordedJumps->second.begin(); pit != recordedJumps->second.end(); ++pit) {
 					const Pointer p = *pit;
 					if (ops.find(p) != ops.end() && labels.find(p) != labels.end()) {
-						fprintf(fout, " ; %s [%06X]", labels[p].c_str(), p);
+						fprintf(fout, " ; %s [%06X]", labels[p].first.c_str(), p);
 					} else {
 						fprintf(fout, " ; %06X", p);
 					}					
