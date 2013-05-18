@@ -1,0 +1,31 @@
+008000 "entry"
+
+00D553 "unpack_image_source7f4000""
+00D561 "unpack_image"
+00D5CE "unpack_image2_inner"
+00D61C "unpack_image_inner"
+
+00E766 "decompress_tableA_dest7f4000_indexY"
+00E75C "decompress_tableA_dest7f4600_indexY" 
+00E76E "decompress_tableA_nodest_indexY"
+00E783 "decompressTableB_indexY"
+00E33B "decompressTableA_AndCopy2048_2118"
+00E33E "copy2048_to_vram_2118"
+00E783 "decompressTableB_indexY"
+
+; Decompression routine
+00E79E "decompress"
+00E7A3 "decompress_main"
+00E7AD "decompress_getcodelen"
+00E7BF "decompress_getlongcount"
+00E7D1 "decompress_notlongcount" 
+00E7E1 "decompress_repeat_single_incrementing"
+00E7EF "decompress_transfer_source"
+00E7FE "decompress_repeat_single"
+00E80B "decompress_repeat_alt"
+00E825 "decompress_transfer_dest"
+00E843 "decompress_readsourcebyte"
+00D54E "decompress_and_unpack_image_tableA"
+
+; Things under investigation
+00D231 "load_stuff_1"
