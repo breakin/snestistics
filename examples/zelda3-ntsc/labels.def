@@ -1,20 +1,43 @@
-008000 "entry"
+008000:0080C6 "entry"
+
+; Invoked by NMI
+0080C9:00822C "vblank_nmi"
+
+; Invoked by IRQ
+0082D8:008332 "unknown_irq_1"
+
+0E97D9:0E97DD "memcpy_7EFE02_0E965B_372"
+; X = 62, 60, ..., 2 (not 0). 31 iterations.
+; 6*2=12 bytes copied per iteration
+
+0ED3EB:0ED442 "copyStuff1"
 
 00D553 "unpack_image_source7f4000""
 00D561 "unpack_image"
-00D5CE "unpack_image2_inner"
-00D61C "unpack_image_inner"
+
+00D5CE:00D6DB "unpack_image2_inner"
+00D61C:00D667 "unpack_image_inner"
 
 00E766 "decompress_tableA_dest7f4000_indexY"
 00E75C "decompress_tableA_dest7f4600_indexY" 
 00E76E "decompress_tableA_nodest_indexY"
 00E783 "decompressTableB_indexY"
+00E78F "decompress_tableB_something"
+00E772 "decompress_tableA_something"
 00E33B "decompressTableA_AndCopy2048_2118"
 00E33E "copy2048_to_vram_2118"
 00E783 "decompressTableB_indexY"
 
+00F800:00F875 "gameloop_displayModalText"
+0287A2:0288C0 "gameloop_gameInsideHouseOrCastle"
+02A475:02A52C "gameloop_gameOutside"
+
+; Unpack directly from tableA, data is uncompressed. Entry specified through memory 00:0000
+00D537 "unpack_tableA_index000000"
+00D54E "decompress_and_unpack_image_tableA"
+
 ; Decompression routine
-00E79E "decompress"
+00E79E:00E851 "decompress"
 00E7A3 "decompress_main"
 00E7AD "decompress_getcodelen"
 00E7BF "decompress_getlongcount"
@@ -25,7 +48,300 @@
 00E80B "decompress_repeat_alt"
 00E825 "decompress_transfer_dest"
 00E843 "decompress_readsourcebyte"
-00D54E "decompress_and_unpack_image_tableA"
 
-; Things under investigation
-00D231 "load_stuff_1"
+
+; Copy stuff to 7EC300 (TODO: Check more!)
+1BEF4B:1BEF5F "copyDataTo7EC300_variantA"
+
+; Copy stuff to 7EC300 (TODO: Check more!)
+1BEF30:1BEF3B "copyDataTo7EC300_variantB"
+
+; Clearing a lot of memory 0CE2-0F00, writin to 7FFA1C
+0DB871 "clearMemory_indexX_andMemory000000"
+
+; Copy 16 bytes from 0CC425 to 7EC6A0 and increase $15
+0CC3BD:0CC403 "memcpy_0CC425_7EC6A0_16_increase000015"
+
+; TODO: Double check this, I'm unclear on MVN srblk,dstblk
+; Set [00:1F00-00:1F01]=0
+; Move memory down from 001F02-001FFF to 001F00-001FFD (253 bytes). Copy 001F31 to 001F0A.
+; Move memory down from 001F32-001F3E to 09F810-09F81C.
+09F7DE "copyMemorySomething3"
+
+
+00E2D0:00E30A "unknown1"
+02C57B:02C5B1 "unknown2"
+00D308:00D336 "unknown3"
+00D337:00D361 "unknown4"
+00D3C6:00D406 "unknown5"
+02C630:02C68B "unknown6"
+00FC41:00FC84 "unknown7"
+00D2C8:00D2FF "unknown8"
+07F13C:07F1A2 "unknown9"
+1DF65D:1DF6B3 "unknown10"
+0DB818:0DB857 "unknown11"
+02C692:02C6EA "unknown12"
+1BEF0C:1BEF2F "unknown13"
+1BEEE8:1BEF0B "unknown14"
+02C769:02C7B7 "unknown15"
+1BEEC7:1BEEE7 "unknown16"
+1BEEA8:1BEEC6 "unknown17"
+1BEE52:1BEE73 "unknown18"
+1BED72:1BED90 "unknown19"
+1BEC9E:1BECC4 "unknown20"
+1BEC77:1BEC9D "unknown21"
+0ED5F4:0ED617 "unknown22"
+02D8B3:02DB6D "unknown23"
+0CED82:0CEDAC "unknown24"
+02C5B2:02C62F "unknown25"
+02C500:02C532 "unknown26"
+
+; Zero Memory (Entire $0000-$1fff)
+; Zero $7EC500 (2b)
+; Zero $701FFE (2b)
+; If $70:03E5==$55AA, let it be. Otherwise zero (2b). (true)
+; If $70:08E5==$55AA, let it be. Otherwise zero (2b). (false)
+; If $70:0DE5==$55AA, let it be. Otherwise zero (2b). (false)
+; $212E=0 (2b)
+; [00:0013] = $80
+; [00:0015]++
+0087C0:00882D "zeroMemory1"
+
+008888:0088EC "audio_unknown0"
+; [00:0000-0002]=$008019
+008901:008912 "audio_unknown0_008019"
+008925:008931 "audio_unknown0_00801B"
+008913:008924 "audio_unknown0_F59E1A"
+00891D "audio_unknown0_trampoline"
+
+
+00893D:008949 "unknown30"
+; Called from VBLANK
+00822D:0082D7 "initialize_perframe_graphics_registersA"
+00814C:0081FF "initialize_perframe_graphics_registersB"
+008333:0083D0 "unknown33"
+0083D1:0083F8 "readJoypad"
+
+; Initialize RAM $0861-$0A00 with [F0 00 00 00] (416 bytes, 104 entries?)
+00841E:008489 "initMemory_at0861_to_F0000000"
+0085FC:008780 "unknown36"
+008F45:008F71 "unknown37"
+009347:00937A "unknown38"
+00E384:00E398 "unknown39"
+00E3FA:00E4E8 "unknown40"
+00E583:00E5AC "unknown41"
+02DC55:02DD87 "unknown42"
+02E4A3:02E5D3 "unknown43"
+1BEDF9:1BEE39 "unknown44"
+1EFF8D:1EFFDD "unknown45"
+1DEA00:1DEB67 "unknown46"
+1DE9FC:1DE9FF "unknown47"
+1DE9DA:1DE9FB "unknown48"
+1DE9B6:1DE9D9 "unknown49"
+1BF09A:1BF0C1 "unknown50"
+1BF072:1BF099 "unknown51"
+1BF032:1BF071 "unknown52"
+1BEF96:1BF031 "unknown53"
+00E4E9:00E555 "unknown54"
+00E5AF:00E608 "unknown55"
+00E609:00E633 "unknown56"
+00E636:00E6B6 "unknown57"
+00E6B7:00E741 "unknown58"
+00E744:00E759 "unknown59"
+00E90C:00E9CB "unknown60"
+1BEE74:1BEEA7 "unknown61"
+1BED6E:1BED90 "unknown62"
+1BED91:1BEDDC "unknown63"
+1BED29:1BED4E "unknown64"
+1BED03:1BED28 "unknown65"
+1BECE4:1BED02 "unknown66"
+1BECC5:1BECE3 "unknown67"
+1BCA69:1BCA9E "unknown68"
+1BC980:1BC983 "unknown69"
+1BC983:1BC983 "unknown70"
+
+
+0089E0:0089EC "unknown71"
+0089EF:008CE3 "unknown72"
+00D423:00D468 "unknown74"
+00E19B:00E2CF "unknown75"
+00E343:00E36C "unknown76"
+028000:028053 "unknown77"
+028116:02811D "unknown78"
+02854C:028569 "unknown79"
+09F81D:09F83B "unknown80"
+09F83D:09F863 "unknown81"
+09F864:09F8FA "unknown82"
+09F8FB:09F930 "unknown83"
+09F931:09F9D5 "unknown84"
+
+09F9D6:09FA4E "unknown85"
+
+; Too big?
+09FA4F:09FB23 "unknown86"
+
+09FB24:09FB6C "unknown87"
+09FCAE:09FCC3 "unknown88"
+09FD04:09FD1D "unknown89"
+
+0CC9F1:0CCA4B "unknown90"
+0CC972:0CC9F0 "unknown91"
+0CC8D0:0CC8E1 "unknown92"
+0CC864:0CC867 "unknown93"
+
+0CC70F:0CC72E "unknown95"
+
+0CC47B:0CC4B9 "unknown102"
+0CC45B:0CC47A "unknown103"
+
+0CC448:0CC45A "unknown104"
+0CC44F:0CC45A "__jumpTableWord__"
+
+0CC435:0CC447 "unknown105"
+0CC404:0CC411 "unknown107"
+0CC36F:0CC3BC "unknown108"
+0CC33C:0CC36E "unknown109"
+0CC1F5:0CC25B "unknown110"
+0CC1A0:0CC1F4 "unknown111"
+
+; This is the main game loop that executes once per frame
+; Reads Y = $10 (state)
+; Jump [$8061+Y $807D+Y $8099+Y].
+; $00: Intro
+; $01: Select player
+; $02: Copy player
+; $03: Erase player
+; $07: Inside house / castle?
+; $08: While loading new screen/room
+; $09: Outside (at least in the beginning of the game)
+; $0E: Modal message text shown
+; $0F: Part when loading new room
+; $12: Death screen
+0080B5:0080C8 "gameloop"
+
+; Activated once a player was selected
+028136:0281BC "gameloop_hm"
+
+0CC120:0CC15C "gameloop_intro"
+0CC139:0CC15C "__jumpTableLong__"
+
+00C2F0 "gameloop_backstory"
+
+0CC133 ";Load current intro state from $00:0011 into A"
+0CC135 ";Jump to function indexed by the game state"
+
+0CC15D:0CC17B "unknown113a"
+0CC170:0CC19F "unknown113b"
+0CC17F:0CC19F "__jumpTableLong__"
+
+00D231:00D2BD "unknown73"
+
+09FF1E:09FF8B "unknown114"
+09FEB4:09FF1D "unknown115"
+09FDCF:09FE93 "unknown116"
+
+; Called using JSL so PC after JML is on the stack. Pops it manually and don't RET. Keeps X,Y.
+; Jumps to [RET + (A&0x00FF)*2] (support 2 bytes adresses, same PB as calling function)
+008781 "jumpEncodedWordJump"
+
+; Called using JSL so PC after JML is on the stack. Pops it manually and don't RET. Keeps X,Y.
+; Jumps to [RET + (A&0x00FF)*3] (support full 3 bytes adresses)
+00879C "jumpEncodedLongJump"
+
+; Reads A from 0C:1E17+X and jump using jumpEncodedWordJump
+; A=0 => stateA_mutate5
+; A=1 => stateA_mutate2
+; A=2 => stateA_mutate3
+0CC534:0CC539 "stateA_mutate1"
+
+; Quit the state machine, RTS!
+0CC543:0CC543 "stateA_mutate5"
+
+; Read A from 0C:1E18+X and jump using jumpEncodedWordJump
+; A=0 => stateA_mutate8
+; A=1 => stateA_mutate10
+; A=2 => stateA_mutate4
+; A=3 => stateA_mutate11
+; A=4 => stateA_mutate12
+; A=5 => stateA_mutate12
+; A=6 => stateA_mutate12
+; A=7 => stateA_mutate13
+0CC544:0CC547 "stateA_mutate2"
+
+0CC84F "stateA_mutate10"
+0CC8E2 "stateA_mutate11"
+0CCBE8 "stateA_mutate12"
+0CCD19 "stateA_mutate13"
+0CC90D "stateA_mutate14"
+0CCC13 "stateA_mutate15"
+0CCD3E "stateA_mutate16"
+0CFFDA "stateA_mutate17"
+0C005F "stateA_mutate18"
+0C00E6 "stateA_mutate19"
+0C00C8 "stateA_mutate20"
+0CFFBD "stateA_mutate21"
+0CC608 "stateA_mutate22"
+0C0001 "stateA_mutate23"
+0CFFFF "stateA_mutate24"
+0CFF01 "stateA_mutate25"
+0C5F4B "stateA_mutate26"
+0C5875 "stateA_mutate27"
+0C5830 "stateA_mutate28"
+
+0CC57E:0CC5B0 "stateA_mutate8"
+
+; Reads A from 0C:1E18+X
+; A=0 => stateA_mutate6
+; A=1 => stateA_mutate10
+; A=2 => stateA_mutate9
+; A=3 => stateA_mutate14
+; A=4 => stateA_mutate15
+; A=5 => stateA_mutate15
+; A=6 => stateA_mutate15
+; A=7 => stateA_mutate16
+; A=8 => stateA_mutate17
+; A=9 => stateA_mutate18
+; A=A => stateA_mutate19
+; A=B => stateA_mutate20
+; A=C => stateA_mutate21
+; A=D => stateA_mutate20
+0CC55B:0CC55E "stateA_mutate3"
+
+; Call unknown92, then quit state machine
+0CC864:0CC867 "stateA_mutate9"
+
+; Quits state matchine, updates memory
+; [$1E30+X]=$4C
+; [$1E38+X]=$00
+; [$1E48+X]=$B8
+; [$1E50+X]=$00
+; [$1E10+X]++
+0CC850:0CC863 "stateA_mutate4"
+
+; Call unknown95 then unknown90
+; A = [00:1E00] (1 byte)
+; A=0 => stateA_mutate7 
+; A=1 => stateA_mutate7 
+; A=2 => stateA_mutate7 
+; A=3 => stateA_mutate7 
+; A=4 => stateA_mutate7 
+; A=5 => stateA_mutate22 
+; A=6 => stateA_mutate24 
+; A=7 => stateA_mutate24  
+; A=8 => stateA_mutate25  
+; A=9 => stateA_mutate26  
+; A=A => stateA_mutate27  
+; A=B => stateA_mutate28 
+0CC5B1:0CC5BA "stateA_mutate6"
+
+; Do stuff, quit state machine
+0CC5D6:0CC607 "stateA_mutate7"
+
+; Invokes stateA-machine through stateA_mutate1 (8 times)
+; X=7,6,5,4,3,2,1,0
+; [00:1E08]=$00
+; [00:1E09]=$08
+0CC412:0CC424 "unknown106"
+
+
+
