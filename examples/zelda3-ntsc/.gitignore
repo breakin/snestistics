@@ -4,3 +4,4 @@ make.bat
 *.txt
 *.asm
 *.obj
+*.link

@@ -112,11 +112,9 @@ void visitOp(const Options &options, const Pointer pc, const uint16_t ps, const 
     const char * const op = S9xMnemonics[ih];
     
     // If this happens, we should not predict the next instruction. Could be data!
-    if (strcmp(op, "JMP")==0) { return; }
-    if (strcmp(op, "BRA")==0) { return; }
-    if (strcmp(op, "RTS")==0) { return; }
-    if (strcmp(op, "RTI")==0) { return; }
-    if (strcmp(op, "RTL")==0) { return; }
+	if (endOfPrediction[ih]) {
+		return;
+	}
     
     // Update process status register so we can interpret the byte stream correctly
     uint16_t next_ps = ps;
@@ -204,11 +202,13 @@ int main(const int argc, const char * const argv[]) {
 			ops.insert(p);
 			opStatus[p]=status;
 		} else if (code==1) {
+
 			Pointer p,t;
 			fread(&p, sizeof(Pointer), 1, f2);
 			fread(&t, sizeof(Pointer), 1, f2);
 			takenJumps[p].insert(t);
-			
+
+		
 			labels[t] = std::make_pair(getLabelName(t), std::string(""));
 
 		} else {
@@ -260,9 +260,7 @@ int main(const int argc, const char * const argv[]) {
 
 			const int gap = pc - next;
 
-			// TODO: Show larger chunks of data, 64x64 matrix
-
-			if (gap>64) {
+			if (gap>16*64 || (bank(pc)!=bank(next))) {
 
 				if (!firstSection) {
 					emitSectionEnd(fout);
@@ -274,15 +272,21 @@ int main(const int argc, const char * const argv[]) {
 			} else {
 
 				fprintf(fout, "\n");
-				fprintf(fout, ".DB ");
-				for (Pointer p = next; p<pc; p++) {
-					const uint32_t pr = options.romOffset + getRomOffset(p, options.calculatedSize);
-					if (p !=next) {
-						fprintf(fout, ",");
+				
+
+				Pointer p = next;
+				for (int y=0; y<64 && p<pc; y++) {
+					fprintf(fout, ".DB ");
+					for (int x=0; x<16 && p<pc; x++, ++p) {
+						const uint32_t pr = options.romOffset + getRomOffset(p, options.calculatedSize);
+						fprintf(fout, "$%02X", romdata[pr]);
+
+						if (x!=32-1 && p != pc-1) {
+							fprintf(fout, ",");
+						}
 					}
-					fprintf(fout, "$%02X", romdata[pr]);
+					fprintf(fout, "\n");
 				}
-				fprintf(fout, "\n");
 				next = pc;
 			}
 		}
@@ -330,12 +334,16 @@ int main(const int argc, const char * const argv[]) {
 			fprintf(fout, "*/ ");
 		}
 
-		if (jumps[ih] && jumpDest != 0 && ops.find(jumpDest) != ops.end()) {
-			fprintf(fout, "%s ", S9xMnemonics[ih]);
-			fprintf(fout, labelPretty, labels[jumpDest].first.c_str());
-			fprintf(fout, "");
+		if (options.lowerCaseOpCode) {
+			fprintf(fout, "%c%c%c ", tolower(S9xMnemonics[ih][0]), tolower(S9xMnemonics[ih][1]), tolower(S9xMnemonics[ih][2]));
 		} else {
-			fprintf(fout, "%s %s", S9xMnemonics[ih], pretty);
+			fprintf(fout, "%s ", S9xMnemonics[ih]);		
+		}
+
+		if (jumps[ih] && jumpDest != 0 && ops.find(jumpDest) != ops.end()) {
+			fprintf(fout, labelPretty, labels[jumpDest].first.c_str());
+		} else {
+			fprintf(fout, "%s", pretty);
 		}
         
 		const bool predicted = predictOps.find(pc) != predictOps.end();
@@ -348,7 +356,7 @@ int main(const int argc, const char * const argv[]) {
 				for (auto pit = recordedJumps->second.begin(); pit != recordedJumps->second.end(); ++pit) {
 					const Pointer p = *pit;
 					if (ops.find(p) != ops.end() && labels.find(p) != labels.end()) {
-						fprintf(fout, " ; %s [%06X]", labels[p].first.c_str(), p);
+						fprintf(fout, " ; \"%s\" [%06X]", labels[p].first.c_str(), p);
 					} else {
 						fprintf(fout, " ; %06X", p);
 					}					
@@ -369,10 +377,10 @@ int main(const int argc, const char * const argv[]) {
 			fprintf(fout, "\n");
 		}
 
-        // TODO: Looks weird if a label comes directly after
-        if (strcmp(S9xMnemonics[ih], "RTS")==0) { fprintf(fout, "\n"); }
-        if (strcmp(S9xMnemonics[ih], "RTL")==0) { fprintf(fout, "\n");}
-        if (strcmp(S9xMnemonics[ih], "RTI")==0) { fprintf(fout, "\n"); }
+		if (endOfPrediction[ih]) {
+			// TODO: Looks weird if a label comes directly after, double \n
+			fprintf(fout, "\n");
+		}
 		fflush(fout);
 
 		next = pc + numBytes;

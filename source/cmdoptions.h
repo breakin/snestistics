@@ -7,10 +7,11 @@
 struct Options {
 	Options() {
 		allowPrediction = false;
-		printHexOpcode = false;
-		printProgramCounter = false;
+		printHexOpcode = true;
+		printProgramCounter = true;
 		printFileAdress = false;
 		printDataJumpsAsComments = true;
+		lowerCaseOpCode = true;
 		romOffset = 512;
 		outFile = "result.asm";
 		calculatedSize = 8*0x20000; // 8mbit LoROM
@@ -23,6 +24,7 @@ struct Options {
 	bool printProgramCounter;
 	bool printFileAdress;
 	bool allowPrediction;
+	bool lowerCaseOpCode;
 
 	std::string romFile;
 	std::string labelsFile;
@@ -76,6 +78,9 @@ bool parseOptions(const int argc, const char * const argv[], Options &options) {
 			k++;
 		} else if (cmd == "-cs") {
 			options.calculatedSize = parseInt(opt);
+			k++;
+		} else if (cmd == "-lowercaseopcode") {
+			options.lowerCaseOpCode = parseBool(opt);
 			k++;
 		}
 	}

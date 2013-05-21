@@ -105,9 +105,18 @@ static int	AddrModes[256] =
 
 bool branches[256];
 bool jumps[256];
+bool endOfPrediction[256];
 
-void initLookupTables() {
+ void initLookupTables() {
 	for (int ih=0; ih<256; ih++) {
+		endOfPrediction[ih]=false;
+    
+		if (strcmp(S9xMnemonics[ih], "RTS")==0) { endOfPrediction[ih]=true; }
+        if (strcmp(S9xMnemonics[ih], "RTL")==0) { endOfPrediction[ih]=true; }
+        if (strcmp(S9xMnemonics[ih], "RTI")==0) { endOfPrediction[ih]=true; }
+		if (strcmp(S9xMnemonics[ih], "JMP")==0) { endOfPrediction[ih]=true; }
+		if (strcmp(S9xMnemonics[ih], "BRA")==0) { endOfPrediction[ih]=true; }
+
 		jumps[ih]=false;
         branches[ih] = false;
 		const char * const i = S9xMnemonics[ih];
@@ -133,8 +142,7 @@ int processArg(const Pointer pc, const uint8_t ih, const uint8_t *ops, char *pre
 	const bool acc16   = (registerP & STATUS_ACCUMULATOR_FLAG) == 0;
 	const bool index16 = (registerP & STATUS_MEMORY_FLAG) == 0;
 
-	if (ih == 0xD3) {
-		// CASE 9 is weird now... seems that $D3 get am = 9 but should get am = 20
+	if (ih == 0xDC) {
 		int A=9;
 	}
 
