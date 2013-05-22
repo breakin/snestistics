@@ -216,7 +216,6 @@ int main(const int argc, const char * const argv[]) {
 			fread(&p, sizeof(Pointer), 1, f2);
 			fread(&t, sizeof(Pointer), 1, f2);
 			takenJumps[p].insert(t);
-
 		
 			labels[t] = std::make_pair(getLabelName(t), std::string(""));
 
