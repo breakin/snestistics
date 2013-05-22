@@ -179,6 +179,15 @@ int main(const int argc, const char * const argv[]) {
 		return 2;
 	}
 
+	const uint16_t expectedVersionNumber = 0x0001;
+	uint16_t versionNumber;
+	fread(&versionNumber, sizeof(versionNumber), 1, f2);
+
+	if(versionNumber != expectedVersionNumber) {
+		printf("Wrong version number %04X, expected %04X\n", versionNumber, expectedVersionNumber);
+		return 3;
+	}
+
 	std::set<Pointer> ops;
 	LabelsMap labels;
 	std::vector<uint16_t> opStatus;
