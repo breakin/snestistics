@@ -1,99 +1,19 @@
-008000 "entry"
-008034 "_entry_inner1"
-008051 "_entry_inner2"
-0080B5 "_entry_inner3"
-0080EE "_entry_inner4"
-008100 "_entry_inner5"
-008103 "_entry_inner6"
-00811E "_entry_inner7"
-008144 "_entry_inner8"
-00814C "_entry_inner9"
-008200 "_entry_inner10"
-00821B "_entry_inner11"
+008000:00822C "entry"
 
 00D553 "unpack_image_source7f4000""
 00D561 "unpack_image"
 
-00D5CE "unpack_image2_inner"
-00D5D0 "_unpack_image2_inner1"
-00D5DB "_unpack_image2_inner2"
+00D5CE:00D6DB "unpack_image2_inner"
+00D61C:00D667 "unpack_image_inner"
 
+; Called from IEQ
+0082D8:00831E "unknown_irq_1"
 
-00D61C "unpack_image_inner"
-00D61E "_unpack_image_inner1"
-00D629 "_unpack_image_inner2"
-00D667 "_unpack_image_inner3"
-
-00E2D0 "unknown1"
-00E2F1 "_unknown1_loop1"
-00E2F3 "_unknown1_loop2"
-00E30A "_unknown1_loop3"
-
-00D308 "unknown3"
-
-00D337 "unknown4"
-00D337 "unknown4"
-00D361 "_unknown4_loop1
-
-00D3C6 "unknown5"
-
-
-0E97D9 "memcpy_7EFE02_0E965B_372"
+0E97D9:0E97DD "memcpy_7EFE02_0E965B_372"
 ; X = 62, 60, ..., 2 (not 0). 31 iterations.
 ; 6*2=12 bytes copied per iteration
-0E97DD "_0E97D9_loop1"
 
-
-00FC41 "unknown7"
-00FC4C "_unknown7_loop1"
-00FC67 "_unknown7_internal1"
-00FC81 "_unknown7_internal2"
-00FC84 "_unknown7_loop2"
-
-
-00D2C8 "unknown8"
-
-07F13C "unknown9"
-
-1DF65D "unknown10"
-1DF660 "_unknown10_inner1"
-1DF66B "_unknown10_inner2"
-1DF6B3 "_unknown10_inner3"
-
-0DB818 "unknown11"
-0DB857 "_unknown11_inner"
-
-1BEF0C "unknown13"
-1BEEE8 "unknown14"
-
-1BEEC7 "unknown16"
-1BEEA8 "unknown17"
-1BEE52 "unknown18"
-1BED72 "unknown19"
-1BEC9E "unknown20"
-1BECAB "_unknown20_inner1"
-
-1BEC77 "unknown21"
-1BEC95 "_unknown21_inner1"
-
-0ED5F4 "unknown22"
-
-0ED3EB "copyStuff1"
-0ED3FC "_copyStuff1_inner1"
-0ED40B "_copyStuff1_inner2"
-0ED421 "_copyStuff1_inner3"
-0ED424 "_copyStuff1_inner4"
-0ED442 "_copyStuff1_inner5"
-
-
-0CED82 "unknown24"
-0CED89 "_unknown24_inner1"
-
-02C5B2 "unknown25"
-02C5B9 "_unknown25_inner1"
-02C61F "_unknown25_inner2"
-
-02C500 "unknown26"
+0ED3EB:0ED442 "copyStuff1"
 
 ; Keeps X,Y
 ; Called using JML so PC after JML is on the stack. Pops it manually and don't RET.
@@ -103,85 +23,19 @@
 ; Called using JML so PC after JML is on the stack. Pops it manually and don't RET.
 00879C "trampolineFunction2"
 
-0087C0 "unknown27"
-0087CB "_unknown27_inner2"
-0087FF "_unknown27_inner3"
-00880F "_unknown27_inner4"
-00881F "_unknown27_inner5"
-
-008901 "unknown28"
-
-008888 "unknown29"
-008891 "_unknown29_inner1"
-00889C "_unknown29_inner2"
-0088A4 "_unknown29_inner3"
-0088B2 "_unknown29_inner4"
-0088B3 "_unknown29_inner5"
-0088B9 "_unknown29_inner6"
-0088C3 "_unknown29_inner7"
-0088C8 "_unknown29_inner8"
-0088CC "_unknown29_inner9"
-0088EC "_unknown29_inner10"
-
-
-00893D "unknown30"
-
-00831F "unknown31"
-
-00822D "unknown32"
-0082F3 "_unknown32_inner1"
-008317 "_unknown32_inner2"
-
-00834B "unknown33"
-
-0083D1 "unknown34"
-
-00841E "unknown35"
-008420 "_unknown35_inner1"
-
-0085FC "unknown36"
-0085FE "_unknown36_inner1"
-0086F7 "_unknown36_inner2"
-0086FA "_unknown36_inner3"
-00870E "_unknown36_inner4"
-008719 "_unknown36_inner5"
-008731 "_unknown36_inner6"
-00874E "_unknown36_inner7"
-
-008F45 "unknown37"
-
-009347 "unknown38"
-00937A "_unknown38_inner1"
-
-00E384 "unknown39"
-
-00E3FA "unknown40"
-00E42B "_unknown40_inner1"
-00E451 "_unknown40_inner2"
-00E462 "_unknown40_inner3"
-00E481 "_unknown40_inner4"
-00E48E "_unknown40_inner5"
-00E493 "_unknown40_inner6"
-00E4B2 "_unknown40_inner7"
-00E4D4 "_unknown40_inner8"
-
-00E583 "unknown41"
-00E5AF "_unknown41_loop1"
-00E5B1 "_unknown41_loop2"
-00E5DB "_unknown41_loop3"
-
-
 
 00E766 "decompress_tableA_dest7f4000_indexY"
 00E75C "decompress_tableA_dest7f4600_indexY" 
 00E76E "decompress_tableA_nodest_indexY"
 00E783 "decompressTableB_indexY"
+00E78F "decompress_tableB_something"
+00E772 "decompress_tableA_something"
 00E33B "decompressTableA_AndCopy2048_2118"
 00E33E "copy2048_to_vram_2118"
 00E783 "decompressTableB_indexY"
 
 ; Decompression routine
-00E79E "decompress"
+00E79E:00E851 "decompress"
 00E7A3 "decompress_main"
 00E7AD "decompress_getcodelen"
 00E7BF "decompress_getlongcount"
@@ -197,15 +51,11 @@
 00D537 "unpack_tableA_index000000"
 00D54E "decompress_and_unpack_image_tableA"
 
+; Copy stuff to 7EC300 (TODO: Check more!)
+1BEF4B:1BEF5F "copyDataTo7EC300_variantA"
 
 ; Copy stuff to 7EC300 (TODO: Check more!)
-1BEF4B "copyDataTo7EC300_variantA"
-1BEF56 "_inner_1BEF56"
-1BEF5F "_inner_1BEF5F"
-
-; Copy stuff to 7EC300 (TODO: Check more!)
-1BEF30 "copyDataTo7EC300_variantB"
-1BEF3B "_inner_1BEF3B"
+1BEF30:1BEF3B "copyDataTo7EC300_variantB"
 
 ; Clearing a lot of memory 0CE2-0F00, writin to 7FFA1C
 0DB871 "clearMemory_indexX_andMemory000000"
@@ -217,4 +67,101 @@
 ; Set [00:1F00-00:1F01]=0
 ; Move memory down from 001F02-001FFF to 001F00-001FFD (253 bytes). Copy 001F31 to 001F0A.
 ; Move memory down from 001F32-001F3E to 09F810-09F81C.
-label_09F7DE
+09F7DE "WTF"
+
+
+00E2D0:00E30A "unknown1"
+02C57B:02C5B1 "unknown2"
+00D308:00D336 "unknown3"
+00D337:00D361 "unknown4"
+00D3C6:00D406 "unknown5"
+02C630:02C68B "unknown6"
+00FC41:00FC84 "unknown7"
+00D2C8:00D2FF "unknown8"
+07F13C:07F1A2 "unknown9"
+1DF65D:1DF6B3 "unknown10"
+0DB818:0DB857 "unknown11"
+02C692:02C6EA "unknown12"
+1BEF0C:1BEF2F "unknown13"
+1BEEE8:1BEF0B "unknown14"
+02C769:02C7B7 "unknown15"
+1BEEC7:1BEEE7 "unknown16"
+1BEEA8:1BEEC6 "unknown17"
+1BEE52:1BEE73 "unknown18"
+1BED72:1BED90 "unknown19"
+1BEC9E:1BECC4 "unknown20"
+1BEC77:1BEC9D "unknown21"
+0ED5F4:0ED617 "unknown22"
+02D8B3:02DB6D "unknown23"
+0CED82:0CEDAC "unknown24"
+02C5B2:02C62F "unknown25"
+02C500:02C532 "unknown26"
+0087C0:00882D "unknown27"
+008901:008912 "unknown28"
+008888:0088EC "unknown29"
+00893D:008949 "unknown30"
+00831F:008332 "unknown31"
+00822D:0082D7 "unknown32"
+008333:0083D0 "unknown33"
+0083D1:0083F8 "unknown34"
+00841E:008489 "unknown35"
+0085FC:008780 "unknown36"
+008F45:008F71 "unknown37"
+009347:00937A "unknown38"
+00E384:00E398 "unknown39"
+00E3FA:00E4E8 "unknown40"
+00E583:00E5AC "unknown41"
+02DC55:02DD87 "unknown42"
+02E4A3:02E5D3 "unknown43"
+1BEDF9:1BEE39 "unknown44"
+1EFF8D:1EFFDD "unknown45"
+1DEA00:1DEB67 "unknown46"
+1DE9FC:1DE9FF "unknown47"
+1DE9DA:1DE9FB "unknown48"
+1DE9B6:1DE9D9 "unknown49"
+1BF09A:1BF0C1 "unknown50"
+1BF072:1BF099 "unknown51"
+1BF032:1BF071 "unknown52"
+1BEF96:1BF031 "unknown53"
+00E4E9:00E555 "unknown54"
+00E5AF:00E608 "unknown55"
+00E609:00E633 "unknown56"
+00E636:00E6B6 "unknown57"
+00E6B7:00E741 "unknown58"
+00E744:00E759 "unknown59"
+00E90C:00E9CB "unknown60"
+1BEE74:1BEEA7 "unknown61"
+1BED6E:1BED90 "unknown62"
+1BED91:1BEDDC "unknown63"
+1BED29:1BED4E "unknown64"
+1BED03:1BED28 "unknown65"
+1BECE4:1BED02 "unknown66"
+1BECC5:1BECE3 "unknown67"
+1BCA69:1BCA9E "unknown68"
+1BC980:1BC983 "unknown69"
+1BC983:1BC983 "unknown70"
+
+
+0089E0:0089EC "unknown71"
+0089EF:008CE3 "unknown72"
+00D231:00D2BD "unknown73"
+00D423:00D468 "unknown74"
+00E19B:00E2CF "unknown75"
+00E343:00E36C "unknown76"
+028000:028053 "unknown77"
+028116:02811D "unknown78"
+02854C:028569 "unknown79"
+09F81D:09F83B "unknown80"
+09F83D:09F863 "unknown81"
+09F864:09F8FA "unknown82"
+09F8FB:09F930 "unknown83"
+09F931:09F9D5 "unknown84"
+
+09F9D6:09FA4E "unknown85"
+
+; Too big?
+09FA4F:09FB23 "unknown86"
+
+09FB24:09FB6C "unknown87"
+09FCAE:09FCC3 "unknown88"
+09FD04:09FD1D "unknown89"

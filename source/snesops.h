@@ -141,11 +141,7 @@ int processArg(const Pointer pc, const uint8_t ih, const uint8_t *ops, char *pre
 
 	const bool acc16   = (registerP & STATUS_ACCUMULATOR_FLAG) == 0;
 	const bool index16 = (registerP & STATUS_MEMORY_FLAG) == 0;
-
-	if (ih == 0xDC) {
-		int A=9;
-	}
-
+	
 	if (am==0) {
 		sprintf(pretty,  "");
 		return 1;
@@ -183,6 +179,7 @@ int processArg(const Pointer pc, const uint8_t ih, const uint8_t *ops, char *pre
 	} else if (am==4) {
         
         if (branches[ih]) {
+
 			const int signed_offset = unpackSigned(ops[1]);
 			*dest = pc + signed_offset + 2;
             

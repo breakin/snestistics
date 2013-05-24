@@ -11,6 +11,7 @@ struct Options {
 		printProgramCounter = true;
 		printFileAdress = false;
 		printDataJumpsAsComments = true;
+		printCorrectWLA = false;
 		lowerCaseOpCode = true;
 		romOffset = 512;
 		outFile = "result.asm";
@@ -25,6 +26,7 @@ struct Options {
 	bool printFileAdress;
 	bool allowPrediction;
 	bool lowerCaseOpCode;
+	bool printCorrectWLA;
 
 	std::string romFile;
 	std::string labelsFile;

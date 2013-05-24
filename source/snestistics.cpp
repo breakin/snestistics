@@ -29,6 +29,8 @@ bool fillLabels(const std::string &labelsFile, LabelsMap &labels) {
 
 	std::string comment;
 
+	int numLocalLabels = 0;
+
 	while (!f.eof()) {
 		char buf[4096];
 		f.getline(buf, 4096);
@@ -46,7 +48,28 @@ bool fillLabels(const std::string &labelsFile, LabelsMap &labels) {
 			char labelName[4096];
 			memset(labelName, 0, 4096);
 			Pointer pc;
-			sscanf(buf, "%06X \"%[^\"]", &pc, labelName);
+
+			numLocalLabels = 0;
+
+			if (buf[6]==':') {
+				Pointer pc2;
+				sscanf(buf, "%06X:%06X \"%[^\"]", &pc, &pc2, labelName);
+
+				for (Pointer p = pc+1; p<=pc2; ++p) {
+					if (labels.find(p) != labels.end()) {
+
+						char a[128];
+						sprintf(a, "_%s_%d", labelName, numLocalLabels);
+						labels[p] = std::make_pair(a, "");
+
+						numLocalLabels++;
+					}
+				}
+
+
+			} else {
+				sscanf(buf, "%06X \"%[^\"]", &pc, labelName);
+			}
 
 			// TODO: Validate labelName
 
@@ -314,9 +337,11 @@ int main(const int argc, const char * const argv[]) {
 		const int numBytes = processArg(pc, ih, &romdata[romAdr], pretty, labelPretty, &jumpDest, opStatus[pc], &needBits);
 
 		if (needBits != numBits) {
-			if (needBits== 8) { fprintf(fout, ".8bit\n"); }
-			if (needBits==16) { fprintf(fout, ".16bit\n"); }
-			if (needBits==24) { fprintf(fout, ".24bit\n"); }
+			if (options.printCorrectWLA) {
+				if (needBits== 8) { fprintf(fout, ".8bit\n"); }
+				if (needBits==16) { fprintf(fout, ".16bit\n"); }
+				if (needBits==24) { fprintf(fout, ".24bit\n"); }
+			}
 			numBits = needBits;
 		}
 
