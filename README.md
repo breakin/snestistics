@@ -4,7 +4,7 @@ Emulation guided dissassembler for snes games.
 
 Tries to create a well-formed .ASM-file that can be compiled as a patch over the ROM-file using WLA DX. Code locations and jump targets are extracted using an emulator.
 
-I've chosen to create a simple binary file format that any emulator can create. Currently I have a version of snes9x that supports this. The branch at https://github.com/breakin/snes9x-debugtrace will soon have it incorporated, but until then a sample file for zelda3-nstc can be found in the examples directory.
+I've chosen to create a simple binary file format that any emulator can create. Currently I have a version of snes9x that supports this. See https://github.com/breakin/snes9x-debugtrace.
 
 Notice:
 * I will not distribute any ROM-files.

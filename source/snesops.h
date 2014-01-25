@@ -1,6 +1,8 @@
 #ifndef SNESTISTICS_SNESOPS
 #define SNESTISTICS_SNESOPS
 
+#include <sstream>
+
 #define STATUS_EMULATION_FLAG (256)
 #define STATUS_MEMORY_FLAG (0x10)
 #define STATUS_ACCUMULATOR_FLAG (0x20)
@@ -103,6 +105,20 @@ static int	AddrModes[256] =
 	 4, 11,  9, 20, 26,  7,  7, 13,  0, 16,  0,  0, 23, 15, 15, 18  // F
 };
 
+struct HardwareAdressEntry {
+	HardwareAdressEntry() {}
+	HardwareAdressEntry(const std::string &_desc, const std::string &_shortname) : desc(_desc), shortname(_shortname) {}
+	std::string desc, shortname;
+	bool isLow, isMedium, isHigh;
+	const bool operator<(const HardwareAdressEntry &other) const {
+		return desc < other.desc;
+	}
+};
+typedef std::map<Pointer, HardwareAdressEntry> HardwareAdressInfo;
+HardwareAdressInfo global_hardwareAdresses;
+
+#include "registergen.h"	
+
 bool branches[256];
 bool jumps[256];
 bool endOfPrediction[256];
@@ -129,9 +145,18 @@ bool endOfPrediction[256];
             branches[ih] = true;
 		}
 	}
+	fillHardwareAdresses(global_hardwareAdresses);
 }
 
-int processArg(const Pointer pc, const uint8_t ih, const uint8_t *ops, char *pretty, char *labelPretty, Pointer *dest, const uint16_t registerP, int *needBits) {
+ const HardwareAdressEntry* resolveAdressContext(const Pointer p) {
+	 auto it = global_hardwareAdresses.find(p);
+	 if (it == global_hardwareAdresses.end()) {
+		 return 0;
+	 }
+	 return &it->second;
+ }
+
+int processArg(const Pointer pc, const uint8_t ih, const uint8_t *ops, char *pretty, char *labelPretty, Pointer *dest, const uint16_t registerP, int *needBits, const HardwareAdressEntry **adressContext = 0) {
 
 	if (needBits) { *needBits = 8; }
 	
@@ -148,6 +173,9 @@ int processArg(const Pointer pc, const uint8_t ih, const uint8_t *ops, char *pre
 	} else if (am==1) {
 		if (acc16) {
 			sprintf(pretty, "#$%02X%02X.W", ops[2], ops[1]);
+			if (adressContext) {
+				*adressContext = resolveAdressContext(Pointer((ops[2] << 8) | (ops[1])));
+			}
 			return 3;
 		} else {
 			sprintf(pretty, "#$%02X.B", ops[1]);
@@ -156,6 +184,9 @@ int processArg(const Pointer pc, const uint8_t ih, const uint8_t *ops, char *pre
 	} else if (am==2) {
 
 		if (index16) {
+			if (adressContext) {
+				*adressContext = resolveAdressContext(Pointer((ops[2] << 8) | (ops[1])));
+			}
 			sprintf(pretty, "#$%02X%02X.W", ops[2], ops[1]);
 			return 3;
 		} else {
@@ -226,12 +257,21 @@ int processArg(const Pointer pc, const uint8_t ih, const uint8_t *ops, char *pre
 		return 2;
 	} else if (am==14) {
 		sprintf(pretty, "$%02X%02X.W", ops[2],ops[1]); // depend DB
+		if (adressContext) {
+			*adressContext = resolveAdressContext(Pointer((ops[2] << 8) | (ops[1])));
+		}
 		return 3;
 	} else if (am==15) {
 		sprintf(pretty, "$%02X%02X.W,x", ops[2],ops[1]); // depend x
+		if (adressContext) {
+			*adressContext = resolveAdressContext(Pointer((ops[2] << 8) | (ops[1])));
+		}
 		return 3;
 	} else if (am==16) {
 		sprintf(pretty, "$%02X%02X.W,y", ops[2], ops[1]); // depend y
+		if (adressContext) {
+			*adressContext = resolveAdressContext(Pointer((ops[2] << 8) | (ops[1])));
+		}
         return 3;
 	} else if (am==17) {
 		*dest = (ops[3]<<16)|(ops[2]<<8)|(ops[1]),
@@ -267,6 +307,9 @@ int processArg(const Pointer pc, const uint8_t ih, const uint8_t *ops, char *pre
 		sprintf(pretty, "$%02X, $%02X", ops[1], ops[2]);
 		return 3;		 
 	} else if (am==26) {
+		if (adressContext) {
+			*adressContext = resolveAdressContext(Pointer((ops[2] << 8) | (ops[1])));
+		}
 		sprintf(pretty, "$%02X%02X.W", ops[2], ops[1]);
 		return 3;		 
 	} else if (am==27) {

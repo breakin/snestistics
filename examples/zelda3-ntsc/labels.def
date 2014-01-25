@@ -1,7 +1,7 @@
 008000:0080C6 "entry"
 
 ; Invoked by NMI
-0080C9:00822C "unknown_nmi_1"
+0080C9:00822C "vblank_nmi"
 
 ; Invoked by IRQ
 0082D8:008332 "unknown_irq_1"
@@ -110,7 +110,7 @@
 00893D:008949 "unknown30"
 00822D:0082D7 "unknown32"
 008333:0083D0 "unknown33"
-0083D1:0083F8 "unknown34"
+0083D1:0083F8 "readJoypad"
 00841E:008489 "unknown35"
 0085FC:008780 "unknown36"
 008F45:008F71 "unknown37"
@@ -181,19 +181,26 @@
 
 0CC47B:0CC4B9 "unknown102"
 0CC45B:0CC47A "unknown103"
-0CC448:0CC44B "unknown104"
+
+0CC448:0CC45A "unknown104"
+0CC44F:0CC45A "__jumpTableWord__"
+
 0CC435:0CC447 "unknown105"
 0CC404:0CC411 "unknown107"
 0CC36F:0CC3BC "unknown108"
 0CC33C:0CC36E "unknown109"
 0CC1F5:0CC25B "unknown110"
 0CC1A0:0CC1F4 "unknown111"
-0CC120:0CC135 "unknown112"
+
+0CC120:0CC15C "unknown112"
+0CC139:0CC15C "__jumpTableLong__"
+
 0CC15D:0CC17B "unknown113a"
 
-
 ; This function can cause unknown73 to be called
-0CC170:0CC17B "unknown113b"
+0CC170:0CC19F "unknown113b"
+0CC17F:0CC19F "__jumpTableLong__"
+
 00D231:00D2BD "unknown73"
 
 09FF1E:09FF8B "unknown114"
@@ -219,32 +226,52 @@
 
 ; Read A from 0C:1E18+X and jump using jumpEncodedWordJump
 ; A=0 => stateA_mutate8
-; A=1 => 0CC84F
+; A=1 => stateA_mutate10
 ; A=2 => stateA_mutate4
-; A=3 => 0CC8E2
-; A=4 => 0CCBE8
-; A=5 => 0CCBE8
-; A=6 => 0CCBE8
-; A=7 => 0CCD19
+; A=3 => stateA_mutate11
+; A=4 => stateA_mutate12
+; A=5 => stateA_mutate12
+; A=6 => stateA_mutate12
+; A=7 => stateA_mutate13
 0CC544:0CC547 "stateA_mutate2"
+
+0CC84F "stateA_mutate10"
+0CC8E2 "stateA_mutate11"
+0CCBE8 "stateA_mutate12"
+0CCD19 "stateA_mutate13"
+0CC90D "stateA_mutate14"
+0CCC13 "stateA_mutate15"
+0CCD3E "stateA_mutate16"
+0CFFDA "stateA_mutate17"
+0C005F "stateA_mutate18"
+0C00E6 "stateA_mutate19"
+0C00C8 "stateA_mutate20"
+0CFFBD "stateA_mutate21"
+0CC608 "stateA_mutate22"
+0C0001 "stateA_mutate23"
+0CFFFF "stateA_mutate24"
+0CFF01 "stateA_mutate25"
+0C5F4B "stateA_mutate26"
+0C5875 "stateA_mutate27"
+0C5830 "stateA_mutate28"
 
 0CC57E:0CC5B0 "stateA_mutate8"
 
 ; Reads A from 0C:1E18+X
 ; A=0 => stateA_mutate6
-; A=1 => 0CC84F
+; A=1 => stateA_mutate10
 ; A=2 => stateA_mutate9
-; A=3 => 0CC90D
-; A=4 => 0CCC13
-; A=5 => 0CCC13
-; A=6 => 0CCC13
-; A=7 => 0CCD3E
-; A=8 => 0CFFDA
-; A=9 => 0C005F
-; A=A => 0C00E6
-; A=B => 0C00C8
-; A=C => 0CFFBD
-; A=D => 0C00C8
+; A=3 => stateA_mutate14
+; A=4 => stateA_mutate15
+; A=5 => stateA_mutate15
+; A=6 => stateA_mutate15
+; A=7 => stateA_mutate16
+; A=8 => stateA_mutate17
+; A=9 => stateA_mutate18
+; A=A => stateA_mutate19
+; A=B => stateA_mutate20
+; A=C => stateA_mutate21
+; A=D => stateA_mutate20
 0CC55B:0CC55E "stateA_mutate3"
 
 ; Call unknown92, then quit state machine
@@ -265,13 +292,13 @@
 ; A=2 => stateA_mutate7 
 ; A=3 => stateA_mutate7 
 ; A=4 => stateA_mutate7 
-; A=5 => 0CC608 
-; A=6 => 0C0001 
-; A=7 => 0CFFFF  
-; A=8 => 0CFF01  
-; A=9 => 0C5F4B  
-; A=A => 0C5875  
-; A=B => 0C5830 
+; A=5 => stateA_mutate22 
+; A=6 => stateA_mutate24 
+; A=7 => stateA_mutate24  
+; A=8 => stateA_mutate25  
+; A=9 => stateA_mutate26  
+; A=A => stateA_mutate27  
+; A=B => stateA_mutate28 
 0CC5B1:0CC5BA "stateA_mutate6"
 
 ; Do stuff, quit state machine

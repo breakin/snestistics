@@ -16,9 +16,22 @@
 	      Short breaks between sections is filled using .DB instead of starting new sections.
 */
 
-typedef std::map<Pointer, std::pair<std::string,std::string>> LabelsMap;
+struct RangeInfo {
+	RangeInfo() {}
+	RangeInfo(const Pointer pc) : firstPC(pc), lastPC(pc) {}
+	RangeInfo(const Pointer pc, const Pointer pc2) : firstPC(pc), lastPC(pc2) {}
 
-bool fillLabels(const std::string &labelsFile, LabelsMap &labels) {
+	Pointer firstPC,lastPC;
+	std::string labelName, comment;
+};
+
+typedef std::map<Pointer, RangeInfo> RangeInfoMap;
+
+void insertRangeInfo(const RangeInfo &ri, RangeInfoMap &labels) {
+	labels[ri.firstPC]=ri;
+}
+
+bool fillLabels(const std::string &labelsFile, RangeInfoMap &labels) {
 
 	if (labelsFile.length()==0) {
 		return true;
@@ -47,12 +60,11 @@ bool fillLabels(const std::string &labelsFile, LabelsMap &labels) {
 		} else {
 			char labelName[4096];
 			memset(labelName, 0, 4096);
-			Pointer pc;
+			Pointer pc,pc2;
 
 			numLocalLabels = 0;
 
 			if (buf[6]==':') {
-				Pointer pc2;
 				sscanf(buf, "%06X:%06X \"%[^\"]", &pc, &pc2, labelName);
 
 				for (Pointer p = pc+1; p<=pc2; ++p) {
@@ -60,7 +72,10 @@ bool fillLabels(const std::string &labelsFile, LabelsMap &labels) {
 
 						char a[128];
 						sprintf(a, "_%s_%d", labelName, numLocalLabels);
-						labels[p] = std::make_pair(a, "");
+
+						RangeInfo le(p);
+						le.labelName = a;
+						insertRangeInfo(le, labels);
 
 						numLocalLabels++;
 					}
@@ -69,11 +84,15 @@ bool fillLabels(const std::string &labelsFile, LabelsMap &labels) {
 
 			} else {
 				sscanf(buf, "%06X \"%[^\"]", &pc, labelName);
+				pc2=pc;
 			}
 
 			// TODO: Validate labelName
 
-			labels[pc] = std::make_pair(labelName, comment);
+			RangeInfo le(pc,pc2);
+			le.labelName = labelName;
+			le.comment = comment;
+			insertRangeInfo(le, labels);
 			comment.clear();
 		}
 	}
@@ -98,7 +117,7 @@ std::string getLabelName(const Pointer p) {
     return hej;
 }
 
-void visitOp(const Options &options, const Pointer pc, const uint16_t ps, const bool predict, const std::set<Pointer> &knownOps, std::set<Pointer> &predictOps, LabelsMap &labels, std::vector<uint16_t> &statusRegArray, const std::vector<uint8_t> &romdata) {
+void visitOp(const Options &options, const Pointer pc, const uint16_t ps, const bool predict, const std::set<Pointer> &knownOps, std::set<Pointer> &predictOps, RangeInfoMap &labels, std::vector<uint16_t> &statusRegArray, const std::vector<uint8_t> &romdata) {
     
     const uint32_t romAdr = options.romOffset + getRomOffset(pc, options.calculatedSize);
     const uint8_t ih = romdata[romAdr];
@@ -119,7 +138,9 @@ void visitOp(const Options &options, const Pointer pc, const uint16_t ps, const 
         
     if (jumps[ih]) {
         if (jumpDest != 0) {
-            labels[jumpDest] = std::make_pair(getLabelName(jumpDest), "");
+			RangeInfo le(jumpDest);
+			le.labelName = getLabelName(jumpDest);
+			insertRangeInfo(le, labels);
         }
     }
 
@@ -212,7 +233,7 @@ int main(const int argc, const char * const argv[]) {
 	}
 
 	std::set<Pointer> ops;
-	LabelsMap labels;
+	RangeInfoMap labels;
 	std::vector<uint16_t> opStatus;
 
 	opStatus.resize(256*65536, 0xffff);
@@ -240,7 +261,9 @@ int main(const int argc, const char * const argv[]) {
 			fread(&t, sizeof(Pointer), 1, f2);
 			takenJumps[p].insert(t);
 		
-			labels[t] = std::make_pair(getLabelName(t), std::string(""));
+			RangeInfo le(t);
+			le.labelName = getLabelName(t);
+			insertRangeInfo(le, labels);
 
 		} else {
 			assert(false);
@@ -284,6 +307,7 @@ int main(const int argc, const char * const argv[]) {
 
 	for (auto it = begin(ops); it != end(ops); ++it) {
 		const Pointer pc = *it;
+
 		const uint32_t romAdr = options.romOffset + getRomOffset(pc, options.calculatedSize);
 		const uint8_t ih = romdata[romAdr];
         
@@ -292,10 +316,11 @@ int main(const int argc, const char * const argv[]) {
 			const int gap = pc - next;
 
 			if (gap>16*64 || (bank(pc)!=bank(next))) {
-
 				if (!firstSection) {
 					emitSectionEnd(fout);
-					fprintf(fout, "\n; %d bytes gap\n\n", gap);
+				}
+				if (!firstSection) {
+					fprintf(fout, "; %d bytes gap (0x%X)\n\n", gap, gap);
 				}
 				firstSection = false;
                 
@@ -324,8 +349,31 @@ int main(const int argc, const char * const argv[]) {
 
 		auto labelIt = labels.find(pc);
 		if (labelIt != labels.end()) {
-			fprintf(fout, "\n%s\n", labelIt->second.second.c_str());
-			fprintf(fout, "%s:\n\n", labelIt->second.first.c_str());
+			if (labelIt->second.labelName=="__jumpTableWord__") {
+
+			} else if (labelIt->second.labelName=="__jumpTableLong__") {
+
+				for (Pointer a = pc; a <= labelIt->second.lastPC; a+=3) {
+					const uint32_t pr = options.romOffset + getRomOffset(a, options.calculatedSize);
+					const Pointer full = (romdata[pr+2]<<16)|(romdata[pr+1]<<8)|(romdata[pr+0]);
+
+					// TODO: Change to DL?
+					fprintf(fout, "\t.DB $%02X,$%02X,$%02X", romdata[pr+0], romdata[pr+1], romdata[pr+2]);
+
+					auto targetLabelIt = labels.find(full);
+					if (targetLabelIt != labels.end()) {
+						fprintf(fout, " ; %s", targetLabelIt->second.labelName.c_str());
+					} else {
+						fprintf(fout, " ; %06X", full);
+					}					
+					fprintf(fout, "\n");
+					next+=3;
+				}
+
+			} else {
+				fprintf(fout, "\n%s\n", labelIt->second.comment.c_str());
+				fprintf(fout, "%s:\n\n", labelIt->second.labelName.c_str());
+			}
 		}
 
 		Pointer jumpDest(0);
@@ -334,7 +382,8 @@ int main(const int argc, const char * const argv[]) {
 
 		// TODO: Hand in processor status register
 		int needBits = numBits; // Unless processArg cares, let it stay!
-		const int numBytes = processArg(pc, ih, &romdata[romAdr], pretty, labelPretty, &jumpDest, opStatus[pc], &needBits);
+		const HardwareAdressEntry *adressContext = 0;
+		const int numBytes = processArg(pc, ih, &romdata[romAdr], pretty, labelPretty, &jumpDest, opStatus[pc], &needBits, &adressContext);
 
 		if (needBits != numBits) {
 			if (options.printCorrectWLA) {
@@ -374,7 +423,7 @@ int main(const int argc, const char * const argv[]) {
 		}
 
 		if (jumps[ih] && jumpDest != 0 && ops.find(jumpDest) != ops.end()) {
-			fprintf(fout, labelPretty, labels[jumpDest].first.c_str());
+			fprintf(fout, labelPretty, labels[jumpDest].labelName.c_str());
 		} else {
 			fprintf(fout, "%s", pretty);
 		}
@@ -389,7 +438,7 @@ int main(const int argc, const char * const argv[]) {
 				for (auto pit = recordedJumps->second.begin(); pit != recordedJumps->second.end(); ++pit) {
 					const Pointer p = *pit;
 					if (ops.find(p) != ops.end() && labels.find(p) != labels.end()) {
-						fprintf(fout, " ; \"%s\" [%06X]", labels[p].first.c_str(), p);
+						fprintf(fout, " ; \"%s\" [%06X]", labels[p].labelName.c_str(), p);
 					} else {
 						fprintf(fout, " ; %06X", p);
 					}					
@@ -402,8 +451,23 @@ int main(const int argc, const char * const argv[]) {
 				}
 			}
 		}
+
+		bool beginComment = false;
+
+		if (adressContext) {
+			if (!beginComment) {
+				fprintf(fout, "; ");
+				beginComment = true;
+			}
+			fprintf(fout, " ; %s", adressContext->desc.c_str());
+		}
+
 		if (predicted && !emitPred) {
-			fprintf(fout, " ; predicted");
+			if (!beginComment) {
+				fprintf(fout, "; ");
+				beginComment = true;
+			}
+			fprintf(fout, " [P]");
 		}
 
 		if (!emitN) {
