@@ -310,6 +310,10 @@ int main(const int argc, const char * const argv[]) {
 
 		const uint32_t romAdr = options.romOffset + getRomOffset(pc, options.calculatedSize);
 		const uint8_t ih = romdata[romAdr];
+
+		if (pc < next && predictOps.find(pc) != predictOps.end()) {
+			continue;
+		}
         
 		if (pc != next) {
 
@@ -351,24 +355,51 @@ int main(const int argc, const char * const argv[]) {
 		if (labelIt != labels.end()) {
 			if (labelIt->second.labelName=="__jumpTableWord__") {
 
+				Pointer dataStart = pc;
+				Pointer dataEnd = labelIt->second.lastPC;
+
+				const int guessBank = pc >> 16;
+
+				for (Pointer a = dataStart; a <= dataEnd; a += 2) {
+					const uint32_t pr = options.romOffset + getRomOffset(a, options.calculatedSize);
+					const Pointer full = (guessBank << 16) | (romdata[pr + 1] << 8) | (romdata[pr + 0]);
+
+					// TODO: Change to DL?
+					fprintf(fout, "\t.DB $%02X,$%02X", romdata[pr + 0], romdata[pr + 1]);
+					auto targetLabelIt = labels.find(full);
+					if (targetLabelIt != labels.end()) {
+						fprintf(fout, "\t\t; %s", targetLabelIt->second.labelName.c_str());
+					}
+					else {
+						fprintf(fout, "\t\t; %06X", full);
+					}
+					fprintf(fout, "\n");
+					next += 2;
+				}
+				continue;
+
 			} else if (labelIt->second.labelName=="__jumpTableLong__") {
 
-				for (Pointer a = pc; a <= labelIt->second.lastPC; a+=3) {
+				Pointer dataStart = pc;
+				Pointer dataEnd = labelIt->second.lastPC;
+
+				for (Pointer a = dataStart; a <= dataEnd; a+=3) {
 					const uint32_t pr = options.romOffset + getRomOffset(a, options.calculatedSize);
 					const Pointer full = (romdata[pr+2]<<16)|(romdata[pr+1]<<8)|(romdata[pr+0]);
 
 					// TODO: Change to DL?
-					fprintf(fout, "\t.DB $%02X,$%02X,$%02X", romdata[pr+0], romdata[pr+1], romdata[pr+2]);
+					fprintf(fout, "\t.DB $%02X,$%02X,$%02X", romdata[pr + 0], romdata[pr + 1], romdata[pr + 2]);
 
 					auto targetLabelIt = labels.find(full);
 					if (targetLabelIt != labels.end()) {
-						fprintf(fout, " ; %s", targetLabelIt->second.labelName.c_str());
+						fprintf(fout, "\t\t; %s", targetLabelIt->second.labelName.c_str());
 					} else {
-						fprintf(fout, " ; %06X", full);
+						fprintf(fout, "\t\t; %06X", full);
 					}					
 					fprintf(fout, "\n");
 					next+=3;
 				}
+				continue;
 
 			} else {
 				fprintf(fout, "\n%s\n", labelIt->second.comment.c_str());
@@ -438,13 +469,13 @@ int main(const int argc, const char * const argv[]) {
 				for (auto pit = recordedJumps->second.begin(); pit != recordedJumps->second.end(); ++pit) {
 					const Pointer p = *pit;
 					if (ops.find(p) != ops.end() && labels.find(p) != labels.end()) {
-						fprintf(fout, " ; \"%s\" [%06X]", labels[p].labelName.c_str(), p);
+						fprintf(fout, "\t\t; \"%s\" [%06X]", labels[p].labelName.c_str(), p);
 					} else {
-						fprintf(fout, " ; %06X", p);
+						fprintf(fout, "\t\t; %06X", p);
 					}					
 					if (!emitPred && predicted) {
 						emitPred = true;
-						fprintf(fout, " [predicted]");
+						fprintf(fout, " [P]");
 					}
 					emitN = true;
 					fprintf(fout, "\n");
@@ -456,15 +487,15 @@ int main(const int argc, const char * const argv[]) {
 
 		if (adressContext) {
 			if (!beginComment) {
-				fprintf(fout, "; ");
+				fprintf(fout, "\t\t;");
 				beginComment = true;
 			}
-			fprintf(fout, " ; %s", adressContext->desc.c_str());
+			fprintf(fout, " %s", adressContext->desc.c_str());
 		}
 
 		if (predicted && !emitPred) {
 			if (!beginComment) {
-				fprintf(fout, "; ");
+				fprintf(fout, "\t\t;");
 				beginComment = true;
 			}
 			fprintf(fout, " [P]");

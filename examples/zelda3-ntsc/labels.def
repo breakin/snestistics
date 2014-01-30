@@ -28,6 +28,10 @@
 00E33E "copy2048_to_vram_2118"
 00E783 "decompressTableB_indexY"
 
+00F800:00F875 "gameloop_displayModalText"
+0287A2:0288C0 "gameloop_gameInsideHouseOrCastle"
+02A475:02A52C "gameloop_gameOutside"
+
 ; Unpack directly from tableA, data is uncompressed. Entry specified through memory 00:0000
 00D537 "unpack_tableA_index000000"
 00D54E "decompress_and_unpack_image_tableA"
@@ -103,15 +107,23 @@
 ; [00:0015]++
 0087C0:00882D "zeroMemory1"
 
+008888:0088EC "audio_unknown0"
 ; [00:0000-0002]=$008019
-008901:008912 "unknown29_008019"
-008888:0088EC "unknown29"
+008901:008912 "audio_unknown0_008019"
+008925:008931 "audio_unknown0_00801B"
+008913:008924 "audio_unknown0_F59E1A"
+00891D "audio_unknown0_trampoline"
+
 
 00893D:008949 "unknown30"
-00822D:0082D7 "unknown32"
+; Called from VBLANK
+00822D:0082D7 "initialize_perframe_graphics_registersA"
+00814C:0081FF "initialize_perframe_graphics_registersB"
 008333:0083D0 "unknown33"
 0083D1:0083F8 "readJoypad"
-00841E:008489 "unknown35"
+
+; Initialize RAM $0861-$0A00 with [F0 00 00 00] (416 bytes, 104 entries?)
+00841E:008489 "initMemory_at0861_to_F0000000"
 0085FC:008780 "unknown36"
 008F45:008F71 "unknown37"
 009347:00937A "unknown38"
@@ -192,12 +204,33 @@
 0CC1F5:0CC25B "unknown110"
 0CC1A0:0CC1F4 "unknown111"
 
-0CC120:0CC15C "unknown112"
+; This is the main game loop that executes once per frame
+; Reads Y = $10 (state)
+; Jump [$8061+Y $807D+Y $8099+Y].
+; $00: Intro
+; $01: Select player
+; $02: Copy player
+; $03: Erase player
+; $07: Inside house / castle?
+; $08: While loading new screen/room
+; $09: Outside (at least in the beginning of the game)
+; $0E: Modal message text shown
+; $0F: Part when loading new room
+; $12: Death screen
+0080B5:0080C8 "gameloop"
+
+; Activated once a player was selected
+028136:0281BC "gameloop_hm"
+
+0CC120:0CC15C "gameloop_intro"
 0CC139:0CC15C "__jumpTableLong__"
 
-0CC15D:0CC17B "unknown113a"
+00C2F0 "gameloop_backstory"
 
-; This function can cause unknown73 to be called
+0CC133 ";Load current intro state from $00:0011 into A"
+0CC135 ";Jump to function indexed by the game state"
+
+0CC15D:0CC17B "unknown113a"
 0CC170:0CC19F "unknown113b"
 0CC17F:0CC19F "__jumpTableLong__"
 
@@ -309,3 +342,6 @@
 ; [00:1E08]=$00
 ; [00:1E09]=$08
 0CC412:0CC424 "unknown106"
+
+
+
