@@ -10,6 +10,18 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\source\annotationresolver.cpp" />
+    <ClCompile Include="..\..\source\snestistics.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\source\annotationresolver.h" />
+    <ClInclude Include="..\..\source\asmwrite_wladx.h" />
+    <ClInclude Include="..\..\source\cmdoptions.h" />
+    <ClInclude Include="..\..\source\cputable.h" />
+    <ClInclude Include="..\..\source\romaccessor.h" />
+    <ClInclude Include="..\..\source\utils.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{58A5201C-88C2-4562-A87A-095B6A17EC50}</ProjectGuid>
     <RootNamespace>snestistics</RootNamespace>
@@ -65,16 +77,6 @@
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\source\annotationresolver.cpp" />
-    <ClCompile Include="..\..\source\snestistics.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\source\annotationresolver.h" />
-    <ClInclude Include="..\..\source\cmdoptions.h" />
-    <ClInclude Include="..\..\source\registergen.h" />
-    <ClInclude Include="..\..\source\snesops.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
