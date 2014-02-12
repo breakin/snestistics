@@ -1,1 +1,1 @@
--romfile zelda3org.smc -smc -asmheaderfile header.def -tracefile zelda3.snestistics -out zelda3.asm -cs 1048576 -labelsfile labels.def -predict true
+-romfile zelda3org.smc -smc -asmheaderfile header.def -tracefile zelda3.snestistics -out zelda3.asm -cs 1048576 -labelsfile labels.def -predict true -hwregfile ../hardware_reg.labels

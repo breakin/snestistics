@@ -7,52 +7,280 @@
 #define STATUS_MEMORY_FLAG (0x10)
 #define STATUS_ACCUMULATOR_FLAG (0x20)
 
+struct OpCodeInfo {
+	int id;
+	const char * const mnemonics;
+	int adressMode;
+};
+
+static OpCodeInfo opCodeInfo[256]=
+{
+	{ 0x00, "BRK", 3 },
+	{ 0x01, "ORA", 10 },
+	{ 0x02, "COP", 3 },
+	{ 0x03, "ORA", 19 },
+	{ 0x04, "TSB", 6 },
+	{ 0x05, "ORA", 6 },
+	{ 0x06, "ASL", 6 },
+	{ 0x07, "ORA", 12 },
+	{ 0x08, "PHP", 0 },
+	{ 0x09, "ORA", 1 },
+	{ 0x0A, "ASL", 24 },
+	{ 0x0B, "PHD", 0 },
+	{ 0x0C, "TSB", 14 },
+	{ 0x0D, "ORA", 14 },
+	{ 0x0E, "ASL", 14 },
+	{ 0x0F, "ORA", 17 },
+	{ 0x10, "BPL", 4 },
+	{ 0x11, "ORA", 11 },
+	{ 0x12, "ORA", 9 },
+	{ 0x13, "ORA", 20 },
+	{ 0x14, "TRB", 6 },
+	{ 0x15, "ORA", 7 },
+	{ 0x16, "ASL", 7 },
+	{ 0x17, "ORA", 13 },
+	{ 0x18, "CLC", 0 },
+	{ 0x19, "ORA", 16 },
+	{ 0x1A, "INC", 24 },
+	{ 0x1B, "TCS", 0 },
+	{ 0x1C, "TRB", 14 },
+	{ 0x1D, "ORA", 15 },
+	{ 0x1E, "ASL", 15 },
+	{ 0x1F, "ORA", 18 },
+	{ 0x20, "JSR", 14 },
+	{ 0x21, "AND", 10 },
+	{ 0x22, "JSL", 17 },
+	{ 0x23, "AND", 19 },
+	{ 0x24, "BIT", 6 },
+	{ 0x25, "AND", 6 },
+	{ 0x26, "ROL", 6 },
+	{ 0x27, "AND", 12 },
+	{ 0x28, "PLP", 0 },
+	{ 0x29, "AND", 1 },
+	{ 0x2A, "ROL", 24 },
+	{ 0x2B, "PLD", 0 },
+	{ 0x2C, "BIT", 14 },
+	{ 0x2D, "AND", 14 },
+	{ 0x2E, "ROL", 14 },
+	{ 0x2F, "AND", 17 },
+	{ 0x30, "BMI", 4 },
+	{ 0x31, "AND", 11 },
+	{ 0x32, "AND", 9 },
+	{ 0x33, "AND", 20 },
+	{ 0x34, "BIT", 7 },
+	{ 0x35, "AND", 7 },
+	{ 0x36, "ROL", 7 },
+	{ 0x37, "AND", 13 },
+	{ 0x38, "SEC", 0 },
+	{ 0x39, "AND", 16 },
+	{ 0x3A, "DEC", 24 },
+	{ 0x3B, "TSC", 0 },
+	{ 0x3C, "BIT", 15 },
+	{ 0x3D, "AND", 15 },
+	{ 0x3E, "ROL", 15 },
+	{ 0x3F, "AND", 18 },
+	{ 0x40, "RTI", 0 },
+	{ 0x41, "EOR", 10 },
+	{ 0x42, "WDM", 3 },
+	{ 0x43, "EOR", 19 },
+	{ 0x44, "MVP", 25 },
+	{ 0x45, "EOR", 6 },
+	{ 0x46, "LSR", 6 },
+	{ 0x47, "EOR", 12 },
+	{ 0x48, "PHA", 0 },
+	{ 0x49, "EOR", 1 },
+	{ 0x4A, "LSR", 24 },
+	{ 0x4B, "PHK", 0 },
+	{ 0x4C, "JMP", 14 },
+	{ 0x4D, "EOR", 14 },
+	{ 0x4E, "LSR", 14 },
+	{ 0x4F, "EOR", 17 },
+	{ 0x50, "BVC", 4 },
+	{ 0x51, "EOR", 11 },
+	{ 0x52, "EOR", 9 },
+	{ 0x53, "EOR", 20 },
+	{ 0x54, "MVN", 25 },
+	{ 0x55, "EOR", 7 },
+	{ 0x56, "LSR", 7 },
+	{ 0x57, "EOR", 13 },
+	{ 0x58, "CLI", 0 },
+	{ 0x59, "EOR", 16 },
+	{ 0x5A, "PHY", 0 },
+	{ 0x5B, "TCD", 0 },
+	{ 0x5C, "JMP", 17 },
+	{ 0x5D, "EOR", 15 },
+	{ 0x5E, "LSR", 15 },
+	{ 0x5F, "EOR", 18 },
+	{ 0x60, "RTS", 0 },
+	{ 0x61, "ADC", 10 },
+	{ 0x62, "PER", 5 },
+	{ 0x63, "ADC", 19 },
+	{ 0x64, "STZ", 6 },
+	{ 0x65, "ADC", 6 },
+	{ 0x66, "ROR", 6 },
+	{ 0x67, "ADC", 12 },
+	{ 0x68, "PLA", 0 },
+	{ 0x69, "ADC", 1 },
+	{ 0x6A, "ROR", 24 },
+	{ 0x6B, "RTL", 0 },
+	{ 0x6C, "JMP", 21 },
+	{ 0x6D, "ADC", 14 },
+	{ 0x6E, "ROR", 14 },
+	{ 0x6F, "ADC", 17 },
+	{ 0x70, "BVS", 4 },
+	{ 0x71, "ADC", 11 },
+	{ 0x72, "ADC", 9 },
+	{ 0x73, "ADC", 20 },
+	{ 0x74, "STZ", 7 },
+	{ 0x75, "ADC", 7 },
+	{ 0x76, "ROR", 7 },
+	{ 0x77, "ADC", 13 },
+	{ 0x78, "SEI", 0 },
+	{ 0x79, "ADC", 16 },
+	{ 0x7A, "PLY", 0 },
+	{ 0x7B, "TDC", 0 },
+	{ 0x7C, "JMP", 23 },
+	{ 0x7D, "ADC", 15 },
+	{ 0x7E, "ROR", 15 },
+	{ 0x7F, "ADC", 18 },
+	{ 0x80, "BRA", 4 },
+	{ 0x81, "STA", 10 },
+	{ 0x82, "BRL", 5 },
+	{ 0x83, "STA", 19 },
+	{ 0x84, "STY", 6 },
+	{ 0x85, "STA", 6 },
+	{ 0x86, "STX", 6 },
+	{ 0x87, "STA", 12 },
+	{ 0x88, "DEY", 0 },
+	{ 0x89, "BIT", 1 },
+	{ 0x8A, "TXA", 0 },
+	{ 0x8B, "PHB", 0 },
+	{ 0x8C, "STY", 14 },
+	{ 0x8D, "STA", 14 },
+	{ 0x8E, "STX", 14 },
+	{ 0x8F, "STA", 17 },
+	{ 0x90, "BCC", 4 },
+	{ 0x91, "STA", 11 },
+	{ 0x92, "STA", 9 },
+	{ 0x93, "STA", 20 },
+	{ 0x94, "STY", 7 },
+	{ 0x95, "STA", 7 },
+	{ 0x96, "STX", 8 },
+	{ 0x97, "STA", 13 },
+	{ 0x98, "TYA", 0 },
+	{ 0x99, "STA", 16 },
+	{ 0x9A, "TXS", 0 },
+	{ 0x9B, "TXY", 0 },
+	{ 0x9C, "STZ", 14 },
+	{ 0x9D, "STA", 15 },
+	{ 0x9E, "STZ", 15 },
+	{ 0x9F, "STA", 18 },
+	{ 0xA0, "LDY", 2 },
+	{ 0xA1, "LDA", 10 },
+	{ 0xA2, "LDX", 2 },
+	{ 0xA3, "LDA", 19 },
+	{ 0xA4, "LDY", 6 },
+	{ 0xA5, "LDA", 6 },
+	{ 0xA6, "LDX", 6 },
+	{ 0xA7, "LDA", 12 },
+	{ 0xA8, "TAY", 0 },
+	{ 0xA9, "LDA", 1 },
+	{ 0xAA, "TAX", 0 },
+	{ 0xAB, "PLB", 0 },
+	{ 0xAC, "LDY", 14 },
+	{ 0xAD, "LDA", 14 },
+	{ 0xAE, "LDX", 14 },
+	{ 0xAF, "LDA", 17 },
+	{ 0xB0, "BCS", 4 },
+	{ 0xB1, "LDA", 11 },
+	{ 0xB2, "LDA", 9 },
+	{ 0xB3, "LDA", 20 },
+	{ 0xB4, "LDY", 7 },
+	{ 0xB5, "LDA", 7 },
+	{ 0xB6, "LDX", 8 },
+	{ 0xB7, "LDA", 13 },
+	{ 0xB8, "CLV", 0 },
+	{ 0xB9, "LDA", 16 },
+	{ 0xBA, "TSX", 0 },
+	{ 0xBB, "TYX", 0 },
+	{ 0xBC, "LDY", 15 },
+	{ 0xBD, "LDA", 15 },
+	{ 0xBE, "LDX", 16 },
+	{ 0xBF, "LDA", 18 },
+	{ 0xC0, "CPY", 2 },
+	{ 0xC1, "CMP", 10 },
+	{ 0xC2, "REP", 3 },
+	{ 0xC3, "CMP", 19 },
+	{ 0xC4, "CPY", 6 },
+	{ 0xC5, "CMP", 6 },
+	{ 0xC6, "DEC", 6 },
+	{ 0xC7, "CMP", 12 },
+	{ 0xC8, "INY", 0 },
+	{ 0xC9, "CMP", 1 },
+	{ 0xCA, "DEX", 0 },
+	{ 0xCB, "WAI", 0 },
+	{ 0xCC, "CPY", 14 },
+	{ 0xCD, "CMP", 14 },
+	{ 0xCE, "DEC", 14 },
+	{ 0xCF, "CMP", 17 },
+	{ 0xD0, "BNE", 4 },
+	{ 0xD1, "CMP", 11 },
+	{ 0xD2, "CMP", 9 },
+	{ 0xD3, "CMP", 20 },
+	{ 0xD4, "PEI", 27 },
+	{ 0xD5, "CMP", 7 },
+	{ 0xD6, "DEC", 7 },
+	{ 0xD7, "CMP", 13 },
+	{ 0xD8, "CLD", 0 },
+	{ 0xD9, "CMP", 16 },
+	{ 0xDA, "PHX", 0 },
+	{ 0xDB, "STP", 0 },
+	{ 0xDC, "JML", 22 },
+	{ 0xDD, "CMP", 15 },
+	{ 0xDE, "DEC", 15 },
+	{ 0xDF, "CMP", 18 },
+	{ 0xE0, "CPX", 2 },
+	{ 0xE1, "SBC", 10 },
+	{ 0xE2, "SEP", 3 },
+	{ 0xE3, "SBC", 19 },
+	{ 0xE4, "CPX", 6 },
+	{ 0xE5, "SBC", 6 },
+	{ 0xE6, "INC", 6 },
+	{ 0xE7, "SBC", 12 },
+	{ 0xE8, "INX", 0 },
+	{ 0xE9, "SBC", 1 },
+	{ 0xEA, "NOP", 0 },
+	{ 0xEB, "XBA", 0 },
+	{ 0xEC, "CPX", 14 },
+	{ 0xED, "SBC", 14 },
+	{ 0xEE, "INC", 14 },
+	{ 0xEF, "SBC", 17 },
+	{ 0xF0, "BEQ", 4 },
+	{ 0xF1, "SBC", 11 },
+	{ 0xF2, "SBC", 9 },
+	{ 0xF3, "SBC", 20 },
+	{ 0xF4, "PEA", 26 },
+	{ 0xF5, "SBC", 7 },
+	{ 0xF6, "INC", 7 },
+	{ 0xF7, "SBC", 13 },
+	{ 0xF8, "SED", 0 },
+	{ 0xF9, "SBC", 16 },
+	{ 0xFA, "PLX", 0 },
+	{ 0xFB, "XCE", 0 },
+	{ 0xFC, "JSR", 23 },
+	{ 0xFD, "SBC", 15 },
+	{ 0xFE, "INC", 15 },
+	{ 0xFF, "SBC", 18 }
+};
+
 bool branches[256];
 bool jumps[256];
-
-
-// From snes9x (one should be INA)
-static const char	*S9xMnemonics[256] =
-{
-	"BRK", "ORA", "COP", "ORA", "TSB", "ORA", "ASL", "ORA",
-	"PHP", "ORA", "ASL", "PHD", "TSB", "ORA", "ASL", "ORA",
-	"BPL", "ORA", "ORA", "ORA", "TRB", "ORA", "ASL", "ORA",
-	"CLC", "ORA", "INC", "TCS", "TRB", "ORA", "ASL", "ORA",
-	"JSR", "AND", "JSL", "AND", "BIT", "AND", "ROL", "AND",
-	"PLP", "AND", "ROL", "PLD", "BIT", "AND", "ROL", "AND",
-	"BMI", "AND", "AND", "AND", "BIT", "AND", "ROL", "AND",
-	"SEC", "AND", "DEC", "TSC", "BIT", "AND", "ROL", "AND",
-	"RTI", "EOR", "WDM", "EOR", "MVP", "EOR", "LSR", "EOR",
-	"PHA", "EOR", "LSR", "PHK", "JMP", "EOR", "LSR", "EOR",
-	"BVC", "EOR", "EOR", "EOR", "MVN", "EOR", "LSR", "EOR",
-	"CLI", "EOR", "PHY", "TCD", "JMP", "EOR", "LSR", "EOR",
-	"RTS", "ADC", "PER", "ADC", "STZ", "ADC", "ROR", "ADC",
-	"PLA", "ADC", "ROR", "RTL", "JMP", "ADC", "ROR", "ADC",
-	"BVS", "ADC", "ADC", "ADC", "STZ", "ADC", "ROR", "ADC",
-	"SEI", "ADC", "PLY", "TDC", "JMP", "ADC", "ROR", "ADC",
-	"BRA", "STA", "BRL", "STA", "STY", "STA", "STX", "STA",
-	"DEY", "BIT", "TXA", "PHB", "STY", "STA", "STX", "STA",
-	"BCC", "STA", "STA", "STA", "STY", "STA", "STX", "STA",
-	"TYA", "STA", "TXS", "TXY", "STZ", "STA", "STZ", "STA",
-	"LDY", "LDA", "LDX", "LDA", "LDY", "LDA", "LDX", "LDA",
-	"TAY", "LDA", "TAX", "PLB", "LDY", "LDA", "LDX", "LDA",
-	"BCS", "LDA", "LDA", "LDA", "LDY", "LDA", "LDX", "LDA",
-	"CLV", "LDA", "TSX", "TYX", "LDY", "LDA", "LDX", "LDA",
-	"CPY", "CMP", "REP", "CMP", "CPY", "CMP", "DEC", "CMP",
-	"INY", "CMP", "DEX", "WAI", "CPY", "CMP", "DEC", "CMP",
-	"BNE", "CMP", "CMP", "CMP", "PEI", "CMP", "DEC", "CMP",
-	"CLD", "CMP", "PHX", "STP", "JML", "CMP", "DEC", "CMP",
-	"CPX", "SBC", "SEP", "SBC", "CPX", "SBC", "INC", "SBC",
-	"INX", "SBC", "NOP", "XBA", "CPX", "SBC", "INC", "SBC",
-	"BEQ", "SBC", "SBC", "SBC", "PEA", "SBC", "INC", "SBC",
-	"SED", "SBC", "PLX", "XCE", "JSR", "SBC", "INC", "SBC"
-};
 
 void initLookupTables() {
 	for (int ih = 0; ih<256; ih++) {
 		jumps[ih] = false;
 		branches[ih] = false;
-		const char * const i = S9xMnemonics[ih];
+		const char * const i = opCodeInfo[ih].mnemonics;
 		if (i[0] == 'J') {
 			jumps[ih] = true;
 		}
@@ -65,267 +293,6 @@ void initLookupTables() {
 	}
 }
 
-
-static int adressModes[256] =
-{
-	3,	// 0x00 [0]
-	10,	// 0x01 [1]
-	3,	// 0x02 [2]
-	19,	// 0x03 [3]
-	6,	// 0x04 [4]
-	6,	// 0x05 [5]
-	6,	// 0x06 [6]
-	12,	// 0x07 [7]
-	0,	// 0x08 [8]
-	1,	// 0x09 [9]
-	24,	// 0x0A [10]
-	0,	// 0x0B [11]
-	14,	// 0x0C [12]
-	14,	// 0x0D [13]
-	14,	// 0x0E [14]
-	17,	// 0x0F [15]
-	4,	// 0x10 [16]
-	11,	// 0x11 [17]
-	9,	// 0x12 [18]
-	20,	// 0x13 [19]
-	6,	// 0x14 [20]
-	7,	// 0x15 [21]
-	7,	// 0x16 [22]
-	13,	// 0x17 [23]
-	0,	// 0x18 [24]
-	16,	// 0x19 [25]
-	24,	// 0x1A [26]
-	0,	// 0x1B [27]
-	14,	// 0x1C [28]
-	15,	// 0x1D [29]
-	15,	// 0x1E [30]
-	18,	// 0x1F [31]
-	14,	// 0x20 [32]
-	10,	// 0x21 [33]
-	17,	// 0x22 [34]
-	19,	// 0x23 [35]
-	6,	// 0x24 [36]
-	6,	// 0x25 [37]
-	6,	// 0x26 [38]
-	12,	// 0x27 [39]
-	0,	// 0x28 [40]
-	1,	// 0x29 [41]
-	24,	// 0x2A [42]
-	0,	// 0x2B [43]
-	14,	// 0x2C [44]
-	14,	// 0x2D [45]
-	14,	// 0x2E [46]
-	17,	// 0x2F [47]
-	4,	// 0x30 [48]
-	11,	// 0x31 [49]
-	9,	// 0x32 [50]
-	20,	// 0x33 [51]
-	7,	// 0x34 [52]
-	7,	// 0x35 [53]
-	7,	// 0x36 [54]
-	13,	// 0x37 [55]
-	0,	// 0x38 [56]
-	16,	// 0x39 [57]
-	24,	// 0x3A [58]
-	0,	// 0x3B [59]
-	15,	// 0x3C [60]
-	15,	// 0x3D [61]
-	15,	// 0x3E [62]
-	18,	// 0x3F [63]
-	0,	// 0x40 [64]
-	10,	// 0x41 [65]
-	3,	// 0x42 [66]
-	19,	// 0x43 [67]
-	25,	// 0x44 [68]
-	6,	// 0x45 [69]
-	6,	// 0x46 [70]
-	12,	// 0x47 [71]
-	0,	// 0x48 [72]
-	1,	// 0x49 [73]
-	24,	// 0x4A [74]
-	0,	// 0x4B [75]
-	14,	// 0x4C [76]
-	14,	// 0x4D [77]
-	14,	// 0x4E [78]
-	17,	// 0x4F [79]
-	4,	// 0x50 [80]
-	11,	// 0x51 [81]
-	9,	// 0x52 [82]
-	20,	// 0x53 [83]
-	25,	// 0x54 [84]
-	7,	// 0x55 [85]
-	7,	// 0x56 [86]
-	13,	// 0x57 [87]
-	0,	// 0x58 [88]
-	16,	// 0x59 [89]
-	0,	// 0x5A [90]
-	0,	// 0x5B [91]
-	17,	// 0x5C [92]
-	15,	// 0x5D [93]
-	15,	// 0x5E [94]
-	18,	// 0x5F [95]
-	0,	// 0x60 [96]
-	10,	// 0x61 [97]
-	5,	// 0x62 [98]
-	19,	// 0x63 [99]
-	6,	// 0x64 [100]
-	6,	// 0x65 [101]
-	6,	// 0x66 [102]
-	12,	// 0x67 [103]
-	0,	// 0x68 [104]
-	1,	// 0x69 [105]
-	24,	// 0x6A [106]
-	0,	// 0x6B [107]
-	21,	// 0x6C [108]
-	14,	// 0x6D [109]
-	14,	// 0x6E [110]
-	17,	// 0x6F [111]
-	4,	// 0x70 [112]
-	11,	// 0x71 [113]
-	9,	// 0x72 [114]
-	20,	// 0x73 [115]
-	7,	// 0x74 [116]
-	7,	// 0x75 [117]
-	7,	// 0x76 [118]
-	13,	// 0x77 [119]
-	0,	// 0x78 [120]
-	16,	// 0x79 [121]
-	0,	// 0x7A [122]
-	0,	// 0x7B [123]
-	23,	// 0x7C [124]
-	15,	// 0x7D [125]
-	15,	// 0x7E [126]
-	18,	// 0x7F [127]
-	4,	// 0x80 [128]
-	10,	// 0x81 [129]
-	5,	// 0x82 [130]
-	19,	// 0x83 [131]
-	6,	// 0x84 [132]
-	6,	// 0x85 [133]
-	6,	// 0x86 [134]
-	12,	// 0x87 [135]
-	0,	// 0x88 [136]
-	1,	// 0x89 [137]
-	0,	// 0x8A [138]
-	0,	// 0x8B [139]
-	14,	// 0x8C [140]
-	14,	// 0x8D [141]
-	14,	// 0x8E [142]
-	17,	// 0x8F [143]
-	4,	// 0x90 [144]
-	11,	// 0x91 [145]
-	9,	// 0x92 [146]
-	20,	// 0x93 [147]
-	7,	// 0x94 [148]
-	7,	// 0x95 [149]
-	8,	// 0x96 [150]
-	13,	// 0x97 [151]
-	0,	// 0x98 [152]
-	16,	// 0x99 [153]
-	0,	// 0x9A [154]
-	0,	// 0x9B [155]
-	14,	// 0x9C [156]
-	15,	// 0x9D [157]
-	15,	// 0x9E [158]
-	18,	// 0x9F [159]
-	2,	// 0xA0 [160]
-	10,	// 0xA1 [161]
-	2,	// 0xA2 [162]
-	19,	// 0xA3 [163]
-	6,	// 0xA4 [164]
-	6,	// 0xA5 [165]
-	6,	// 0xA6 [166]
-	12,	// 0xA7 [167]
-	0,	// 0xA8 [168]
-	1,	// 0xA9 [169]
-	0,	// 0xAA [170]
-	0,	// 0xAB [171]
-	14,	// 0xAC [172]
-	14,	// 0xAD [173]
-	14,	// 0xAE [174]
-	17,	// 0xAF [175]
-	4,	// 0xB0 [176]
-	11,	// 0xB1 [177]
-	9,	// 0xB2 [178]
-	20,	// 0xB3 [179]
-	7,	// 0xB4 [180]
-	7,	// 0xB5 [181]
-	8,	// 0xB6 [182]
-	13,	// 0xB7 [183]
-	0,	// 0xB8 [184]
-	16,	// 0xB9 [185]
-	0,	// 0xBA [186]
-	0,	// 0xBB [187]
-	15,	// 0xBC [188]
-	15,	// 0xBD [189]
-	16,	// 0xBE [190]
-	18,	// 0xBF [191]
-	2,	// 0xC0 [192]
-	10,	// 0xC1 [193]
-	3,	// 0xC2 [194]
-	19,	// 0xC3 [195]
-	6,	// 0xC4 [196]
-	6,	// 0xC5 [197]
-	6,	// 0xC6 [198]
-	12,	// 0xC7 [199]
-	0,	// 0xC8 [200]
-	1,	// 0xC9 [201]
-	0,	// 0xCA [202]
-	0,	// 0xCB [203]
-	14,	// 0xCC [204]
-	14,	// 0xCD [205]
-	14,	// 0xCE [206]
-	17,	// 0xCF [207]
-	4,	// 0xD0 [208]
-	11,	// 0xD1 [209]
-	9,	// 0xD2 [210]
-	20,	// 0xD3 [211]
-	27,	// 0xD4 [212]
-	7,	// 0xD5 [213]
-	7,	// 0xD6 [214]
-	13,	// 0xD7 [215]
-	0,	// 0xD8 [216]
-	16,	// 0xD9 [217]
-	0,	// 0xDA [218]
-	0,	// 0xDB [219]
-	22,	// 0xDC [220]
-	15,	// 0xDD [221]
-	15,	// 0xDE [222]
-	18,	// 0xDF [223]
-	2,	// 0xE0 [224]
-	10,	// 0xE1 [225]
-	3,	// 0xE2 [226]
-	19,	// 0xE3 [227]
-	6,	// 0xE4 [228]
-	6,	// 0xE5 [229]
-	6,	// 0xE6 [230]
-	12,	// 0xE7 [231]
-	0,	// 0xE8 [232]
-	1,	// 0xE9 [233]
-	0,	// 0xEA [234]
-	0,	// 0xEB [235]
-	14,	// 0xEC [236]
-	14,	// 0xED [237]
-	14,	// 0xEE [238]
-	17,	// 0xEF [239]
-	4,	// 0xF0 [240]
-	11,	// 0xF1 [241]
-	9,	// 0xF2 [242]
-	20,	// 0xF3 [243]
-	26,	// 0xF4 [244]
-	7,	// 0xF5 [245]
-	7,	// 0xF6 [246]
-	13,	// 0xF7 [247]
-	0,	// 0xF8 [248]
-	16,	// 0xF9 [249]
-	0,	// 0xFA [250]
-	0,	// 0xFB [251]
-	23,	// 0xFC [252]
-	15,	// 0xFD [253]
-	15,	// 0xFE [254]
-	18	// 0xFF [255]
-};
-
 struct AdressModeInfo {
 	int adressMode; // Just for readability, not used
 	int numBytes;
@@ -335,33 +302,33 @@ struct AdressModeInfo {
 };
 
 static const AdressModeInfo g_oplut[] = {
-	{ 0, 1, 8, "",					""},								
-	{ 1, 3, 8, "#$%02X%02X.W",		""},					// special case for acc=8bit
-	{ 2, 3, 8, "#$%02X%02X.W",		"" },					// special case for index=8bit
-	{ 3, 2, 8, "#$%02X",			"" },							// special case for COP and BRK
-	{ 4, 2, 8, "#$%02X", "%%s" },							// special case for branches (jumps or branch)
+	{ 0, 1, 0, "",					""},								
+	{ 1, 3, 16, "#$%02X%02X",		""},				// special case for acc=8bit
+	{ 2, 3, 16, "#$%02X%02X",		"" },				// special case for index=8bit
+	{ 3, 2, 8, "#$%02X",			"" },				// special case for COP and BRK
+	{ 4, 2, 8, "#$%02X", "%%s" },						// special case for branches (jumps or branch)
 	{ 5, 3, 8, "$%02X%02X", "%%s" },
 	{ 6, 2, 8, "$%02X", "" },
 	{ 7, 2, 8, "$%02X, x", "" },
 	{ 8, 2, 8, "$%02X,y", "" },
-	{ 9, 2, 8, "($%02X.B)", "" },
-	{ 10, 2, 8, "($%02X.B,x)", "" },
-	{ 11, 2, 8, "($%02X.B),y", "" },
-	{ 12, 2, 8, "[$%02X.B]", "" },
-	{ 13, 2, 8, "[$%02X.B],y", "" },
-	{ 14, 3, 8, "$%02X%02X.W", "" },
-	{ 15, 3, 8, "$%02X%02X.W,x", "" },
-	{ 16, 3, 8, "$%02X%02X.W,y", "" },
-	{ 17, 4, 8, "$%02X%02X%02X", "%%s" },
-	{ 18, 4, 8, "$%02X%02X%02X,x", "" },
+	{ 9, 2, 8, "($%02X)", "" },
+	{ 10, 2, 8, "($%02X,x)", "" },
+	{ 11, 2, 8, "($%02X),y", "" },
+	{ 12, 2, 8, "[$%02X]", "" },
+	{ 13, 2, 8, "[$%02X],y", "" },
+	{ 14, 3, 16, "$%02X%02X", "" },
+	{ 15, 3, 16, "$%02X%02X,x", "" },
+	{ 16, 3, 16, "$%02X%02X,y", "" },
+	{ 17, 4, 24, "$%02X%02X%02X", "%%s" },
+	{ 18, 4, 24, "$%02X%02X%02X,x", "" },
 	{ 19, 2, 8, "$%02X,s", "" },
 	{ 20, 2, 8, "($%02X,s),y", "" },
-	{ 21, 3, 8, "($%02X%02X.W)", "%%s" },
-	{ 22, 3, 8, "[$%02X%02X.W]", "" },
-	{ 23, 3, 8, "($%02X%02X.W,x)", "" },
-	{ 24, 1, 8, "A", "" },
+	{ 21, 3, 16, "($%02X%02X)", "%%s" },
+	{ 22, 3, 16, "[$%02X%02X]", "" },
+	{ 23, 3, 16, "($%02X%02X,x)", "" },
+	{ 24, 1, 0, "A", "" },
 	{ 25, 3, 8, "$%02X, $%02X", "" },					// (reversed order?)
-	{ 26, 3, 8, "$%02X%02X.W", "" },
+	{ 26, 3, 16, "$%02X%02X", "" },
 	{ 27, 2, 8, "($%02X)", "" }
 };
 
@@ -375,16 +342,18 @@ static int unpackSigned(const uint8_t packed) {
 	}
 }
 
-static int calculateFormattingandSize(const uint8_t *data, const bool acc16, const bool ind16, const bool emulationFlag, char *target, char *targetLabel) {
+static int calculateFormattingandSize(const uint8_t *data, const bool acc16, const bool ind16, const bool emulationFlag, char *target, char *targetLabel, int *bitmodeNeeded) {
 	const uint8_t opcode = data[0];
-	const int am = adressModes[opcode];
+	const int am = opCodeInfo[opcode].adressMode;
+	const AdressModeInfo &ami = g_oplut[am];
+	*bitmodeNeeded = 8;
 	
 	// We have a few special cases that doesn't work with our simple table
 	if (am == 1 && !acc16) {
-		sprintf(target, "#$%02X.B", data[1]);
+		sprintf(target, "#$%02X", data[1]);
 		return 2;
 	} else if (am == 2 && !ind16) {
-		sprintf(target, "#$%02X.B", data[1]);
+		sprintf(target, "#$%02X", data[1]);
 		return 2;
 	} else if (am == 3 && (opcode == 0 || opcode == 2)) {
 		sprintf(target, "$%02X", data[1]);
@@ -396,13 +365,14 @@ static int calculateFormattingandSize(const uint8_t *data, const bool acc16, con
 		} else {
 			sprintf(target, "-$%02X", abs(signed_offset));
 		}
-		sprintf(targetLabel, g_oplut[am].formattingWithLabelString);
+		sprintf(targetLabel, ami.formattingWithLabelString);
 		return 2;
 	} else {
-		const int nb = g_oplut[am].numBytes;
-		const char * result = g_oplut[am].formattingString;
+		const int nb = ami.numBytes;
+		const char * result = ami.formattingString;
 		sprintf(target, result, data[nb-1], data[nb - 2], data[nb - 3]);
-		sprintf(targetLabel, g_oplut[am].formattingWithLabelString);
+		sprintf(targetLabel, ami.formattingWithLabelString);
+		*bitmodeNeeded = ami.numBitsForOpcode;
 		return nb;
 	}
 }
@@ -474,13 +444,15 @@ enum ResultType {
 	SA_NOT_IMPLEMENTED
 };
 
-ResultType evaluateOp(const uint8_t* ops, 
-	const Registers &reg,
-	MagicByte *resultBnk,
-	MagicWord *resultAdr) {
+ResultType evaluateOp(const uint8_t* ops, const Registers &reg, MagicByte *resultBnk, MagicWord *resultAdr) {
+
 	// Introduce all registers with known flags.. then calculate adress with values... and check flags to see if it was "determined"
 
-	const int am = adressModes[ops[0]];
+	// TODO: Some of these are based on the fact that we want to do an indirection via memory...
+	//       but alot of memory is known (such as all jump tables). Involve ROM.
+	//       For this to work we must differentiate between source adress and the pointer read...
+
+	const int am = opCodeInfo[ops[0]].adressMode;
 	if (am >= 0 && am <= 3) {
 		return SA_IMMEDIATE;
 	} else if (am == 4) {
