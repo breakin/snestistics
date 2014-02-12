@@ -158,7 +158,8 @@ int main(const int argc, const char * const argv[]) {
 			
 			char target[128] = "\0";
 			char targetLabel[128] = "\0";
-			const size_t numBytesNeeded = calculateFormattingandSize(data, acc16, ind16, emu, target, targetLabel);
+			int numBitsNeeded = 8;
+			const size_t numBytesNeeded = calculateFormattingandSize(data, acc16, ind16, emu, target, targetLabel, &numBitsNeeded);
 
 			std::map<Pointer, std::pair<std::string, std::string>> proposals;
 
@@ -227,15 +228,15 @@ int main(const int argc, const char * const argv[]) {
 				//ss << " [" << std::setfill('0') << std::setw(6) << std::hex << targetAdr << "]";
 
 				if (!nameInCode) {
-					writer.writeInstruction(pc, numBytesNeeded, target, ss.str());
+					writer.writeInstruction(pc, numBitsNeeded, numBytesNeeded, target, ss.str());
 				} else {
 					char wow[128];
 					sprintf(wow, targetLabel, proposals.begin()->second.first.c_str());
-					writer.writeInstruction(pc, numBytesNeeded, wow, ss.str());
+					writer.writeInstruction(pc, numBitsNeeded, numBytesNeeded, wow, ss.str());
 				}
 			} else {
 
-				writer.writeInstruction(pc, numBytesNeeded, target, annotations.resolveLineComment(pc));
+				writer.writeInstruction(pc, numBitsNeeded, numBytesNeeded, target, annotations.resolveLineComment(pc));
 				for (auto pit = proposals.begin(); pit != proposals.end(); ++pit) {
 					std::stringstream ss;
 					ss << "\t\t;" << pit->second.first << "\t\t" << pit->second.second;

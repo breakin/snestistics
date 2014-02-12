@@ -41,7 +41,7 @@ public:
 		fprintf(m_outFile, "%s:\n", labelName.c_str());
 	}
 
-	void writeInstruction(const Pointer pc, const int numBytesUsed, const std::string &param, std::string &lineComment) {
+	void writeInstruction(const Pointer pc, const int numBits, const int numBytesUsed, const std::string &param, std::string &lineComment) {
 		prepareWrite(pc);
 
 		const uint8_t* data = m_romData.evalPtr(pc);
@@ -68,12 +68,26 @@ public:
 			nw += fprintf(m_outFile, "*/ ");
 		}
 
-		const char * const op = S9xMnemonics[data[0]];
+		const char * const op = opCodeInfo[data[0]].mnemonics;
 		if (m_options.lowerCaseOpCode) {
 			nw += fprintf(m_outFile, "%c%c%c", tolower(op[0]), tolower(op[1]), tolower(op[2]));
 		} else {
 			nw += fprintf(m_outFile, "%s", op);
 		}
+
+		if (strcmp(opCodeInfo[data[0]].mnemonics, "BRL") == 0) {
+
+		} else if (numBits == 0) {
+		} else if (numBits == 8) {
+			nw += fprintf(m_outFile, ".B");
+		} else if (numBits == 16) {
+			nw += fprintf(m_outFile, ".W");
+		} else if (numBits == 24) {
+			nw += fprintf(m_outFile, ".L");
+		} else {
+			assert(false);
+		}
+
 
 		if (!param.empty()) {
 			nw += fprintf(m_outFile, " %s", param.c_str());
