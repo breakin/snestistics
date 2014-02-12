@@ -33,6 +33,7 @@ struct Options {
 	std::string outFile;
 	std::string traceFile;
 	std::string asmHeaderFile;
+	std::string hardwareAnnotationsFile;
 };
 
 bool parseBool(const char * const s) {
@@ -42,7 +43,7 @@ int parseInt(const char * const s) {
 	return atoi(s);
 }
 
-bool parseOptions(const int argc, const char * const argv[], Options &options) {
+void parseOptions(const int argc, const char * const argv[], Options &options) {
 
 	for (int k=1; k<argc; k++) {
 		
@@ -59,8 +60,12 @@ bool parseOptions(const int argc, const char * const argv[], Options &options) {
 			options.romFile = opt;
 			// TODO: Predict ROM-offset from extension (or possible filesize)
 			k++;
-		} else if (cmd == "-asmheaderfile") {
+		}
+		else if (cmd == "-asmheaderfile") {
 			options.asmHeaderFile = opt;
+			k++;
+		} else if (cmd == "-hwregfile") {
+			options.hardwareAnnotationsFile = opt;
 			k++;
 		} else if (cmd == "-out") {
 			options.outFile = opt;
@@ -100,10 +105,8 @@ bool parseOptions(const int argc, const char * const argv[], Options &options) {
 
 	if (error) {
 		// TODO: Print syntax
-		return false;
+		throw std::runtime_error("Error parsing command line!");
 	}
-
-	return true;
 }
 
 #endif
