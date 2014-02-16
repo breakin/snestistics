@@ -121,7 +121,11 @@ function 02A4CD 02A52C gameloop_gameOutside2 breakin
 function 02C500 02C532 unknown26 breakin
 function 02C57B 02C5B1 unknown2 breakin
 function 02C5B2 02C62F unknown25 breakin
-function 02C630 02C68B unknown6 breakin
+
+function 02C630 02C65E unknown6 breakin
+function 02C65F 02C68B unknown6_2 breakin
+
+
 function 02C692 02C6EA unknown12 breakin
 function 02C769 02C7B7 unknown15 breakin
 function 02D8B3 02DB6D unknown23 breakin
@@ -349,7 +353,8 @@ data 7E00E8 7E00E9 RAM_BG2_VSCROLL mathonnapkin
 # BG3 horizontal scroll register ($2112)
 data 7E00EA 7E00EB RAM_BG3_VSCROLL mathonnapkin
 # On upper level?
-; In dungeons, 0 Means you’re on the upper level. 1 Means you’re on a lower level. Important for interaction with different tile types.
+; In dungeons, 0 Means you’re on the upper level. 1 Means you’re on a lower level. 
+; Important for interaction with different tile types.
 data 7E00EE 7E00EE RAM_UPPER_LEVEL mathonnapkin
 # Joypad something 1
 data 7E00F0 7E00F0 JOYPAD1 breakin

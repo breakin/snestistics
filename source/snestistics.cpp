@@ -135,6 +135,21 @@ int main(const int argc, const char * const argv[]) {
 
 		AsmWriteWLADX writer(options, romData);
 
+
+		// Generate EQU for each label
+		for (Pointer p = 0; p < 128 * 65536; p++) {
+			const Annotation *a = annotations.resolve(p, p, true, false);
+			if (a != nullptr && a->type == ANNOTATION_DATA) {
+				const size_t numBytes = a->endOfRange - a->startOfRange + 1;
+
+				// NOTE: We only use 16-bit here... the high byte is almost never used in an op
+				char target[512];
+				sprintf(target, "$%04X", a->startOfRange&0xFFFF);
+
+				writer.writeDefine(a->name, target, a->description.empty() ? a->useComment : a->description);
+			}
+		}
+
 		Pointer nextOp(INVALID_POINTER);
 
 
@@ -214,6 +229,9 @@ int main(const int argc, const char * const argv[]) {
 			}
 
 			if (proposals.size() == 1) {
+
+				// All variant agree that this is the only choice
+				// It might not be possible to codeify in instruction though since it might generate the wrong opcode
 
 				const bool nameInCode = strcmp(targetLabel, "") != 0;
 

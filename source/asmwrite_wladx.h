@@ -16,7 +16,7 @@ private:
 	bool m_bankOpen;
 	int m_sectionCounter;
 public:
-	AsmWriteWLADX(const Options &options, const RomAccessor &romData) : m_options(options), m_outFile(nullptr), m_romData(romData) {}
+	AsmWriteWLADX(const Options &options, const RomAccessor &romData) : m_options(options), m_outFile(nullptr), m_romData(romData), m_nextPC(INVALID_POINTER) {}
 	~AsmWriteWLADX() {
 		// TODO: Write footer I guess
 		if (m_outFile) {
@@ -25,6 +25,26 @@ public:
 			}
 			fclose(m_outFile);
 		}
+	}
+
+	void writeDefine(const std::string &thing, const std::string &value, const std::string &description) {
+		prepareOpenFile();
+
+		if (!description.empty()) {
+			fprintf(m_outFile, "; ");
+		}
+		for (auto it = description.begin(); it != description.end(); ++it) {
+			if (*it == '\n') {
+				fprintf(m_outFile, "\n; ");
+			}
+			else if (*it != '\r') {
+				fprintf(m_outFile, "%c", *it);
+			}
+		}
+		if (!description.empty()) {
+			fprintf(m_outFile, "\n");
+		}
+		fprintf(m_outFile, ".EQU %s %s\n", thing.c_str(), value.c_str());
 	}
 
 	void writeComment(const Pointer pc, const std::string &comment) {
@@ -145,9 +165,8 @@ private:
 		fprintf(m_outFile, "\n.ENDS\n\n");
 	}
 
-	void prepareWrite(const Pointer pc, const bool advancePC=true) {
+	void prepareOpenFile() {
 		if (m_outFile == nullptr) {
-			m_nextPC = pc;
 			m_bankOpen = false;
 			m_sectionCounter = 0;
 			m_outFile = fopen(m_options.outFile.c_str(), "wb");
@@ -162,6 +181,13 @@ private:
 				readFile(m_options.asmHeaderFile, header);
 				fwrite(&header[0], header.size(), 1, m_outFile);
 			}
+		}
+	}
+
+	void prepareWrite(const Pointer pc, const bool advancePC=true) {
+		prepareOpenFile();
+		if (m_nextPC == INVALID_POINTER){
+			m_nextPC = pc;
 		}
 
 		// TODO: Take care of banks and filling "holes" between instructions
