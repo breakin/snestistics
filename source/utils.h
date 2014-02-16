@@ -8,6 +8,8 @@
 
 typedef uint32_t Pointer;
 
+static const Pointer INVALID_POINTER(-1);
+
 class LargeBitfield {
 private:
 	std::vector<bool> m_state;

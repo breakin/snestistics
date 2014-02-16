@@ -135,18 +135,31 @@ int main(const int argc, const char * const argv[]) {
 
 		AsmWriteWLADX writer(options, romData);
 
+		Pointer nextOp(INVALID_POINTER);
+
+
 		// Now iterate the ops
 		for (auto opsit = ops.begin(); opsit != ops.end(); ++opsit) {
 			const Pointer pc = opsit->first;
+
+			if (nextOp == INVALID_POINTER) {
+				nextOp = pc;
+			}
+
+			// TODO: Emit any labels that we might have skipped as well as label for current line
+			//       This is mostly if the static jump predictor is predicting a jump into non-ops.
+			for (Pointer p(nextOp); p <= pc; ++p) {
+				if (labels[p]) {
+					// Emit label?
+					std::string description;
+					std::string labelName = annotations.getLabelName(p, &description, nullptr);
+					writer.writeLabel(p, labelName, description);
+				}
+			}
+
 			const std::set<OpInfo> &variants = opsit->second;
 			assert(!variants.empty());
 
-			// Emit label?
-			if (labels[pc]) {
-				std::string description;
-				std::string labelName = annotations.getLabelName(pc, &description, nullptr);
-				writer.writeLabel(pc, labelName, description);
-			}
 
 			const uint8_t *data = romData.evalPtr(pc);
 
@@ -160,6 +173,8 @@ int main(const int argc, const char * const argv[]) {
 			char targetLabel[128] = "\0";
 			int numBitsNeeded = 8;
 			const size_t numBytesNeeded = calculateFormattingandSize(data, acc16, ind16, emu, target, targetLabel, &numBitsNeeded);
+
+			nextOp = pc + numBytesNeeded;
 
 			std::map<Pointer, std::pair<std::string, std::string>> proposals;
 

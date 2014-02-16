@@ -46,11 +46,20 @@ public:
 
 		const uint8_t* data = m_romData.evalPtr(pc);
 
+		bool overrideInstructionWithDB = false;
+
+		if (numBytesUsed == 2 && data[0] == 0xF0 && data[1] == 0x80) {
+			// WLA DX has a bug here, emit using .DB instad
+			overrideInstructionWithDB = true;
+		}
+
 		// Keep track of bytes written so we can align comment column
 		int nw = 0;
 
+		const bool emitCommentPC = m_options.printProgramCounter || m_options.printHexOpcode || overrideInstructionWithDB;
+
 		nw += fprintf(m_outFile, "\t");
-		if (m_options.printProgramCounter || m_options.printHexOpcode) {
+		if (emitCommentPC) {
 			nw += fprintf(m_outFile, "/* ");
 		}
 		if (m_options.printProgramCounter) {
@@ -64,7 +73,7 @@ public:
 				nw += fprintf(m_outFile, "   ");
 			}
 		}
-		if (m_options.printProgramCounter || m_options.printHexOpcode) {
+		if (emitCommentPC && !overrideInstructionWithDB) {
 			nw += fprintf(m_outFile, "*/ ");
 		}
 
@@ -92,7 +101,11 @@ public:
 		if (!param.empty()) {
 			nw += fprintf(m_outFile, " %s", param.c_str());
 		}
-		
+
+		if (overrideInstructionWithDB) {
+			nw += fprintf(m_outFile, "*/ ");
+		}
+
 		int nwtarget = 56;
 		while (nw > nwtarget) {
 			nwtarget += 8;
@@ -106,6 +119,15 @@ public:
 		}
 
 		fprintf(m_outFile, "\n");
+
+		if (overrideInstructionWithDB) {
+			fprintf(m_outFile, ".DB ");
+			for (int k = 0; k < numBytesUsed; k++) {
+				fprintf(m_outFile, "$%02X%s", data[k], k != numBytesUsed-1 ? ", ":"");
+			}
+			fprintf(m_outFile, "\n");
+		}
+
 
 		m_nextPC = pc + numBytesUsed;
 	}

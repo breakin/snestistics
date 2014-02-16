@@ -22,7 +22,8 @@ function 00814C 0081FF initialize_perframe_graphics_registersB breakin
 function 00822D 0082D7 initialize_perframe_graphics_registersA breakin
 # Invoked by IRQ
 function 0082D8 008332 unknown_irq_1 breakin
-function 008333 0083D0 unknown33 breakin
+function 008333 00834A unknown33 breakin
+function 00834B 0083D0 unknown33_2 breakin
 function 0083D1 0083F8 readJoypad breakin
 # Initialize RAM $0861-$0A00 with [F0 00 00 00] (416 bytes, 104 entries?)
 function 00841E 008489 initMemory_at0861_to_F0000000 breakin
@@ -114,7 +115,9 @@ function 0281ED 028207 gameloop_hm2 breakin
 function 0283BF 0283C6 gameloop_hm3 breakin
 function 02854C 028569 unknown79 breakin
 function 0287A2 0288C0 gameloop_gameInsideHouseOrCastle breakin
-function 02A475 02A52C gameloop_gameOutside breakin
+function 02A475 02A4CC gameloop_gameOutside breakin
+function 02A4CD 02A52C gameloop_gameOutside2 breakin
+
 function 02C500 02C532 unknown26 breakin
 function 02C57B 02C5B1 unknown2 breakin
 function 02C5B2 02C62F unknown25 breakin
@@ -277,7 +280,9 @@ function 0E97D9 0E97DD memcpy_7EFE02_0E965B_372 breakin
 # X = 62, 60, ..., 2 (not 0). 31 iterations.
 ; 6*2=12 bytes copied per iteration
 function 0ED3EB 0ED442 copyStuff1 breakin
-function 0ED5F4 0ED617 unknown22 breakin
+function 0ED5F4 0ED60A unknown22 breakin
+function 0ED60B 0ED617 unknown22_2 breakin
+
 function 1BC980 1BC983 unknown69 breakin
 function 1BC983 1BC983 unknown70 breakin
 function 1BCA69 1BCA9E unknown68 breakin

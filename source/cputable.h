@@ -323,7 +323,7 @@ static const AdressModeInfo g_oplut[] = {
 	{ 18, 4, 24, "$%02X%02X%02X,x", "" },
 	{ 19, 2, 8, "$%02X,s", "" },
 	{ 20, 2, 8, "($%02X,s),y", "" },
-	{ 21, 3, 16, "($%02X%02X)", "%%s" },
+	{ 21, 3, 16, "($%02X%02X)", ""}, // TODO: Absolute indirect, pretty label does not seem to work
 	{ 22, 3, 16, "[$%02X%02X]", "" },
 	{ 23, 3, 16, "($%02X%02X,x)", "" },
 	{ 24, 1, 0, "A", "" },
@@ -347,7 +347,7 @@ static int calculateFormattingandSize(const uint8_t *data, const bool acc16, con
 	const int am = opCodeInfo[opcode].adressMode;
 	const AdressModeInfo &ami = g_oplut[am];
 	*bitmodeNeeded = 8;
-	
+
 	// We have a few special cases that doesn't work with our simple table
 	if (am == 1 && !acc16) {
 		sprintf(target, "#$%02X", data[1]);
@@ -358,19 +358,30 @@ static int calculateFormattingandSize(const uint8_t *data, const bool acc16, con
 	} else if (am == 3 && (opcode == 0 || opcode == 2)) {
 		sprintf(target, "$%02X", data[1]);
 		return 2;
-	} else if (am == 4 && branches[opcode]) {
+	}
+	else if (am == 4 && branches[opcode]) {
 		const int signed_offset = unpackSigned(data[1]);
 		if (signed_offset >= 0) {
 			sprintf(target, "$%02X", abs(signed_offset));
-		} else {
+		}
+		else {
 			sprintf(target, "-$%02X", abs(signed_offset));
 		}
 		sprintf(targetLabel, ami.formattingWithLabelString);
 		return 2;
+	} if (opcode == 0x54) {
+		// HACK: WLA DX specific reversal of parameter order, involve asmwrite_wladx so it can customize?
+		const int nb = ami.numBytes;
+		assert(nb == 3);
+		const char * result = ami.formattingString;
+		sprintf(target, result, data[1], data[2]);
+		sprintf(targetLabel, ami.formattingWithLabelString);
+		*bitmodeNeeded = ami.numBitsForOpcode;
+		return nb;
 	} else {
 		const int nb = ami.numBytes;
 		const char * result = ami.formattingString;
-		sprintf(target, result, data[nb-1], data[nb - 2], data[nb - 3]);
+		sprintf(target, result, data[nb - 1], data[nb - 2], data[nb - 3]);
 		sprintf(targetLabel, ami.formattingWithLabelString);
 		*bitmodeNeeded = ami.numBitsForOpcode;
 		return nb;
