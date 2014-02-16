@@ -51,17 +51,21 @@ public:
 		return it->second;
 	}
 
-	const Annotation *resolve(const Pointer atAddress, const Pointer resolveAddress, bool mustBeAtStart = true) const {
+	const Annotation *resolve(const Pointer atAddress, const Pointer resolveAddress, bool mustBeAtStart = true, const bool performRemap = true) const {
 
 		uint8_t bank = resolveAddress >> 16;
 		uint16_t adr = resolveAddress & 0xffff;
 
-		// Do bank magic... depending on adress, map to 7E or hardware register
-		if (adr < 0x2000) {
-			bank = 0x7E;
-		} else if (adr >= 0x2000 && adr < 0x4000 && bank != 0x7E) {
-			// Just a hack, this way we only need to keep hardware registers annotated in one bank (the first)
-			bank = 0x00;
+		if (performRemap) {
+
+			// Do bank magic... depending on adress, map to 7E or hardware register
+			if (adr < 0x2000) {
+				bank = 0x7E;
+			}
+			else if (adr >= 0x2000 && adr < 0x4000 && bank != 0x7E) {
+				// Just a hack, this way we only need to keep hardware registers annotated in one bank (the first)
+				bank = 0x00;
+			}
 		}
 
 		const Pointer rm((bank << 16) | adr);
@@ -74,7 +78,7 @@ public:
 				}
 			}
 			else if (m_parentResolver) {
-				return m_parentResolver->resolve(atAddress, resolveAddress, mustBeAtStart);
+				return m_parentResolver->resolve(atAddress, resolveAddress, mustBeAtStart, performRemap);
 			}
 		}
 		return nullptr;
