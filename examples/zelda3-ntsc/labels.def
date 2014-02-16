@@ -329,9 +329,9 @@ data 7E001A 7E001A RAM_FRAMECOUNT mathonnapkin
 data 7E001B 7E001B RAM_INBUILDING Euclid
 # Main Screen Designation ($212C)
 data 7E001C 7E001C RAM_MAINSCREENDES mathonnapkin
-# Link’s Y-Coordinate (mirrored at $0FC4)
+# Link's Y-Coordinate (mirrored at $0FC4)
 data 7E0020 7E0021 RAM_LINK_Y mathonnapkin
-# Link’s X-Coordinate (mirrored at $0FC2)
+# Link's X-Coordinate (mirrored at $0FC2)
 data 7E0022 7E0023 RAM_LINK_X mathonnapkin
 # Link Z coordinate when elevated
 ; 0xFFFF usually, but if Link is elevated off the ground it is considered to be his Z coordinate i.e. it's his height off of the ground
