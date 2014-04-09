@@ -3,6 +3,13 @@
 
 #include "utils.h"
 
+/*
+	This class is responsible for resolving a pointer/adress to a byte in the ROM.
+	It obviously can't resolve RAM.
+
+	Currently it only supports LoROM and no FastROM.
+*/
+
 class RomAccessor {
 private:
 	const uint32_t m_romOffset, m_calcSize;

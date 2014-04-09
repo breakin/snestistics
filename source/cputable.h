@@ -327,7 +327,7 @@ static const AdressModeInfo g_oplut[] = {
 	{ 22, 3, 16, "[$%02X%02X]", "" },
 	{ 23, 3, 16, "($%02X%02X,x)", "" },
 	{ 24, 1, 0, "A", "" },
-	{ 25, 3, 8, "$%02X, $%02X", "" },					// (needs order of source bytes reversed)
+	{ 25, 3, 8, "$%02X, $%02X", "" },					// WLA DX wants byte order reversed for this one...
 	{ 26, 3, 16, "$%02X%02X", "" },
 	{ 27, 2, 8, "($%02X)", "" }
 };

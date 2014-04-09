@@ -15,6 +15,40 @@
 #include <iomanip>
 
 /*
+	IDEA for better prediction.
+		Start prediction from all ops recorded in the emulation. [processor status, databank, direct page known]
+		Start emulation from RESET and VBLANK.					 [in reset, processor status is known]
+		Start emulation from all annotated labels
+			First time a label is predicted, we might not know much.
+			Then we might fall into it from a previous label and more is known.
+			If someone calls it we can guess at acc16, ind16. We don't need perfect, we just need to interpret the correct ops.
+
+		Track all registers and entire memory (!) while running through a function.
+			Emulate all ops.
+			Read from ROM are deterministic.
+			Read from RAM that was previously written in same label is known.
+			etc
+
+		If program writes jump adress to RAM and then performs indirect jumps, it is deterministic!
+
+		Multiple passes when new information is available.
+
+		The idea is that the need for .trace-file diminshes as user annotations increases.
+		So while some work is redundant at first, it will later enable generation without tracefile [only annotations!].
+
+		Remember. If deterministic code READ a byte from ROM it probably means that it is not code but rather DATA.
+		That can be used to discredit predicted code.
+
+		So the real hard part is stuff such as
+
+			LDX RAM_SOMETHING
+			JSL [TABLE, X]
+
+		We just don't know the range for X without actually running the game, and that requires user interaction.
+	
+*/
+
+/*
 	QUESTION: Add support for 6502-emulation-flag just to not mess that up?
 */
 
@@ -137,12 +171,14 @@ int main(const int argc, const char * const argv[]) {
 
 
 		// Generate EQU for each label
+		// TODO: Only include USED labels
 		for (Pointer p = 0; p < 128 * 65536; p++) {
 			const Annotation *a = annotations.resolve(p, p, true, false);
 			if (a != nullptr && a->type == ANNOTATION_DATA) {
 				const size_t numBytes = a->endOfRange - a->startOfRange + 1;
 
 				// NOTE: We only use 16-bit here... the high byte is almost never used in an op
+				// TODO: Validate so this doesn't mess thing up when we use it
 				char target[512];
 				sprintf(target, "$%04X", a->startOfRange&0xFFFF);
 
@@ -151,7 +187,6 @@ int main(const int argc, const char * const argv[]) {
 		}
 
 		Pointer nextOp(INVALID_POINTER);
-
 
 		// Now iterate the ops
 		for (auto opsit = ops.begin(); opsit != ops.end(); ++opsit) {
