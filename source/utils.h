@@ -1,38 +1,95 @@
-#ifndef SNESTISTICS_UTILS
-#define SNESTISTICS_UTILS
+#pragma once
 
 #include <string>
 #include <vector>
 #include <stdlib.h>
 #include <sstream>
+#include <stdio.h>
+#include <stdarg.h>
+#include <ctime>
+#include <cassert>
+
+#define CUSTOM_ASSERT(COND) assert(COND);
+//#define CUSTOM_ASSERT(COND)
 
 typedef uint32_t Pointer;
 
 static const Pointer INVALID_POINTER(-1);
 
-class LargeBitfield {
-private:
-	std::vector<bool> m_state;
-public:
-	bool operator[](const size_t p) const {
-		if (p >= m_state.size()) {
-			return false;
-		}
-		return m_state[p];
+struct Profile {
+	const char * const _msg;
+	clock_t   _start;
+	bool _hide_if_fast;
+	Profile(const char *msg, const bool hide_if_fast = false) : _msg(msg), _start(clock()), _hide_if_fast(hide_if_fast) {
+		if (!_hide_if_fast)
+			printf("%s...\n", msg);
 	}
-	void setBit(const size_t p, const bool newStat = true) {
-		if (p+1 >= m_state.size()) {
-			if (newStat == false) {
-				// Always false outside!
-				return;
-			}
-			m_state.resize(p + 1, false);
+	~Profile() {
+		time_t end;
+		time(&end);
+		double elapsed = (clock() - _start)/(float)CLOCKS_PER_SEC;
+		if (elapsed>0.01f) {
+			printf(" %s%s: %.2f seconds\n", _hide_if_fast ? ">":"",_msg, elapsed);
 		}
-		m_state[p] = newStat;
 	}
 };
 
-static void readFile(const std::string &filename, std::vector<uint8_t> &result) {
+class LargeBitfield {
+private:
+	uint32_t* _state = nullptr;
+	uint32_t _num_elements = 0;
+public:
+	LargeBitfield(const uint32_t size) {
+		int k = (size + 31) / 32;
+		_state = new uint32_t[k];
+		memset(_state, 0, k*sizeof(uint32_t));
+		_num_elements = k;
+	}
+	bool operator[](const uint32_t p) const {
+		uint32_t bucket = p / 32;
+		uint32_t mask = 1 << (p & 31);
+
+		bool result = (_state[bucket] & mask) != 0;
+		return result;
+	}
+	void setBit(const uint32_t p, const bool newStat = true) {
+		uint32_t bucket = p / 32;
+		uint32_t mask = 1 << (p & 31);
+		uint32_t current = _state[bucket] & ~mask;
+		if (newStat)
+			current |= mask;
+		_state[bucket] = current;
+		assert(this->operator[](p) == newStat);
+	}
+
+	void write_file(FILE *f) const {
+		fwrite(&_num_elements, sizeof(uint32_t), 1, f);
+		fwrite(_state, sizeof(uint32_t), _num_elements, f);
+	}
+
+	void read_file(FILE *f) {
+		uint32_t new_size = 0;
+		fread(&new_size, sizeof(uint32_t), 1, f);
+
+		if (new_size != _num_elements) {
+			delete[] _state;
+			_state = new uint32_t[new_size];
+			_num_elements = new_size;
+		}
+
+		fread(_state, sizeof(uint32_t), new_size, f);
+	}
+	void set_union(const LargeBitfield &other) {
+		CUSTOM_ASSERT(_num_elements == other._num_elements);
+		int N = _num_elements;
+		for (int k=0; k<N; ++k) {
+			_state[k]|=other._state[k];
+		}
+
+	}
+};
+
+inline void readFile(const std::string &filename, std::vector<uint8_t> &result) {
 	assert(!filename.empty());
 	if (filename.empty()) {
 		std::stringstream ss;
@@ -54,4 +111,134 @@ static void readFile(const std::string &filename, std::vector<uint8_t> &result) 
 	fclose(f);
 }
 
-#endif
+struct StringBuilder {
+private:
+	char _backing[4096] = "";
+	int _length = 0;
+public:
+	void column(int w, int step=4) {
+		while (w<_length) {
+			w+=step;
+		}
+		int start = _length;
+		_length = w;
+		for (int i=start; i <_length; i++) _backing[i]=' ';
+		_backing[_length]='\0';
+	}
+	void clear() { _length = 0; _backing[0]='\0'; }
+	bool empty() const { return _length == 0; }
+	int length() const { return _length; }
+	void add(const char * const str) { 
+		int s = (int)strlen(str);
+		memcpy(_backing + _length, str, s+1);
+		_length += s;
+	}
+	void add(const std::string &str) { 
+		int s = (int)str.length();
+		memcpy(_backing + _length, str.c_str(), s+1);
+		_length += s;
+	}
+	void format(const char *fmt, ...) {
+		va_list args;
+		va_start(args, fmt);
+		int val = vsprintf (_backing + _length, fmt, args);
+		assert(val>=0);
+		_length += val;
+		assert(_length< 4096);
+		va_end(args);
+	}
+
+	const char *c_str() const { return _backing; }
+
+	// Convenience
+	template<typename A, typename B>
+	void add(const A &a, const  B&b) { add(a); add(b); }
+};
+
+struct Range {
+	int first, N, step;
+
+	Range() { reset(); }
+
+	void reset() { N = 0; first = -1; step = 0; }
+
+	bool fits(int v) const {
+		if (N==0||N==1) return true;
+		if (first+N*step==v) return true; // accept next
+		if (first+(N-1)*step==v) return true; // accept same as last as well
+		return false;
+	}
+	void add(int v) {
+		assert(fits(v));
+		if (N==0) first = v;
+		if (N==1) { step = v - first; }
+		if (first+step*N == v) N++; // Don't increase if we got same
+	}
+	void format(StringBuilder &s) {
+		if (N==0) {
+		} else if (N<4) {
+			for (int k=0; k<N-1; k++) {
+				s.format("%X, ", first+step*k);
+			}
+			s.format("%X", first+step*(N-1));
+		} else {
+			int last = first + step * N;
+			s.format("<%X, %X, ..., %X>", first, first + step, last);
+		}
+	}
+};
+
+/*
+	A block based vector. Only support push_back and [], not erase etc.
+	Helps keeping address space from getting fragmented when a vector grows, especially in 32-bit programs.
+	Currently uses 2MB blocks.
+*/
+template<typename T, int ELEMENTS_PER_BLOCK=2*1024*1024/sizeof(T)>
+struct BlockVector {
+public:
+	~BlockVector() {
+		for (T* t: _blocks) {
+			delete[] t;
+		}
+	}
+	void push_back(const T &t) {
+		if (_current_block == nullptr || _num_entries_last_block == ELEMENTS_PER_BLOCK) {
+			_current_block = new T[ELEMENTS_PER_BLOCK];
+			_blocks.push_back(_current_block);
+			_num_entries_last_block = 0;
+		}
+		_current_block[_num_entries_last_block++] = t;
+		_total_entries++;
+	}
+	T& push_back() {
+		T t;
+		if (_current_block == nullptr || _num_entries_last_block == ELEMENTS_PER_BLOCK) {
+			_current_block = new T[ELEMENTS_PER_BLOCK];
+			_blocks.push_back(_current_block);
+			_num_entries_last_block = 0;
+		}
+		_current_block[_num_entries_last_block++] = t;
+		_total_entries++;
+		return last();
+	}
+	const T &operator[](const uint32_t idx) const {
+		CUSTOM_ASSERT(idx < _total_entries);
+		uint32_t block_index = idx / ELEMENTS_PER_BLOCK;
+		return _blocks[block_index][idx - block_index*ELEMENTS_PER_BLOCK];	
+	}
+	T &operator[](const uint32_t idx) {
+		CUSTOM_ASSERT(idx < _total_entries);
+		uint32_t block_index = idx / ELEMENTS_PER_BLOCK;
+		return _blocks[block_index][idx - block_index*ELEMENTS_PER_BLOCK];	
+	}
+	const T& last() const { CUSTOM_ASSERT(!empty()); return this->operator[](_total_entries-1); }
+	T& last() { CUSTOM_ASSERT(!empty()); return this->operator[](_total_entries-1); }
+
+	bool empty() const { return _total_entries == 0; }
+	uint32_t size() const { return _total_entries; }
+private:
+	uint32_t _total_entries = 0;
+	uint32_t _num_entries_last_block = 0;
+	T* _current_block = nullptr;
+	std::vector<T*> _blocks;
+};

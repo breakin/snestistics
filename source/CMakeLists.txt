@@ -1,19 +1,33 @@
 set(SOURCES
-	annotationresolver.cpp
-	annotationresolver.h
+	annotations.cpp
+	annotations.h
 	asmwrite_wladx.h
+	cputable.cpp
 	cputable.h
-	cmdoptions.h
+	emulate.cpp
+	emulate.h
+	emulate_replay.h
+	options.cpp
+	options.h
 	romaccessor.h
 	snestistics.cpp
+	trace.cpp
+	trace.h
+	trace_format.h
+	trace_log.cpp
+	trace_log.h
+	rewind.cpp
+	rewind.h
 	utils.h
 )
 
-set(GENERATED_SOURCE
+# Actually trigger re-generation from here
+SET(GENERATED_SOURCE
+	emulate_generate/optables.h
 )
 
 SET(DATA
-	../examples/hardware_reg.labels
+	../data/hardware_reg.labels
 )
 
 add_executable(snestistics ${SOURCES} ${GENERATED_SOURCE} ${DATA})
