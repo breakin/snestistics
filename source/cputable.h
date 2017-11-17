@@ -1,11 +1,21 @@
-#ifndef SNESTISTICS_CPUTABLE
-#define SNESTISTICS_CPUTABLE
+#pragma once
 
 #include <stdint.h>
+#include <assert.h>
+#include "utils.h"
 
-#define STATUS_EMULATION_FLAG (256)
-#define STATUS_MEMORY_FLAG (0x10)
-#define STATUS_ACCUMULATOR_FLAG (0x20)
+/*
+	TODO:
+		Try to move as much as possible of this to optables functions.
+		Size of function (given index/memory/emulation flag) etc. All is there in the tables.
+		I think when that is done, what is left should be put in in asm-writer file.
+*/
+
+class RomAccessor;
+
+inline bool is_memory_accumulator_wide(const uint16_t P) { return (P&0x20)==0; }
+inline bool is_index_wide(const uint16_t P) { return (P&0x10)==0; }
+inline bool is_emulation_mode(const uint16_t P) { return (P&0x100)!=0; }
 
 struct OpCodeInfo {
 	int id;
@@ -273,25 +283,81 @@ static OpCodeInfo opCodeInfo[256]=
 	{ 0xFF, "SBC", 18 }
 };
 
-bool branches[256];
-bool jumps[256];
+namespace cputable {
 
-void initLookupTables() {
-	for (int ih = 0; ih<256; ih++) {
-		jumps[ih] = false;
-		branches[ih] = false;
-		const char * const i = opCodeInfo[ih].mnemonics;
-		if (i[0] == 'J') {
-			jumps[ih] = true;
-		}
-		else if (i[0] == 'B') {
-			if (strcmp(i, "BRK") == 0) continue;
-			if (strcmp(i, "BIT") == 0) continue;
-			jumps[ih] = true;
-			branches[ih] = true;
+	inline bool is_indirect(const uint8_t op) {
+		const OpCodeInfo &i = opCodeInfo[op];
+		switch (i.adressMode) {
+		case 9:
+		case 10:
+		case 11:
+		case 13:
+		case 20:
+		case 21:
+		case 22:
+		case 23:
+		case 27:
+			return true;
+		default:
+			return false;
 		}
 	}
+
+	inline bool address_depend_x(const uint8_t op) {
+		const int am = opCodeInfo[op].adressMode;
+		switch(am) {
+		case 7:
+		case 10:
+		case 15:
+		case 18:
+		case 23:
+		case 29:
+			return true;
+		default:
+			return false;
+		};
+	}
+	inline bool address_depend_y(const uint8_t op) {
+		const int am = opCodeInfo[op].adressMode;
+		switch(am) {
+		case 8:
+		case 11:
+		case 13:
+		case 16:
+		case 20:
+			return true;
+		default:
+			return false;
+		};
+	}
+	inline bool address_depend_db(const uint8_t op) {
+		const int am = opCodeInfo[op].adressMode;
+		switch(am) {
+		case 14:
+		case 15:
+		case 16:
+			return true;
+		default:
+			return false;
+		};
+	}
+	inline bool address_depend_dp(const uint8_t op) {
+		const int am = opCodeInfo[op].adressMode;
+		switch(am) {
+		case 6:
+		case 9:
+			return true;
+		default:
+			return false;
+		};
+	}
 }
+
+extern bool branches[256];
+extern bool jumps[256];
+extern bool pushpops[256];
+
+void initLookupTables();
 
 struct AdressModeInfo {
 	int adressMode; // Just for readability, not used
@@ -306,20 +372,20 @@ static const AdressModeInfo g_oplut[] = {
 	{ 1, 3, 16, "#$%02X%02X",		""},				// special case for acc=8bit
 	{ 2, 3, 16, "#$%02X%02X",		"" },				// special case for index=8bit
 	{ 3, 2, 8, "#$%02X",			"" },				// special case for COP and BRK
-	{ 4, 2, 8, "#$%02X", "%%s" },						// special case for branches (jumps or branch)
-	{ 5, 3, 8, "$%02X%02X", "%%s" },
-	{ 6, 2, 8, "$%02X", "<%%s" },	// TODO:FIX; <%%s is a hack since it assumes direct page = 0, at least validate that <label == the value...
-	{ 7, 2, 8, "$%02X, x", "" },
+	{ 4, 2, 8, "#$%02X", "%s" },						// special case for branches (jumps or branch)
+	{ 5, 3, 8, "$%02X%02X", "%s" },
+	{ 6, 2, 8, "$%02X", "<%s" },	// TODO:FIX; <%%s is a hack since it assumes direct page = 0, at least validate that <label == the value...
+	{ 7, 2, 8, "$%02X,x", "" },
 	{ 8, 2, 8, "$%02X,y", "" },
 	{ 9, 2, 8, "($%02X)", "" },
 	{ 10, 2, 8, "($%02X,x)", "" },
 	{ 11, 2, 8, "($%02X),y", "" },
 	{ 12, 2, 8, "[$%02X]", "" },
 	{ 13, 2, 8, "[$%02X],y", "" },
-	{ 14, 3, 16, "$%02X%02X", "%%s" },	// TODO:FIX; <%%s is a hack since it assumes data bank = :label.
+	{ 14, 3, 16, "$%02X%02X", "%s" },	// TODO:FIX; <%%s is a hack since it assumes data bank = :label.
 	{ 15, 3, 16, "$%02X%02X,x", "" },
 	{ 16, 3, 16, "$%02X%02X,y", "" },
-	{ 17, 4, 24, "$%02X%02X%02X", "%%s" },
+	{ 17, 4, 24, "$%02X%02X%02X", "%s" },
 	{ 18, 4, 24, "$%02X%02X%02X,x", "" },
 	{ 19, 2, 8, "$%02X,s", "" },
 	{ 20, 2, 8, "($%02X,s),y", "" },
@@ -329,11 +395,13 @@ static const AdressModeInfo g_oplut[] = {
 	{ 24, 1, 0, "A", "" },
 	{ 25, 3, 8, "$%02X, $%02X", "" },					// WLA DX wants byte order reversed for this one...
 	{ 26, 3, 16, "$%02X%02X", "" },
-	{ 27, 2, 8, "($%02X)", "" }
+	{ 27, 2, 8, "($%02X)", "" },
+	{ 28, 3, 16, "$%02X%02X", "%s" }, // same as 14 but for jumps (pb instead of db)
+	{ 29, 3, 16, "$%02X%02X,x", "" }, // same as 15 but for jumps (pb instead of db)
 };
 
 // Unpacked relative offset for branch operations
-static int unpackSigned(const uint8_t packed) {
+inline int unpackSigned(const uint8_t packed) {
 	if ((packed >= 0x80) != 0) {
 		return packed - 256;
 	}
@@ -342,51 +410,7 @@ static int unpackSigned(const uint8_t packed) {
 	}
 }
 
-static int calculateFormattingandSize(const uint8_t *data, const bool acc16, const bool ind16, const bool emulationFlag, char *target, char *targetLabel, int *bitmodeNeeded) {
-	const uint8_t opcode = data[0];
-	const int am = opCodeInfo[opcode].adressMode;
-	const AdressModeInfo &ami = g_oplut[am];
-	*bitmodeNeeded = 8;
-
-	// We have a few special cases that doesn't work with our simple table
-	if (am == 1 && !acc16) {
-		sprintf(target, "#$%02X", data[1]);
-		return 2;
-	} else if (am == 2 && !ind16) {
-		sprintf(target, "#$%02X", data[1]);
-		return 2;
-	} else if (am == 3 && (opcode == 0 || opcode == 2)) {
-		sprintf(target, "$%02X", data[1]);
-		return 2;
-	}
-	else if (am == 4 && branches[opcode]) {
-		const int signed_offset = unpackSigned(data[1]);
-		if (signed_offset >= 0) {
-			sprintf(target, "$%02X", abs(signed_offset));
-		}
-		else {
-			sprintf(target, "-$%02X", abs(signed_offset));
-		}
-		sprintf(targetLabel, ami.formattingWithLabelString);
-		return 2;
-	} if (opcode == 0x54) {
-		// HACK: WLA DX specific reversal of parameter order, involve asmwrite_wladx so it can customize?
-		const int nb = ami.numBytes;
-		assert(nb == 3);
-		const char * result = ami.formattingString;
-		sprintf(target, result, data[1], data[2]);
-		sprintf(targetLabel, ami.formattingWithLabelString);
-		*bitmodeNeeded = ami.numBitsForOpcode;
-		return nb;
-	} else {
-		const int nb = ami.numBytes;
-		const char * result = ami.formattingString;
-		sprintf(target, result, data[nb - 1], data[nb - 2], data[nb - 3]);
-		sprintf(targetLabel, ami.formattingWithLabelString);
-		*bitmodeNeeded = ami.numBitsForOpcode;
-		return nb;
-	}
-}
+uint32_t calculateFormattingandSize(const uint8_t *data, const bool acc16, const bool ind16, char *target, char *targetLabel, int *bitmodeNeeded);
 
 // Flags are "sticky"... true=bit unknown
 template<typename T>
@@ -428,6 +452,10 @@ struct MagicT {
 		return result;
 	}
 
+	void set_unknown() {
+		flags = (T)-1;
+	}
+
 	bool isKnown() const {
 		return flags == 0;
 	}
@@ -435,6 +463,30 @@ struct MagicT {
 
 typedef MagicT<uint8_t> MagicByte;
 typedef MagicT<uint16_t> MagicWord;
+
+template<typename T>
+struct CombinationT {
+	T value = (T)0;
+	bool single_value = true;
+	bool has_value = false;
+
+	void operator=(const T t) {
+		if (has_value) {
+			if (t != value) {
+				single_value = false;
+				value = (T)0;
+			}
+		} else {
+			has_value = true;
+			single_value = true;
+			value = t;
+		}
+	}
+};
+
+typedef CombinationT<bool> CombinationBool;
+typedef CombinationT<uint8_t> Combination8;
+typedef CombinationT<uint16_t> Combination16;
 
 struct Registers {
 	Registers() : P(0x1FF), pb(-1), pc(-1), db(-1), dp(-1), reg_A(-1), reg_X(-1), reg_Y(-1) {}
@@ -455,91 +507,5 @@ enum ResultType {
 	SA_NOT_IMPLEMENTED
 };
 
-ResultType evaluateOp(const uint8_t* ops, const Registers &reg, MagicByte *resultBnk, MagicWord *resultAdr) {
-
-	// Introduce all registers with known flags.. then calculate adress with values... and check flags to see if it was "determined"
-
-	// TODO: Some of these are based on the fact that we want to do an indirection via memory...
-	//       but alot of memory is known (such as all jump tables). Involve ROM.
-	//       For this to work we must differentiate between source adress and the pointer read...
-
-	const int am = opCodeInfo[ops[0]].adressMode;
-	if (am >= 0 && am <= 3) {
-		return SA_IMMEDIATE;
-	} else if (am == 4) {
-		const int signed_offset = unpackSigned(ops[1]);
-		*resultBnk = reg.pb;
-		*resultAdr = reg.pc + (signed_offset + 2);
-		return SA_ADRESS;
-	}
-	else if (am == 5) {
-		const Pointer relative(ops[2] * 256 + ops[1]);
-		*resultBnk = reg.pb;
-		*resultAdr = reg.pc + relative + 3;
-		return SA_ADRESS;
-	}
-	else if (am == 6) {
-		*resultBnk = 0x00;
-		*resultAdr = reg.dp + ops[1];
-		return SA_ADRESS;
-	}
-	else if (am == 13) {
-		// TODO: Would be cool to not only support this, but also give the indirection pointer... it probably points out a jump table or so
-		return SA_NOT_IMPLEMENTED;
-	}
-	else if (am == 14) {
-		*resultBnk = reg.db;
-		*resultAdr = (ops[2] << 8) | ops[1];
-		return SA_ADRESS;
-	}
-	else if (am == 15) {
-		*resultBnk = reg.db;
-		*resultAdr = reg.reg_X + ((ops[2] << 8) | ops[1]); // TODO: Must X be 16-bit for this op?
-		return SA_ADRESS;
-	} else if (am == 16) {
-		*resultBnk = reg.db;
-		*resultAdr = reg.reg_Y + ((ops[2] << 8) | ops[1]); // TODO: Must Y be 16-bit for this op?
-		return SA_ADRESS;
-	}
-	else if (am == 17) {
-		*resultBnk = ops[3];
-		*resultAdr = (ops[2] << 8) | ops[1];
-		return SA_ADRESS;
-	}
-	else if (am == 18) {
-		*resultBnk = ops[3];
-		*resultAdr = reg.reg_X + (ops[2] << 8) | ops[1];
-		return SA_ADRESS;
-	}
-	else if (am == 22) {
-		return SA_NOT_IMPLEMENTED;
-	} 
-	else if (am == 24) {
-		return SA_ACCUMULATOR;
- 	} else {
-
-		static size_t bangBuck[27];
-		static bool init = true;
-		static size_t mmm = 0;
-		static size_t oldWinner = 0;
-		if (init) {
-			memset(bangBuck, 0, sizeof(size_t)* 27);
-		}
-		bangBuck[am]++;
-		if (bangBuck[am] > mmm) {
-			mmm = bangBuck[am];
-
-			if (oldWinner != am) {
-
-				printf("am %d leading with %d\n", am, bangBuck[am]);
-			}
-			oldWinner = am;
-		}
-
-		return SA_NOT_IMPLEMENTED;
-	}
-}
-
-
-
-#endif //  SNESTISTICS_CPUTABLE
+ResultType evaluateOp(const RomAccessor &rom_accessor, const uint8_t* ops, const Registers &reg, MagicByte *resultBnk, MagicWord *resultAdr, bool *depend_DB = nullptr, bool *depend_DP = nullptr, bool *depend_X = nullptr, bool *depend_Y = nullptr);
+Pointer lorom_bank_remap(const Pointer resolveAddress);

@@ -1,319 +1,1436 @@
 #include <stdint.h>
+#include <memory>
 #include <set>
 #include <vector>
 #include <string>
 #include <cassert>
 #include <fstream>
 #include <map>
-#include "cmdoptions.h"
+#include <iostream>
+#include <iomanip>
+#include <algorithm>
+#include <unordered_map>
+#include "trace_format.h"
+#include "options.h"
 #include "utils.h"
 #include "romaccessor.h"
 #include "asmwrite_wladx.h"
-#include "annotationresolver.h"
+#include "annotations.h"
 #include "cputable.h"
-#include <iostream>
-#include <iomanip>
+#include "trace_log.h"
+#include "trace.h"
+#include "rewind.h"
 
-/*
-	IDEA for better prediction.
-		Start prediction from all ops recorded in the emulation. [processor status, databank, direct page known]
-		Start emulation from RESET and VBLANK.					 [in reset, processor status is known]
-		Start emulation from all annotated labels
-			First time a label is predicted, we might not know much.
-			Then we might fall into it from a previous label and more is known.
-			If someone calls it we can guess at acc16, ind16. We don't need perfect, we just need to interpret the correct ops.
+struct ReportWriter {
+	ReportWriter(const std::string &filename) {
+		_report = fopen(filename.c_str(), "wt");
+		if (!_report) {
+			printf("Could not open report file %s\n", filename.c_str());
+			throw std::runtime_error("Could not open report file!");
+		}
+	}
+	~ReportWriter() {
+		fclose(_report);
+	}
 
-		Track all registers and entire memory (!) while running through a function.
-			Emulate all ops.
-			Read from ROM are deterministic.
-			Read from RAM that was previously written in same label is known.
-			etc
+	FILE *_report = nullptr;
 
-		If program writes jump adress to RAM and then performs indirect jumps, it is deterministic!
+	void writeComment(const char * const str) { fprintf(_report, "%s\n", str); }
+	void writeComment(StringBuilder &sb) { writeComment(sb.c_str()); sb.clear(); }
 
-		Multiple passes when new information is available.
-
-		The idea is that the need for .trace-file diminshes as user annotations increases.
-		So while some work is redundant at first, it will later enable generation without tracefile [only annotations!].
-
-		Remember. If deterministic code READ a byte from ROM it probably means that it is not code but rather DATA.
-		That can be used to discredit predicted code.
-
-		So the real hard part is stuff such as
-
-			LDX RAM_SOMETHING
-			JSL [TABLE, X]
-
-		We just don't know the range for X without actually running the game, and that requires user interaction.
-	
-*/
-
-/*
-	QUESTION: Add support for 6502-emulation-flag just to not mess that up?
-*/
-
-struct OpInfo {
-	uint16_t P; // status
-	uint8_t DB; // data bank
-	uint16_t D; // direct page
-	const bool operator<(const OpInfo &other) const {
-		if (P != other.P) return P < other.P;
-		if (DB != other.DB) return DB < other.DB;
-		return D < other.D;
+	void writeSeperator(const char * const text) {
+		fprintf(_report, "\n");
+		fprintf(_report, "; =====================================================================================================\n");
+		fprintf(_report, "; %s\n", text);
+		fprintf(_report, "; =====================================================================================================\n");
 	}
 };
 
-/*
-	This functions currently performs some deterministic jumps to make sure we record the destination.
-	More prediction ("emulation") is of course possible.
-*/
-void predictOps(const RomAccessor &rom, std::map<Pointer, std::set<OpInfo>> &ops, LargeBitfield &labels, std::map<Pointer, std::set<Pointer>> &takenJumps) {
-	for (auto opsIt = ops.begin(); opsIt != ops.end(); ++opsIt) {
-		const Pointer pc = opsIt->first;
+using namespace snestistics;
+
+// Jumps, branches but not JSLs
+// If secondary target is set, it is always set to the next op after this op
+bool decode_static_jump(uint8_t opcode, const RomAccessor &rom, const Pointer pc, Pointer *target, Pointer *secondary_target) {
+	*target = INVALID_POINTER;
+	*secondary_target = INVALID_POINTER;
+	if (opcode == 0x82) { // BRL
+		uint16_t v = *(uint16_t*)rom.evalPtr(pc+1);
+		Pointer t = pc;
+		t += v;
+		if (v >= 0x8000)
+			t -= 0x10000;
+		*target = t;
+	} else if (branches[opcode]) {
+		const Pointer target1 = pc + (unpackSigned(rom.evalByte(pc+1)) + 2);
+		*target = pc + (unpackSigned(rom.evalByte(pc+1)) + 2);
+		if (opcode != 0x80) {
+			*secondary_target = pc + 2;
+		}
+	} else if (opcode == 0x4C) { // Absolute jump
+		Pointer p = *(uint16_t*)rom.evalPtr(pc+1);
+		p|=pc&0xFF0000;
+		*target = p;
+	} else if (opcode == 0x5C) { // Absolute long jump
+		Pointer p = 0;
+		p |= rom.evalByte(pc+1);
+		p |= rom.evalByte(pc+2)<<8;
+		p |= rom.evalByte(pc+3)<<16;
+		*target = p;
+	} else if (opcode == 0x6C || opcode == 0x7C || opcode == 0xDC) {
+		// All of these are indeterminate, leave as INVALID_POINTER
+	} else {
+		return false;
+	}
+	return true;
+}
+
+bool guess_valid_jump(Pointer pc, Pointer target, int max_distance = 1000) {
+	if ((pc>>16)!=(target>>16))
+		return false;
+	return true;
+	int distance = abs((int32_t)(target&0xFFFF)-(int32_t)(pc&0xFFFF));
+	return distance < max_distance;
+}
+
+void guess_range(const Trace &trace, const RomAccessor &rom, const AnnotationResolver &annotations, std::string &output_file) {
+
+	FILE *output = fopen(output_file.c_str(), "wt");
+
+	int unknownCounter = 0;
+
+	struct FoundRange {
+		Pointer start = INVALID_POINTER, stop = INVALID_POINTER;
+		bool ends_with_rti = false;
+		bool valid = true;
+
+		bool inside(Pointer p) const { return p>=start && p<=stop; }
+
+		int num_long_jumps = 0;
+
+		std::set<Pointer> branches_out;
+	};
+
+	// TODO: Support trace annotation jump is jsr
+	std::vector<FoundRange> found_ranges;
+
+	for (auto it = trace.ops.begin(); it != trace.ops.end(); ++it) {
+		FoundRange found;
+		while (it != trace.ops.end()) {
+			Pointer pc = it->first;
+
+			//if (pc < 0x80801C || pc > 0x80E582)
+			//	break;
+
+			//if (pc > 0x00A0F6) // TODO: Remove
+			//	break;
+
+			const Annotation *function = nullptr;
+			annotations.resolve_annotation(pc, &function);
+
+			// We only want unknown but executed stuff!
+			if (function)
+				break;
+
+			uint8_t opcode = rom.evalByte(pc);
+
+			Pointer jump_target, jump_secondary_target;
+			bool op_is_jump_or_branch = decode_static_jump(opcode, rom, pc, &jump_target, &jump_secondary_target);
+
+			const TraceAnnotation *ta = annotations.trace_annotation(pc);
+			bool jump_is_jsr = false;
+			if (ta && ta->type == TraceAnnotation::JMP_IS_JSR)
+				jump_is_jsr = true;
+
+			if (op_is_jump_or_branch && jump_target != INVALID_POINTER && guess_valid_jump(pc, jump_target)) {
+				found.branches_out.insert(jump_target);
+			}
+			
+			// If this was a jump, deterministic or not, loop over all variants
+			if (op_is_jump_or_branch && !jump_is_jsr) {
+				auto lit = trace.ops.find(pc);
+				if (lit != trace.ops.end()) {
+					const Trace::OpVariantLookup &lut = lit->second;
+					for (uint32_t i=0; i<lut.count; i++) {
+						const OpInfo &o = trace.variant(lut, i);
+						if (o.jump_target != INVALID_POINTER && guess_valid_jump(pc, o.jump_target)) {
+							found.branches_out.insert(o.jump_target);
+						}
+					}
+				}
+			}
+
+			if (found.start == INVALID_POINTER)
+				found.start = pc;
+
+			// Stop if we find a branch or a jump
+			if (op_is_jump_or_branch && jump_secondary_target == INVALID_POINTER) {
+				// If there is a secondary jump target (as in a branch) we don't need to stop
+				found.stop = pc;
+				found_ranges.push_back(found);
+				break;
+			}
+
+			bool is_return = opcode == 0x40 || opcode == 0x6B || opcode == 0x60;
+
+			if (is_return) {
+				found.stop = pc;
+				found.ends_with_rti = true;
+				found_ranges.push_back(found);
+				break;
+			}
+
+			it++;
+		}
+	}
+
+	std::vector<uint32_t> merged_with(found_ranges.size(), -1);
+
+	for (uint32_t j=0; j<=found_ranges.size(); ++j) { // TODO: Make <= be just <
+
+		bool debug = false;
+
+		if (debug) {
+			printf("Step %d\n", j);
+
+			for (uint32_t ai = 0; ai < found_ranges.size(); ai++) {
+				const FoundRange &f = found_ranges[ai];
+				printf(" %d: %06X-%06X%s", ai, f.start, f.stop, f.valid?"":" (invalid)");
+				if (merged_with[ai]!=-1)
+					printf(" (merged with %d)", merged_with[ai]);
+				printf("\n");
+
+				if (ai >=j)
+				for (auto b : f.branches_out) {
+					if (f.inside(b))
+						continue;
+					printf("   -> %06X", b);
+					for (uint32_t bi = 0; bi < found_ranges.size(); ++bi) {
+						const FoundRange &fb = found_ranges[bi];
+						if (fb.start <= b && b <= fb.stop)
+							printf(" %d", bi);
+					}
+					printf("\n");
+				}
+			}
+		}
+
+		// We went one extra round for debugging!
+		if (j==found_ranges.size())
+			break;
+
+		uint32_t merge_target = j;
+		while (merged_with[merge_target] != -1)
+			merge_target = merged_with[merge_target];
+
+		auto &branches_out = found_ranges[j].branches_out;
+
+		FoundRange &fj = found_ranges[j];
+		
+		//printf("Doing %d, saving into %d\n", j, merge_target);
+		for (Pointer target : branches_out) {
+			// We have three cases; forward, backward or internal branches. We treat them separately for clarity
+			if (fj.inside(target)) // Ignore internal branches/jumps
+				continue;
+
+			// TODO: This is not enough.. We must stop at any function in the range...
+			//       Basically cut target at any function def...
+			const Annotation *target_function = nullptr;
+			annotations.resolve_annotation(target, &target_function);
+			if (target_function)
+				continue;
+
+			int len = 0;
+			if (target < fj.start) {
+				len = fj.start - target;
+			} else {
+				len = target - fj.stop;
+			}
+			if (len > 1000) {
+				fj.num_long_jumps++;
+			}
+
+			Pointer t1 = target;
+
+			if (target < fj.start) {
+				target = annotations.find_last_free_before_or_at(fj.start, target);
+				if (target != t1) {
+					int A=9;
+				}
+
+				if (target == INVALID_POINTER)
+					continue;
+				// Branch going out to smaller addresses (before j)
+
+				int lowest_merge = j;
+
+				for (int32_t t=j-1; t>=0; --t) {
+					FoundRange &merger = found_ranges[t];
+					if (target > merger.stop) // Since ranges are sorted on start and non-overlapping we can stop here
+						break;
+					lowest_merge = t;
+				}
+
+				if (lowest_merge == j)
+					continue;
+
+				while (merged_with[lowest_merge] != -1)
+					lowest_merge = merged_with[lowest_merge];
+
+				// We want to merge the range (lowest_range, ..., j) into lowest_range
+				for (uint32_t t=lowest_merge+1; t <= j; t++) {
+					FoundRange &f = found_ranges[t];
+					if (f.valid) {
+						f.valid = false;
+						merged_with[t] = lowest_merge;
+					}
+				}
+
+				found_ranges[lowest_merge].stop = fj.stop;
+
+			} else if (target > fj.stop) {
+
+				target = annotations.find_last_free_after_or_at(fj.stop, target);
+				if (target != t1) {
+					int A=9;
+				}
+
+				if (target == INVALID_POINTER)
+					continue;
+
+				// Branch going out to larger addresses (after j)
+				for (uint32_t t=j+1; t<found_ranges.size(); ++t) {
+					FoundRange &merger = found_ranges[t];
+					if (target < merger.start) // Since ranges are sorted on start and non-overlapping we can stop here
+						break;
+					if (merger.valid) {
+						// Merge t into j (the easy case)
+						fj.stop = merger.stop;
+						merger.valid = false; // Since we make it invalid it can only be merged once...
+						merged_with[t] = merge_target;
+					}
+				}
+			}
+		}
+	}
+
+	int num_found = 0;
+
+	int longest = -1, longest_range = -1;
+	uint32_t longest_length = 0;
+
+	for (uint32_t fi = 0; fi < found_ranges.size(); ++fi) {
+		const FoundRange &f = found_ranges[fi];
+		if (f.num_long_jumps > 4) {
+			printf("Long jumps to %06X-%06X (%d)\n", f.start, f.stop, f.num_long_jumps);
+		}
+
+		if (f.valid) {
+			bool collision = false;
+			for (auto k : annotations._annotations) {
+				if (k.type == AnnotationType::ANNOTATION_FUNCTION) {
+					if (f.stop < k.startOfRange || f.stop > k.endOfRange) {
+						continue;
+					} else {
+						collision = true;
+						break;
+					}
+				}
+			}
+			if (collision) {
+				printf("Collision!\n");
+			} else {
+				// TODO: Validate that there is no function annotation inside a range
+				if (f.stop - f.start > longest_length) {
+					longest = num_found;
+					longest_length = f.stop - f.start + 1;
+					longest_range = fi;
+				}
+				num_found++;
+				fprintf(output, "function %06X %06X Auto%04d\n", f.start, f.stop, unknownCounter++);
+			}
+		}
+	}
+
+	printf("Found %d functions (longest Auto%04d, len=%d, range=%d)\n", num_found, longest, longest_length, longest_range);
+
+	fclose(output);
+}
+
+void dma_report(ReportWriter &writer, const Trace &trace, const AnnotationResolver &annotations) {
+	Profile profile("DMA report", true);
+	writer.writeSeperator("DMA analysis");
+	writer.writeComment("");
+	writer.writeComment("Currently not sure if we can deduce step or not!");
+	writer.writeComment("Currently not doing anything with data annotations! Let me know what I could do!");
+	writer.writeComment("HDMA is not supported. Can be added in.");
+	writer.writeComment("");
+
+	StringBuilder sb;
+
+	const Annotation* reported_function = nullptr;
+	Pointer reported_pc = -1;
+
+	for (const DmaTransfer &d : trace.dma_transfers) {
+
+		bool print_pc = false;
+
+		if (reported_pc != d.pc) {
+			const Annotation *from;
+			annotations.resolve_annotation(d.pc, &from);
+
+			if (reported_function != from) {
+				reported_function = from;
+
+				if (from) {
+					sb.format("%s", from->name.c_str());
+				} else {
+					sb.format("(unannotated)", from->name.c_str());
+				}
+			}
+
+			print_pc = true;
+			reported_pc = d.pc;
+		}
+
+		sb.column(20); sb.format("%d", d.channel);
+		sb.column(24); sb.format("$%05X $%02X:$%04X %s $21%02X (mode=$%02X)%s%s", d.transfer_bytes == 0 ? 0x10000 : d.transfer_bytes, d.a_bank, d.a_address, d.flags & DmaTransfer::REVERSE_TRANSFER ? "<-":"->", d.b_address, d.transfer_mode, d.flags & DmaTransfer::A_ADDRESS_DECREMENT ?" (dec)":" (inc)", d.flags & DmaTransfer::A_ADDRESS_FIXED ? " (fixed)":"");
+
+		if (print_pc) {
+			sb.column(86);  sb.format("at pc=$%06X", d.pc);
+		}
+		writer.writeComment(sb);
+	}
+}
+
+void data_report(ReportWriter &writer, const Trace &trace, const AnnotationResolver &annotations) {
+	StringBuilder sb;
+
+	Profile profile("Data report", true);
+	writer.writeSeperator("Data analysis");
+
+	sb.clear();
+	sb.format("DATA RANGE");
+	sb.column(20);
+	sb.format("READERS");
+	sb.column(60);
+	sb.format("WRITERS");
+	sb.column(90);
+	sb.format("ANNOTATIONS");
+	writer.writeSeperator(sb.c_str());
+
+	Pointer first_global = INVALID_POINTER, last_global = INVALID_POINTER;
+
+	std::set<const Annotation*> global_readers;
+	std::set<uint32_t> global_unknown_readers;
+	std::set<const Annotation*> global_writers;
+	std::set<uint32_t> global_unknown_writers;
+	const Annotation *global_data = nullptr;
+
+	for (uint32_t p = 0; p < trace.memory_accesses.size(); ) {
+		const Trace::MemoryAccess ra = trace.memory_accesses[p];
+		Pointer adress = ra.adress;
+
+		const Annotation *data = nullptr;
+
+		// Don't care about accesses to code
+		// TODO: Check so we don't write code?
+		{
+			const Annotation *accessed_function = nullptr;
+			annotations.resolve_annotation(adress, &accessed_function, &data);
+			if (accessed_function != nullptr) {
+				for (uint32_t j=p; j<trace.memory_accesses.size(); j++, p++) {
+					const Trace::MemoryAccess rb = trace.memory_accesses[j];
+					if (adress != rb.adress) break;
+				}
+				continue;
+			}
+		}
+
+		bool need_flush = false;
+		std::set<const Annotation*> new_readers;
+		std::set<uint32_t> new_unknown_readers;
+		std::set<const Annotation*> new_writers;
+		std::set<uint32_t> new_unknown_writers;
+
+		for (uint32_t j=p; j<trace.memory_accesses.size(); j++, p++) {
+			const Trace::MemoryAccess rb = trace.memory_accesses[j];
+			if (adress != rb.adress) break;
+
+			const bool is_write = (rb.pc & 0x80000000)!=0;
+			const Pointer pc = is_write ? rb.pc & ~0x80000000 : rb.pc;
+
+			const Annotation *our_function = nullptr;
+			annotations.resolve_annotation(pc, &our_function);
+
+			if (our_function) {
+				if (is_write) {
+					new_writers.insert(our_function);
+					if (!need_flush && global_writers.find(our_function) == global_writers.end()) need_flush = true;
+				} else {
+					new_readers.insert(our_function);
+					if (!need_flush && global_readers.find(our_function) == global_readers.end()) need_flush = true;
+				}
+			} else {
+				if (is_write) {
+					new_unknown_writers.insert(pc);
+					if (!need_flush && new_unknown_writers.find(pc) == new_unknown_writers.end()) need_flush = true;
+				} else {
+					new_unknown_readers.insert(pc);
+					if (!need_flush && global_unknown_readers.find(pc) == global_unknown_readers.end()) need_flush = true;
+				}
+			}
+		}
+
+		if (data != global_data)
+			need_flush = true;
+
+		// We know that we aren't adding any new readers/writers, but did we produce the same full list?
+		if (first_global != INVALID_POINTER) {
+			if ((new_readers.size() != global_readers.size()) || (global_unknown_readers.size() != new_unknown_readers.size())) {
+				need_flush = true;
+			}
+			if ((new_writers.size() != global_writers.size()) || (global_unknown_writers.size() != new_unknown_writers.size())) {
+				need_flush = true;
+			}
+		}
+
+		bool update_globals = false;
+		if (need_flush || first_global == INVALID_POINTER) {
+			update_globals = true;
+		}
+
+		struct AccessIterator {
+			AccessIterator(const std::set<const Annotation*> &known, const std::set<uint32_t> &unknown) : _known(known), _unknown(unknown) {}
+			const std::set<const Annotation*> &_known;
+			const std::set<uint32_t> &_unknown;
+
+			uint32_t _current = 0;
+			bool has() {
+				const uint32_t total = (uint32_t)_known.size() + (uint32_t)_unknown.size();
+				return _current < total;
+			}
+			void advance() {
+				_current++;
+			}
+			void emit(StringBuilder &sb) {
+				if (_current < _known.size()) {
+					auto it = _known.begin();
+					for (uint32_t i=0; i<_current; i++, it++);
+					const Annotation *a = *it;
+					sb.format("%s", a->name.c_str());
+				} else {
+					uint32_t lc = _current - (uint32_t)_known.size();
+					auto it = _unknown.begin();
+					for (uint32_t i=0; i<lc; i++, it++);
+					const uint32_t pc = *it;
+					sb.format("%06X", pc);
+				}
+			}
+		};
+
+		AccessIterator readers(global_readers, global_unknown_readers);
+		AccessIterator writers(global_writers, global_unknown_writers);
+
+		// If last range was finished, print it
+		if (need_flush) {
+			bool first_line = true;
+			while (readers.has() || writers.has()) {
+				sb.clear();
+				if (first_line) {
+					if (first_global != last_global)
+						sb.format("%06X-%06X", first_global, last_global);
+					else
+						sb.format("%06X", first_global);
+				}
+				if (readers.has()) {
+					sb.column(20);
+					readers.emit(sb);
+				}
+				if (writers.has()) {
+					sb.column(60);
+					writers.emit(sb);
+				}
+				if (first_line) {
+					if (global_data) {
+						sb.column(90);
+						sb.format("%s [%06X-%06X]", global_data->name.c_str(), global_data->startOfRange, global_data->endOfRange);
+					}
+				}
+				writer.writeComment(sb);
+				first_line = false;
+				readers.advance();
+				writers.advance();
+			}
+			first_global = last_global = adress;
+		} else {
+			if (first_global == INVALID_POINTER) first_global = adress;
+			last_global = adress;
+		}
+		
+		if (update_globals) {
+			std::swap(global_readers, new_readers);
+			std::swap(global_writers, new_writers);
+			std::swap(global_unknown_readers, new_unknown_readers);
+			std::swap(global_unknown_writers, new_unknown_writers);
+			global_data = data;
+		}
+	}
+
+	// TODO: Print last range
+}
+
+void predict(Options::PredictMode mode, ReportWriter *writer, const RomAccessor &rom, Trace &trace, const AnnotationResolver &annotations) {
+
+	if (mode == Options::PREDICT_NOTHING)
+		return;
+
+	bool limit_to_functions = mode == Options::PREDICT_FUNCTIONS;
+
+	Profile profile("Predict", true);
+
+	struct PredictBranch {
+		const Annotation *annotation;
+		Pointer pc;
+		uint16_t DP, P;
+		uint8_t DB;
+	};
+
+	std::vector<PredictBranch> predict_brances;
+	LargeBitfield has_op(256*64*1024);
+
+	for (auto opsit : trace.ops) {
+		const Pointer pc = opsit.first;
+		has_op.setBit(pc);
+
+		const Trace::OpVariantLookup &vl = opsit.second;
 		const uint8_t* data = rom.evalPtr(pc);
 
 		const uint8_t opcode = data[0];
 
-		if ((branches[opcode]||jumps[opcode]) && takenJumps.find(pc) == takenJumps.end()) {
-			Registers reg;
-			reg.P = opsIt->second.begin()->P; // TODO: Just set bits acc16 and mem16
-			reg.pc = pc & 0xFFFF;
-			reg.pb = pc >> 16;
-			MagicByte rb(0);
-			MagicWord ra(0);
-			ResultType r = evaluateOp(data, reg, &rb, &ra);
+		StringBuilder sb;
 
-			if (r == SA_ADRESS && rb.isKnown() && ra.isKnown()) {
-				const Pointer target((rb.value << 16 ) | (ra.value));
-				labels.setBit(target);
-				takenJumps[pc].insert(target);
+		Pointer target_jump, target_no_jump;
+		bool branch_or_jump = decode_static_jump(opcode, rom, pc, &target_jump, &target_no_jump);
+
+		if (!branch_or_jump || target_jump == INVALID_POINTER)
+			continue;
+
+		trace.labels.setBit(target_jump);
+
+		const Annotation *source_annotation = nullptr, *target_annotation = nullptr;
+		annotations.resolve_annotation(pc,          &source_annotation);
+		annotations.resolve_annotation(target_jump, &target_annotation);
+
+		if (source_annotation || !limit_to_functions) {
+			// We only predict branches going within an annotated function
+			PredictBranch p;
+			p.annotation = source_annotation;
+			p.DB = trace.variant(vl, 0).DB;
+			p.DP = trace.variant(vl, 0).DP;
+			p.P  = trace.variant(vl, 0).P;
+			if (target_annotation == source_annotation || !limit_to_functions) {
+				p.pc = target_jump;
+				CUSTOM_ASSERT(target_jump != INVALID_POINTER);
+				predict_brances.push_back(p);
 			}
+			if (target_no_jump != INVALID_POINTER && (!limit_to_functions || (target_no_jump >= source_annotation->startOfRange && target_no_jump <= source_annotation->endOfRange))) {
+				// BRA,BRL and the jumps always branches/jumps
+				p.pc = target_no_jump;
+				CUSTOM_ASSERT(target_no_jump != INVALID_POINTER);
+				predict_brances.push_back(p);
+			}
+		}
+	}
+
+	StringBuilder sb;
+	sb.clear();
+
+	if (writer)
+		writer->writeSeperator("Prediction diagnostics");
+
+	for (int pbi=0; pbi<(int)predict_brances.size(); ++pbi) {
+		const PredictBranch pb = predict_brances[pbi];
+
+		Pointer pc = pb.pc;
+		Pointer r0 = limit_to_functions ? pb.annotation->startOfRange : 0, r1 = limit_to_functions ? pb.annotation->endOfRange : 0xFFFFFF;
+		uint16_t P = pb.P, DP = pb.DP;
+		uint8_t DB = pb.DB;
+
+		bool P_unknown = false;
+
+		while (!has_op[pc] && pc >= r0 && pc <= r1) {
+
+			// Make sure we don't run into a data scope
+			const Annotation *data_scope = nullptr;
+			annotations.resolve_annotation(pc, nullptr, &data_scope);
+			if (data_scope)
+				continue;
+
+			uint8_t opcode = rom.evalByte(pc);
+
+			bool abort_unknown_P = P_unknown;
+
+			if (P_unknown) {
+				switch(opcode) {
+				case 0x02: // COP const
+				case 0x40: // RTI
+				case 0x6B: // RTL
+				case 0x60: // RTS
+				case 0x3B: // TSC
+				case 0xBA: // TSX
+				case 0x8A: // TXA
+				case 0x9A: // TXS
+				case 0x9B: // TXY
+				case 0x98: // TYA
+				case 0xBB: // TYX
+				case 0xCB: // WAI
+				case 0xEB: // XBA
+				case 0xFB: // XCE
+				case 0xAA: // TAX
+				case 0xA8: // TAY
+				case 0x5B: // TCD
+				case 0x1B: // TCS
+				case 0x7B: // TDC
+				case 0xDB: // STP
+				case 0x38: // SEC
+				case 0xF8: // SED
+				case 0x78: // SEI
+				case 0xE2: // SEP
+				case 0xC2: // REP
+				case 0x18: // CLC
+				case 0xD8: // CLD
+				case 0x58: // CLI
+				case 0xB8: // CLV
+				case 0xCA: // DEX
+				case 0x88: // DEY
+				case 0xE8: // INX
+				case 0xC8: // INY
+				case 0xEA: // NOP
+				case 0x8B: // PHB
+				case 0x0B: // PHD
+				case 0x4B: // PHK
+				case 0x08: // PHP
+				case 0xDA: // PHX
+				case 0x5A: // PHY
+				case 0x68: // PLA
+				case 0xAB: // PLB
+				case 0x2B: // PLD
+				case 0x28: // PLP
+				case 0xFA: // PLX
+				case 0x7A: // PLY
+					abort_unknown_P = false;
+				}
+			}
+
+			if (abort_unknown_P) {
+				if (writer) {
+					sb.clear();
+					sb.format("Aborting trace at %06X in %s due to unknown processor status", pc, pb.annotation->name.c_str());
+					writer->writeComment(sb);
+				}
+				break;
+			}
+
+			{
+				Trace::OpVariantLookup l;
+				l.count = 1;
+				l.offset = (uint32_t)trace.ops_variants.size();
+				trace.ops[pc] = l;
+				OpInfo info;
+				info.P = P_unknown ? 0 : P;
+				info.DB = DB;
+				info.DP = DP;
+				info.X = info.Y = 0;
+				info.jump_target = INVALID_POINTER;
+				info.indirect_base_pointer = INVALID_POINTER;
+				trace.ops_variants.push_back(info);
+
+				// Note that DB and DP here represent a lie :)
+			}
+
+			trace.is_predicted.setBit(pc);
+			has_op.setBit(pc);
+			int op_size = calculateFormattingandSize(rom.evalPtr(pc), is_memory_accumulator_wide(P), is_index_wide(P), nullptr, nullptr, nullptr);
+
+			uint8_t operand = rom.evalByte(pc+1);
+
+			Pointer target_jump, target_no_jump;
+			bool is_jump_or_branch = decode_static_jump(opcode, rom, pc, &target_jump, &target_no_jump);
+
+			bool is_jsr = opcode == 0x20||opcode==0x22||opcode==0xFC;
+
+			const TraceAnnotation *ta = annotations.trace_annotation(pc);
+			if (ta && ta->type == TraceAnnotation::JMP_IS_JSR) {
+				 is_jump_or_branch = false;
+				 is_jsr = true;
+			}
+
+			if (is_jump_or_branch) {
+				const Annotation *function = nullptr;
+				if (target_jump != INVALID_POINTER) {
+					annotations.resolve_annotation(target_jump, &function);
+					trace.labels.setBit(target_jump);
+				}
+
+				if (writer && (!function || function != pb.annotation)) {
+					sb.clear();
+					sb.format("Branch going out of %s to ", pb.annotation->name.c_str());
+					if (function) {
+						sb.format("%s [%06X]", function->name.c_str(), target_jump);
+					} else {
+						sb.format("%06X", target_jump);
+					}
+					sb.format(". Not following due to range restriction.");
+					writer->writeComment(sb);
+				}
+				
+				if (target_jump != INVALID_POINTER) {
+					PredictBranch npb = pb;
+					npb.pc = target_jump;
+					predict_brances.push_back(npb);
+				}
+			} else if (opcode == 0xE2) {
+				//	TODO:
+				//	* When we get a REP or SEP parts or P become known again. We could track unknown per the three flags and update.
+				//	* Updating DB/DP might be interesting
+				if (operand & 0x10) P |= 0x0010;
+				if (operand & 0x20) P |= 0x0020;
+			} else if (opcode == 0xC2) {
+				if (operand & 0x10) P &= ~0x0010;
+				if (operand & 0x20) P &= ~0x0020;
+			} else if (opcode == 0x28 || opcode == 0xFB) {
+				P_unknown = true; // PLP or XCE
+				// A jump or BRA, stop execution flow (not JSR or non-BRA-branch)
+			} else if (opcode == 0x4C||opcode==0x5C||opcode==0x6C||opcode==0x7C||opcode==0x80) {
+				if (writer && opcode != 0x80) {
+					sb.clear();
+					sb.format("Not following jump (opcode %02X) at %06X in %s. Only absolute jumps supported.", opcode, pc, pb.annotation->name.c_str());
+					writer->writeComment(sb);
+				}
+				// TODO: if there is a trace annotation about jmp being jsr we could go on
+				continue;
+			} else if (is_jsr) {
+				if (writer) {
+					sb.clear();
+					sb.format("Not following jump with subroutine (opcode %02X) at %06X in %s.", opcode, pc, pb.annotation->name.c_str());
+					writer->writeComment(sb);
+				}
+			} else if (opcode == 0x40 || opcode == 0x6B || opcode == 0x60) {
+				// some sort of return, stop execution flow
+				continue;
+			}
+			pc += op_size;
 		}
 	}
 }
 
-void parseTraceFile(const std::string &filename, std::map<Pointer, std::set<OpInfo>> &ops, LargeBitfield &labels, std::map<Pointer, std::set<Pointer>> &takenJumps) {
-	// We can assume that all PC are saved in order
-	FILE *f2 = fopen(filename.c_str(), "rb");
-	if (!f2) {
-		std::stringstream ss;
-		ss << "Could not open trace-file '" << filename << "'";
-		throw std::runtime_error(ss.str());
-	}
+void branch_report(ReportWriter &writer, const RomAccessor &rom, const Trace &op_trace, const AnnotationResolver &annotations) {
+	StringBuilder sb;
+	writer.writeSeperator("Branch analysis");
+	writer.writeComment("NOTE: Branches between two functions could mean that they really are one function.");
+	writer.writeComment("      Branches out from a function could mean that the function is larger than tagged.");
+	writer.writeComment("      This report was generated AFTER extra branches were predicted.");
+	writer.writeComment("");
 
-	const uint16_t expectedVersionNumber = 0x0001;
-	uint16_t versionNumber;
-	fread(&versionNumber, sizeof(versionNumber), 1, f2);
+	sb.clear();
 
-	if (versionNumber != expectedVersionNumber) {
-		std::stringstream ss;
-		ss << "Wrong version number " << versionNumber << ", expected " << expectedVersionNumber;
-		throw std::runtime_error(ss.str());
-	}
+	for (const auto &it : op_trace.ops) {
+		const Pointer pc = it.first;
+		uint8_t opcode = rom.evalByte(pc);
+		if (!branches[opcode])
+			continue;
 
-	// First pass: Parse file, find all opcode starts and their status.
-	while (!feof(f2)) {
-		uint8_t code;
+		for (int myloop = 0; myloop < 2; myloop++) {
+			Pointer target = myloop == 0 ? pc + (unpackSigned(rom.evalByte(pc+1)) + 2) : pc + 2;
+			if (myloop == 1 && opcode == 0x80)
+				break;
 
-		fread(&code, 1, 1, f2);
-		if (code == 0) {
-			uint32_t pc;
-			OpInfo o;
-			fread(&pc, sizeof(Pointer), 1, f2);
-			fread(&o.P, 2, 1, f2);
-			fread(&o.DB, 1, 1, f2);
-			fread(&o.D, 2, 1, f2);
-			ops[Pointer(pc)].insert(o);
-		}
-		else if (code == 1) {
-			Pointer p, t;
-			fread(&p, sizeof(Pointer), 1, f2);
-			fread(&t, sizeof(Pointer), 1, f2);
-			labels.setBit(t);
-			takenJumps[p].insert(t);
-		}
-		else {
-			assert(false);
+			const Annotation *source_annotation = nullptr, *target_annotation = nullptr;
+			annotations.resolve_annotation(pc,     &source_annotation);
+			annotations.resolve_annotation(target, &target_annotation);
+
+			if (!source_annotation || source_annotation == target_annotation)
+				continue;
+
+			sb.clear();
+			sb.format("Branch going from %s", source_annotation->name.c_str());
+						
+			if (target_annotation) {
+				sb.format(" to %s", target_annotation->name.c_str());
+			}
+			sb.format(" [%06X->%06X]", pc, target);
+			writer.writeComment(sb);
 		}
 	}
+}
 
-	fclose(f2);
+void entry_point_report(ReportWriter &writer, const Trace &trace, const AnnotationResolver &annotations) {
+	writer.writeSeperator("Entry point report");
+	writer.writeComment("Disabled");
+/*
+	struct FunctionInfo {
+		int jumps_within_function = 0; // Could be interesting if we limit was sorts of jumps we count (jsr vs jmp)
+		std::set<Pointer> targets_inside; // Lazy coding here
+	};
+
+	std::vector<FunctionInfo> stats(annotations._annotations.size());
+
+	// We assume this is done when no branches are part of jumps
+	for (JumpTrace::const_iterator it = jumps.begin(); it != jumps.end(); ++it) {
+
+		const Pointer from = it->first;
+
+		const Annotation *source_function = nullptr;
+		annotations.resolve_annotation(from, &source_function);
+		
+		for (const JumpInfo &ji : it->second) {
+			const Pointer target = ji.target;
+
+			const Annotation *function = nullptr;
+			annotations.resolve_annotation(target, &function);
+
+			if (!function)
+				continue;
+
+			int function_index = (((uint8_t*)function)-((uint8_t*)&annotations._annotations[0]))/sizeof(Annotation);
+			assert(&annotations._annotations[function_index] == function);
+
+			FunctionInfo &fi = stats[function_index];
+
+			if (source_function == function) {
+				fi.jumps_within_function++;
+			} else if (target == function->startOfRange) {
+				fi.targets_inside.insert(target);
+			} else {
+				fi.targets_inside.insert(target);
+			}
+		}		
+	}
+
+	StringBuilder sb;
+
+	writer.writeSeperator("Entry point analysis");
+
+	for (uint32_t i = 0; i < stats.size(); i++) {
+		const FunctionInfo &f = stats[i];
+		int entries = f.targets_inside.size();
+
+		const Annotation &a = annotations._annotations[i];
+		if (entries>1) {
+			sb.clear();
+			sb.format("%s has %d entry points (function start %06X)", a.name.c_str(), entries, a.startOfRange);
+			writer.writeComment(sb);
+			for (Pointer t : f.targets_inside) {
+				std::string label = annotations.label(t, nullptr, true);
+				sb.clear();
+				sb.format("    %06X %s    %s", t, t == a.startOfRange ? "(*)":"   ",label.c_str());
+				writer.writeComment(sb);
+			}
+		} else if (entries == 1) {
+			const Pointer t = *f.targets_inside.begin();
+			if (t != a.startOfRange) {			
+				sb.clear();
+				sb.format("%s has an entry point that is not at start (%06X vs %06X)", a.name.c_str(), t, a.startOfRange);
+				writer.writeComment(sb);
+			}
+		}
+	}
+*/
 }
 
 int main(const int argc, const char * const argv[]) {
 	try {
-
 		initLookupTables();
 
 		Options options;
 		parseOptions(argc, argv, options);
 
-		RomAccessor romData(options.romOffset, options.calculatedSize);
-		romData.load(options.romFile);
+		printf("Loading ROM '%s'\n", options.rom_file.c_str());
 
-		AnnotationResolver hardwareAnnotations;
-		hardwareAnnotations.load(options.hardwareAnnotationsFile);
+		RomAccessor rom_accessor(options.rom_offset, options.calculated_size);
+		{
+			Profile profile("Load ROM data");
+			rom_accessor.load(options.rom_file);
+		}
 
-		AnnotationResolver annotations(&hardwareAnnotations);
-		annotations.load(options.labelsFile);
-		annotations.save(options.labelsFile + ".resave");
-		
-		std::map<Pointer, std::set<Pointer>> takenJumps;
-		std::map<Pointer, std::set<OpInfo>> ops;
-		LargeBitfield labels;
-		labels.setBit(0x008000); // TODO: Get from ROM-header? Also the others like NMI...
+		Trace trace;
 
-		parseTraceFile(options.traceFile, ops, labels, takenJumps);
+		for (uint32_t k=0; k<options.trace_files.size(); ++k) {
+			bool generate = true;
 
-		predictOps(romData, ops, labels, takenJumps);
+			Trace backing_trace;
+			Trace &local_trace = k==0 ? trace : backing_trace;
 
-		AsmWriteWLADX writer(options, romData);
+			if (!options.regenerate_emulation && load_trace(options.trace_file_op_cache(k).c_str(), local_trace))
+				generate = false;
 
+			if (generate) {
+				Profile profile("Create trace using emulation");
+				create_trace(options, k, rom_accessor, local_trace);
+				save_trace(local_trace, options.trace_file_op_cache(k).c_str());
+			}
 
-		// Generate EQU for each label
-		// TODO: Only include USED labels
-		for (Pointer p = 0; p < 128 * 65536; p++) {
-			const Annotation *a = annotations.resolve(p, p, true, false);
-			if (a != nullptr && a->type == ANNOTATION_DATA) {
-				const size_t numBytes = a->endOfRange - a->startOfRange + 1;
-
-				// NOTE: We only use 16-bit here... the high byte is almost never used in an op
-				// TODO: Validate so this doesn't mess thing up when we use it
-				char target[512];
-				sprintf(target, "$%04X", a->startOfRange&0xFFFF);
-
-				writer.writeDefine(a->name, target, a->description.empty() ? a->useComment : a->description);
+			if (k != 0) {
+				merge_trace(trace, local_trace);
 			}
 		}
 
+		if (!options.auto_label_file.empty()) {
+			FILE *test_file = fopen(options.auto_label_file.c_str(), "rb");
+			bool auto_file_exists = test_file != NULL;
+			if (test_file != NULL) {
+				fclose(test_file);
+			}
+			
+			if (options.generate_auto_annotations || !auto_file_exists) {
+				Profile profile("Regenerating auto-labels");
+				// We load annotations here since we want to avoid the annotation file
+				AnnotationResolver annotations;
+				annotations.load(options.labels_files);
+				guess_range(trace, rom_accessor, annotations, options.auto_label_file);
+			}
+		}
+
+		AnnotationResolver annotations;
+		{
+			Profile profile("Loading game annotations");
+			if (options.auto_label_file.empty()) {
+				// Don't load the auto-labels file if we are re-generating it
+				annotations.load(options.labels_files);
+			} else {
+				std::vector<std::string> copy(options.labels_files);
+				copy.push_back(options.auto_label_file);
+				annotations.load(copy);
+			}
+		}
+
+		// Make sure this happens after create_trace so skip file is fresh
+		if (!options.rewind_file.empty()) {
+			rewind_report(options, rom_accessor, annotations);
+		}
+
+		// Write trace log if requested
+		if (!options.trace_log.empty()) {
+			Profile profile("Create trace log");
+			write_trace_log(options, rom_accessor, annotations);
+		}
+
+		if (options.asm_file.empty()) {
+			// TODO: Factor asm gen into a file like trace_log?
+			return 0;
+		}
+
+		Profile profile("Writing asm");
+		AsmWriteWLADX writer(options, rom_accessor);
+
+		std::unique_ptr<ReportWriter> report_writer;
+		if (!options.asm_report_file.empty())
+			report_writer.reset(new ReportWriter(options.asm_report_file));
+
+		// TODO: Maybe run once before guess_range as well to find longer ranges
+		predict(options.predict_mode, report_writer.get(), rom_accessor, trace, annotations);
+
+		writer.writeSeperator("Data");
+
+		// Generate EQU for each label
+		// TODO: Only include USED labels?
+		for (const Annotation &a : annotations._annotations) {
+			if (a.type == ANNOTATION_FUNCTION || (a.type == ANNOTATION_LINE && !a.name.empty()))
+				trace.labels.setBit(a.startOfRange);
+			if (a.type != ANNOTATION_DATA)
+				continue;
+
+			// NOTE: We only use 16-bit here... the high byte is almost never used in an op
+			// TODO: Validate so this doesn't mess thing up when we use it
+			char target[512];
+			sprintf(target, "$%04X", a.startOfRange&0xFFFF);
+
+			writer.writeDefine(a.name, target, a.comment.empty() ? a.useComment : a.comment);
+		}
+
+		writer.writeSeperator("Code");
+
 		Pointer nextOp(INVALID_POINTER);
 
+		std::vector<OpInfo> variants;
+		variants.reserve(1024*64);
+
 		// Now iterate the ops
-		for (auto opsit = ops.begin(); opsit != ops.end(); ++opsit) {
+		for (auto opsit = trace.ops.begin(); opsit != trace.ops.end(); ++opsit) {
 			const Pointer pc = opsit->first;
 
 			if (nextOp == INVALID_POINTER) {
 				nextOp = pc;
 			}
 
+			bool emitted_label = false;
+
 			// TODO: Emit any labels that we might have skipped as well as label for current line
 			//       This is mostly if the static jump predictor is predicting a jump into non-ops.
 			for (Pointer p(nextOp); p <= pc; ++p) {
-				if (labels[p]) {
+				if (trace.labels[p]) {
+
 					// Emit label?
-					std::string description;
-					std::string labelName = annotations.getLabelName(p, &description, nullptr);
-					writer.writeLabel(p, labelName, description);
+					std::string label, line_comment, line_use_comment;
+
+					annotations.line_info(p, &label, &line_comment, &line_use_comment, true);
+
+					std::string description = line_comment;
+					if (line_comment.empty()) {
+						description = line_use_comment;
+					}
+
+					bool shortmode = false;//!multiline && description.size() < 20;
+
+					writer.writeLabel(p, label, shortmode ? "" : description, shortmode ? description : "");
+
+					if (p == pc)
+						emitted_label = true;
 				}
 			}
 
-			const std::set<OpInfo> &variants = opsit->second;
-			assert(!variants.empty());
+			const Trace::OpVariantLookup variant_lookup = opsit->second;
+			assert(variant_lookup.count != 0);
 
-
-			const uint8_t *data = romData.evalPtr(pc);
+			const uint8_t *data = rom_accessor.evalPtr(pc);
+			const uint8_t opcode = *data;
 
 			// Determine number of bytes needed for this instruction
 			// Here I've assumed that either these flags agree for ALL variants, or that they are irrelevant for this opcode
-			const bool acc16 = (variants.begin()->P & STATUS_ACCUMULATOR_FLAG) == 0;
-			const bool ind16 = (variants.begin()->P & STATUS_MEMORY_FLAG) == 0;
-			const bool emu   = (variants.begin()->P & STATUS_EMULATION_FLAG) != 0;
-			
+			const OpInfo &first_variant = trace.variant(variant_lookup, 0);
+			const bool acc16 = is_memory_accumulator_wide(first_variant.P);
+			const bool ind16 = is_index_wide(first_variant.P);
+			const bool emu   = is_emulation_mode(first_variant.P);
+			const bool is_predicted = trace.is_predicted[pc];
+			if (emu) printf("emu mode at pc %06X\n", pc);
+
 			char target[128] = "\0";
-			char targetLabel[128] = "\0";
+			char target_label[128] = "\0";
 			int numBitsNeeded = 8;
-			const size_t numBytesNeeded = calculateFormattingandSize(data, acc16, ind16, emu, target, targetLabel, &numBitsNeeded);
+
+			const uint32_t numBytesNeeded = calculateFormattingandSize(data, acc16, ind16, target, target_label, &numBitsNeeded);
 
 			nextOp = pc + numBytesNeeded;
 
-			std::map<Pointer, std::pair<std::string, std::string>> proposals;
+			typedef std::string Proposal;
+			typedef std::map<Pointer, Proposal> Proposals;
+			Proposals proposals; // Given destionation/source give comment on how we got there
 
-			auto tji = takenJumps.find(pc);
-			if (tji != takenJumps.end()) {
+			const bool is_jump = jumps[opcode]; // TODO: Cover all jumps we want? And not too many?
 
-				for (auto jit = tji->second.begin(); jit != tji->second.end(); ++jit) {
-					std::string useComment;
-					const std::string labelname = annotations.getLabelName(*jit, nullptr, &useComment);
-					// TODO: Add use comment
-					proposals[*jit] = std::make_pair(labelname, useComment);
+			// Does adress depend on ....?
+			bool is_indirect = cputable::is_indirect(opcode);
+			const bool depend_X = cputable::address_depend_x(opcode);
+			const bool depend_Y = cputable::address_depend_y(opcode);
+			const bool depend_DB = cputable::address_depend_db(opcode);
+			const bool depend_DP = is_jump ? false : cputable::address_depend_dp(opcode);
+
+			// First copy all variants into our local vector where we can modify
+			variants.resize(variant_lookup.count);
+			memcpy(&variants[0], &trace.ops_variants[variant_lookup.offset], variant_lookup.count * sizeof(OpInfo));
+
+			// These know if they have been assigned no value, one value (maybe multiple times) or multiple different values
+			Combination8 shared_db;
+			Combination16 shared_dp;
+			CombinationBool accumulator_wide;
+			CombinationBool index_wide;
+
+			{
+				// NOTE: While an op might depend on say DB it might not use it if adress is in $0000-$1999
+
+				// Zero out unused registers so our sort get items in correct order
+				for (OpInfo &o : variants) {
+					accumulator_wide = is_memory_accumulator_wide(o.P);
+					index_wide = is_index_wide(o.P);
+					shared_dp = o.DP;
+					shared_db = o.DB;
+					if (!depend_X) o.X = 0;
+					if (!depend_Y) o.Y = 0;
+					if (!depend_DB) o.DB = 0;
+					if (!depend_DP) o.DP = 0;
+					if (!is_indirect) o.indirect_base_pointer = 0;
 				}
 			}
-			
-			for (auto vit = variants.begin(); vit != variants.end(); ++vit) {
-				Registers reg;
-				reg.P = vit->P;
-				reg.dp = vit->D;
-				reg.db = vit->DB;
-				reg.pc = pc & 0xFFFF;
-				reg.pb = pc >> 16;
-				// TODO: Make this more robust, listing options by X and Y etc...
-				reg.reg_X = 0; // Pretend that these are known and zero... that way we can get label/data namn for base adr
-				reg.reg_Y = 0; // Pretend that these are known and zero
-				MagicByte rb(0);
-				MagicWord ra(0);
-				const ResultType r = evaluateOp(data, reg, &rb, &ra);
 
-				if (r == SA_ADRESS && rb.isKnown() && ra.isKnown()) {
-					const Pointer p((rb.value << 16) | ra.value);
-					const Annotation *ann = annotations.resolve(pc, p);
+			if (branches[opcode]) {
+				const Pointer branch_target = pc + (unpackSigned(data[1]) + 2);
+				proposals[branch_target] = "";
+			} else {
+				// Sort and make variants unique
+				std::sort(variants.begin(), variants.end());
 
-					if (ann && proposals.find(p) == proposals.end()) {
-						proposals[p] = std::make_pair(ann->name, ann->useComment);
+				uint32_t num_unique_variants = 0;
+
+				// Remove duplicates
+				for (uint32_t source_idx = 0; source_idx < variants.size(); source_idx++) {
+					if (num_unique_variants == 0 || variants[source_idx] != variants[num_unique_variants - 1]) {
+						variants[num_unique_variants++] = variants[source_idx];
+					}
+				}
+				variants.resize(num_unique_variants);
+
+				if (is_jump) {
+					for (uint32_t variant_idx = 0; variant_idx < variants.size(); ++variant_idx) {
+						const OpInfo &vit = variants[variant_idx];
+						if (vit.jump_target == INVALID_POINTER)
+							continue;
+						StringBuilder sb;
+						sb.clear();
+						if (depend_X)
+							sb.format("[X=%04X]", vit.X);
+						proposals[vit.jump_target] = sb.c_str();
+					}
+
+				} else if (!is_predicted) {
+
+					for (uint32_t variant_idx = 0; variant_idx < variants.size(); ++variant_idx) {
+
+						const OpInfo &vit = variants[variant_idx];
+
+						StringBuilder ranges;
+						if (depend_X||depend_Y) {
+							if (depend_X) ranges.add("X=");
+							if (depend_Y) ranges.add("Y=");
+
+							int max_size = 80;
+							int skipped = 0;
+
+							bool first = true;
+
+							Range r;
+							r.add(depend_X?vit.X:vit.Y);
+							for (uint32_t v = variant_idx+1; v < variants.size(); ++v) {
+								const OpInfo &vi = variants[v];
+								if (vi.DB != vit.DB || vi.DP != vit.DP)
+									break;
+								int value = depend_X ? variants[v].X : variants[v].Y;
+								if (r.fits(value)) {
+									r.add(value);
+								} else {
+									bool skip = ranges.length() >= max_size;
+									if (!skip) {
+										if (!first) ranges.add(", "); first = false;
+										r.format(ranges);
+									} else {
+										skipped++;
+									}
+									r.reset();
+									r.add(value);
+								}
+								variant_idx++;
+							}
+							if (skipped == 0) {
+								if (!first) ranges.add(", "); first = false;
+								r.format(ranges);
+							} else {
+								ranges.format(" and %d more", skipped);
+							}
+						}
+
+						Registers reg;
+						reg.P = vit.P;
+						reg.dp = vit.DP;
+						reg.db = vit.DB;
+						reg.pc = pc & 0xFFFF;
+						reg.pb = pc >> 16;
+						reg.reg_X = 0; // Start at 0 to get base pointer
+						reg.reg_Y = 0; // Start at 0 to get base pointer
+						MagicByte rb(0);
+						MagicWord ra(0);
+						ra.set_unknown();
+						rb.set_unknown();
+						assert(!ra.isKnown() && !rb.isKnown());
+						const ResultType r = evaluateOp(rom_accessor, data, reg, &rb, &ra, nullptr, nullptr, nullptr, nullptr);
+
+						if (r == SA_ADRESS && rb.isKnown() && ra.isKnown()) {
+							const Pointer p = lorom_bank_remap((rb.value << 16) | ra.value);
+
+							//if((p>>16)!=rb.value) // data bank was removed due to adressing being shuffled into 7E
+							// depend_DB = false;
+
+							if (proposals.find(p) != proposals.end())
+								continue;
+
+							std::string use_comment;
+
+							bool has_remark = depend_DB || depend_DP || !ranges.empty();
+
+							StringBuilder sb;
+							if (!use_comment.empty()) {
+								sb.add(use_comment);
+								if (has_remark)
+									sb.add(" ");
+							}
+							bool first = true;
+							if (has_remark)
+								sb.add("[");
+							if (depend_DB) {
+								if (!first) sb.add(" "); first = false;
+								sb.format("DB=%X", vit.DB);
+							}
+							if (depend_DP) {
+								if (!first) sb.add(" "); first = false;
+								sb.format("DP=%X", vit.DP);
+							}
+							if (!ranges.empty()) {
+								if (!first) sb.add(" "); first = false;
+								sb.add(ranges.c_str());
+							}
+							if (has_remark)
+								sb.add("]");
+
+							proposals[p] = sb.c_str();
+						}
 					}
 				}
 			}
+
+			std::string line_comment;
+			if (!emitted_label) {
+				annotations.line_info(pc, nullptr, &line_comment, nullptr, false);
+			}
+
+			auto variant_writer = [&annotations, &line_comment, is_jump](StringBuilder &ss, const Pointer target_pointer, const Proposal &p, bool name_in_code) {
+				ss.clear();
+				std::string use_comment, pointer_comment = p;
+				const std::string name = annotations.label(target_pointer, &use_comment, is_jump);
+
+				if (!name_in_code || name.empty()) {
+					if (!name.empty()) {
+						ss.format("%s ", name.c_str()); // Name
+					} else {
+						ss.format("%06X ", target_pointer);
+					}
+				}
+
+				bool first = true;
+				if (!line_comment.empty()) {
+					if (!first) ss.add(" - "); first = false;
+					ss.add(line_comment);
+				}
+				if (!use_comment.empty()) {
+					if (!first) ss.add(" - "); first = false;
+					ss.add(use_comment);
+				}
+				if (!pointer_comment.empty()) {
+					if (!first) ss.add(" - "); first = false;
+					ss.add(pointer_comment);
+				}
+				return name;
+			};
+
+			StringBuilder ss;
 
 			if (proposals.size() == 1) {
 
 				// All variant agree that this is the only choice
-				// It might not be possible to codeify in instruction though since it might generate the wrong opcode
+				// If we have a valid label we might be able to use that in the op-code
+				// It might not be possible to codify it though since it might generate the wrong opcode
+				// If target_label is non-empty we can codify using a label
 
-				const bool nameInCode = strcmp(targetLabel, "") != 0;
+				const bool name_in_code = strcmp(target_label, "") != 0;
+				std::string name = variant_writer(ss, proposals.begin()->first, proposals.begin()->second, name_in_code);
 
-				std::stringstream ss;
-
-				if (!nameInCode) {
-					ss << proposals.begin()->second.first; // Name
-				}
-
-				const std::string lineComment = annotations.resolveLineComment(pc);
-				const std::string useComment = proposals.begin()->second.second;
-
-				if (lineComment.empty() && !useComment.empty()) {
-					if (!nameInCode) {
-						ss << " - ";
-					}
-					ss << useComment;
-				}				
-				if (!lineComment.empty()) {
-					if (!nameInCode) {
-						ss << " - ";
-					}
-					ss << lineComment;
-				}
-
-				//const Pointer targetAdr = proposals.begin()->first;
-				//ss << " [" << std::setfill('0') << std::setw(6) << std::hex << targetAdr << "]";
-
-				if (!nameInCode) {
-					writer.writeInstruction(pc, numBitsNeeded, numBytesNeeded, target, ss.str());
+				if (!name_in_code || name.empty()) {
+					writer.writeInstruction(pc, numBitsNeeded, numBytesNeeded, target, ss.c_str(), accumulator_wide, index_wide, shared_db, shared_dp, is_predicted);
 				} else {
-					char wow[128];
-					sprintf(wow, targetLabel, proposals.begin()->second.first.c_str());
-					writer.writeInstruction(pc, numBitsNeeded, numBytesNeeded, wow, ss.str());
+					char wow[256];
+					sprintf(wow, target_label, name.c_str());
+					writer.writeInstruction(pc, numBitsNeeded, numBytesNeeded, wow, ss.c_str(), accumulator_wide, index_wide, shared_db, shared_dp, is_predicted);
 				}
 			} else {
-
-				writer.writeInstruction(pc, numBitsNeeded, numBytesNeeded, target, annotations.resolveLineComment(pc));
+				writer.writeInstruction(pc, numBitsNeeded, numBytesNeeded, target, line_comment, accumulator_wide, index_wide, shared_db, shared_dp, is_predicted);
+				// List all possible targets in comments!
 				for (auto pit = proposals.begin(); pit != proposals.end(); ++pit) {
-					std::stringstream ss;
-					ss << "\t\t;" << pit->second.first << "\t\t" << pit->second.second;
-					writer.writeComment(pc, ss.str());
+					std::string name = variant_writer(ss, pit->first, pit->second, false);
+					writer.writeComment(pc, ss.c_str(), 0, 10);
 				}
+			}
 
+			if (is_indirect && !is_jump && !is_predicted) {
+				for (uint32_t variant_idx = 0; variant_idx < variants.size(); ++variant_idx) {
+
+					const OpInfo &v = variants[variant_idx];
+
+					StringBuilder ranges;
+					
+					if (depend_X||depend_Y) {
+						if (depend_X) ranges.add(" X=");
+						if (depend_Y) ranges.add(" Y=");
+						Range r;
+						bool first = true;
+						int skipped = 0;
+
+						r.add(depend_X ? v.X : v.Y);
+
+						for (uint32_t vi2 = variant_idx+1; vi2 < variants.size(); ++vi2) {
+							const OpInfo &v2 = variants[vi2];
+							if (v.DB != v2.DB) break;
+							if (v.DP != v2.DP) break;
+							if (v.indirect_base_pointer != v2.indirect_base_pointer) break;
+
+							int value = depend_X ? v2.X : v2.Y;
+
+							if (r.fits(value)) {
+								r.add(value);
+								
+							} else {
+								if (ranges.length() > 128) {
+									skipped++;
+								} else {
+									if (!first)	ranges.add(", "); first = false;
+									r.format(ranges);
+								}
+								r.reset();
+							}
+
+							variant_idx++;
+						}
+						if (skipped==0 && r.N != 0) {
+							if (!first)	ranges.add(", "); first = false;
+							r.format(ranges);
+						} else if (skipped !=0) {
+							ranges.format(" (and %d more)", skipped);
+						}
+					}
+
+					StringBuilder ss;
+
+					std::string use_comment;
+					const std::string name = annotations.label(v.indirect_base_pointer, &use_comment, is_jump);
+
+					ss.format("indirect base=%06X", v.indirect_base_pointer);
+					if (depend_DP) ss.format(", DP=%X", v.DP);
+					if (depend_DB) ss.format(", DB=%X", v.DB);
+
+					if (!ranges.empty()) {
+						ss.add(ranges.c_str());
+					}
+
+					if (!name.empty()) {
+						ss.add(" - ", name);
+					}
+
+					if (!use_comment.empty()) {
+						ss.add(" - ", use_comment);
+					}
+
+					writer.writeComment(pc, ss.c_str(), 0, 10);
+				}
 			}
 		}
+
+		if (report_writer) {
+			data_report(*report_writer, trace, annotations);
+			dma_report(*report_writer, trace, annotations);
+			branch_report(*report_writer, rom_accessor, trace, annotations);
+			entry_point_report(*report_writer, trace, annotations);
+		}
+
 	} catch (const std::runtime_error &e) {
+		printf("error: %s\n", e.what());
+		return 1;
+	} catch (const std::exception &e) {
 		printf("error: %s\n", e.what());
 		return 1;
 	}
