@@ -1,0 +1,3 @@
+[submodule "deps/squirrel"]
+	path = deps/squirrel
+	url = https://github.com/albertodemichelis/squirrel.git

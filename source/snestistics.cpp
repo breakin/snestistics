@@ -20,6 +20,7 @@
 #include "trace_log.h"
 #include "trace.h"
 #include "rewind.h"
+#include "scripting.h"
 
 struct ReportWriter {
 	ReportWriter(const std::string &filename) {
@@ -1012,7 +1013,13 @@ int main(const int argc, const char * const argv[]) {
 		// Write trace log if requested
 		if (!options.trace_log.empty()) {
 			Profile profile("Create trace log");
-			write_trace_log(options, rom_accessor, annotations);
+
+			bool need_scripting = true;
+			Scripting *scripting = create_scripting("C:/mine/translate-snes-game/sfw-translation/tools/snestistics/data/test.nut");
+			write_trace_log(options, rom_accessor, annotations, scripting);
+
+			if (scripting)
+				destroy_scripting(scripting);
 		}
 
 		if (options.asm_file.empty()) {

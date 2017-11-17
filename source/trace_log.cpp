@@ -4,11 +4,12 @@
 #include "romaccessor.h"
 #include "annotations.h"
 #include "options.h"
+#include "scripting.h"
 #include <stack>
 #include <unordered_set>
 #include <memory>
 
-void trace_log_parameters(FILE *report, const EmulateRegisters &regs, const Pointer pc, int indent_width) { return; }
+//extern void trace_log_parameters(FILE *report, const EmulateRegisters &regs, const Pointer pc, int indent_width);
 bool trace_log_filter(Pointer pc, Pointer function_start, Pointer function_end, const char * const function_name) { return true; }
 
 namespace {
@@ -67,7 +68,13 @@ void trace_fix_depth(TraceState &state) {
 
 namespace snestistics {
 
-void write_trace_log(const Options &options, const RomAccessor &rom, const AnnotationResolver &annotations) {
+void write_trace_log(const Options &options, const RomAccessor &rom, const AnnotationResolver &annotations, Scripting *scripting) {
+
+	LargeBitfield script_breakpoints(256*64*1024);
+	if (scripting) {
+		scripting_trace_log_init(scripting, script_breakpoints);
+	}
+
 	FILE *report = fopen(options.trace_log.c_str(), "wt");
 
 	// These are reads to memory other than ROM/SRAM (outside what we emulate)
@@ -100,8 +107,10 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 
 		const uint32_t pc = regs._PC;
 
-		if (do_logging_for_current_function)
-			trace_log_parameters(report, regs, pc, ts.current_depths.top() * 2 + 1);
+		if (do_logging_for_current_function && scripting && script_breakpoints[pc]) {
+			scripting_trace_log_parameter_printer(scripting, &regs);
+			//trace_log_parameters(report, regs, pc, ts.current_depths.top() * 2 + 1);
+		}
 
 		bool more = replay.next<EmulateRegisters>(regs);
 		const uint32_t jump_pc  = regs._PC;
@@ -120,7 +129,7 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 			trace_indent_line(ts); fprintf(report, "  # NMI %d\n", current_nmi);
 			ts.current_depths.push(TRACE_START_INDENTATION);
 			trace_separator(ts, "NMI");
-			printf("Tracelog for nmi %d (%.1f%%)\n", current_nmi, (1+current_nmi-capture_nmi_first)*100.0f/(capture_nmi_last-capture_nmi_first+1));
+			//printf("Tracelog for nmi %d (%.1f%%)\n", current_nmi, (1+current_nmi-capture_nmi_first)*100.0f/(capture_nmi_last-capture_nmi_first+1));
 			current_nmi++;
 		} else if (regs.event == Events::RESET) {
 			// This have no impact. If we skip frames it will not happen.
