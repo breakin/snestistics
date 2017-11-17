@@ -2,7 +2,7 @@
 #define SNESTISTICS_ASMWRITE_WLADX
 
 #include "utils.h"
-#include "cmdoptions.h"
+#include "options.h"
 #include <sstream>
 #include "romaccessor.h"
 #include "cputable.h"
@@ -15,6 +15,25 @@ private:
 	Pointer m_nextPC;
 	bool m_bankOpen;
 	int m_sectionCounter;
+
+	inline int adjusted_column(const int s) {
+		int target = 72;
+		while (s > target) target += 4;
+		return target;
+	}
+
+	inline int indent_column(FILE *f, int target, int pos, bool comment = false) {
+		static const char spaces[160]="                                                                                                                                                               ";
+		assert(target >= pos);
+		int wanted_spaces = target-pos;
+		assert(wanted_spaces <= 159);
+		fwrite(spaces, 1, wanted_spaces, f);
+		if (comment) {
+			wanted_spaces += fprintf(f, "; ");
+		}
+		return pos + wanted_spaces;
+	}
+
 public:
 	AsmWriteWLADX(const Options &options, const RomAccessor &romData) : m_options(options), m_outFile(nullptr), m_romData(romData), m_nextPC(INVALID_POINTER) {}
 	~AsmWriteWLADX() {
@@ -29,41 +48,75 @@ public:
 
 	void writeDefine(const std::string &thing, const std::string &value, const std::string &description) {
 		prepareOpenFile();
-
-		if (!description.empty()) {
-			fprintf(m_outFile, "; ");
-		}
-		for (auto it = description.begin(); it != description.end(); ++it) {
-			if (*it == '\n') {
-				fprintf(m_outFile, "\n; ");
-			}
-			else if (*it != '\r') {
-				fprintf(m_outFile, "%c", *it);
-			}
-		}
-		if (!description.empty()) {
-			fprintf(m_outFile, "\n");
-		}
-		fprintf(m_outFile, ".EQU %s %s\n", thing.c_str(), value.c_str());
+		int nw = fprintf(m_outFile, ".EQU %s %s", thing.c_str(), value.c_str());
+		writeCommentHelper(nw, adjusted_column(nw), description);
 	}
 
-	void writeComment(const Pointer pc, const std::string &comment) {
+	void writeCommentHelper(const int start_pos, const int target_column, const std::string &comment) {
+
+		if (comment.empty()) {
+			fputc('\n', m_outFile);
+			return;
+		}
+
+		int nw = start_pos;
+
+		bool line_start = true;
+		for (size_t i=0; i<comment.length(); ++i) {
+			if (line_start) {
+				nw = indent_column(m_outFile, target_column, nw, true);
+				line_start = false;
+			}
+			char c = comment[i];
+			fputc(c, m_outFile);
+			if (c == '\n') {
+				line_start = true;
+				nw = 0;
+			}
+		}
+		fputc('\n', m_outFile);
+	}
+
+	void writeComment(const Pointer pc, const std::string &comment, const int start_pos = 0, const int target_column = 0) {
 		prepareWrite(pc, false);
-		fprintf(m_outFile, "%s\n", comment.c_str());
+		writeCommentHelper(start_pos, target_column, comment);
 	}
-	
-	void writeLabel(const Pointer pc, const std::string &labelName, const std::string &comment="") {
-		prepareWrite(pc);
+
+	void writeComment(const std::string &comment, const int start_pos = 0, const int target_column = 0) {
+		prepareOpenFile();
+		writeCommentHelper(start_pos, target_column, comment);
+	}
+
+	void writeComment(StringBuilder &sb) {
+		writeComment(sb.c_str());
+		sb.clear();
+	}
+
+	void writeSeperator(const char * const text) {
+		prepareOpenFile();
 		fprintf(m_outFile, "\n");
-		if (!comment.empty()) {
-			writeComment(pc, comment);
-		}
-		fprintf(m_outFile, "%s:\n", labelName.c_str());
+		fprintf(m_outFile, "; =====================================================================================================\n");
+		fprintf(m_outFile, "; %s\n", text);
+		fprintf(m_outFile, "; =====================================================================================================\n");
 	}
 
-	void writeInstruction(const Pointer pc, const int numBits, const int numBytesUsed, const std::string &param, std::string &lineComment) {
+	void writeLabel(const Pointer pc, const std::string &labelName, const std::string &description, const std::string &comment) {
 		prepareWrite(pc);
+		int nw = 0;
+		fprintf(m_outFile, "\n");
+		if (!description.empty())
+			writeCommentHelper(0, 0, description);
+		nw = fprintf(m_outFile, "%s:", labelName.c_str());
+		if (!comment.empty()) {
+			nw = indent_column(m_outFile, adjusted_column(nw), nw);
+			fprintf(m_outFile, "; %s", comment.c_str());
+			// TODO: Support multiline
+		}			
+		fprintf(m_outFile, "\n");
+	}
 
+	void writeInstruction(const Pointer pc, const int numBits, const int numBytesUsed, const std::string &param, const std::string &line_comment, CombinationBool accumulator_wide, CombinationBool index_wide, Combination8 data_bank, Combination16 direct_page, bool is_predicted) {
+		prepareWrite(pc);
 		const uint8_t* data = m_romData.evalPtr(pc);
 
 		bool overrideInstructionWithDB = false;
@@ -78,10 +131,56 @@ public:
 
 		const bool emitCommentPC = m_options.printProgramCounter || m_options.printHexOpcode || overrideInstructionWithDB;
 
-		nw += fprintf(m_outFile, "\t");
+		nw += fprintf(m_outFile, "    ");
 		if (emitCommentPC) {
-			nw += fprintf(m_outFile, "/* ");
+			nw += fprintf(m_outFile, "/*%c", is_predicted ? 'p':' ');
 		}
+
+		if (m_options.printRegisterSizes) {
+			if(!accumulator_wide.has_value) {
+				fputc('?', m_outFile);
+			} else if (accumulator_wide.single_value) {
+				if (accumulator_wide.value) {
+					fputc('M', m_outFile);
+				} else {
+					fputc('m', m_outFile);
+				}
+			} else {
+				fputc('*', m_outFile);
+			}
+			if(!index_wide.has_value) {
+				fputc('?', m_outFile);
+			} else if (index_wide.single_value) {
+				if (index_wide.value) {
+					fputc('I', m_outFile);
+				} else {
+					fputc('i', m_outFile);
+				}
+			} else {
+				fputc('*', m_outFile);
+			}
+			fputc(' ', m_outFile);
+			nw += 3;
+		}
+
+		if (m_options.printDB) {
+			assert(data_bank.has_value);
+			if (data_bank.single_value) {
+				nw += fprintf(m_outFile, "%02X ", data_bank.value);
+			} else {
+				nw += fprintf(m_outFile, "** ");
+			}
+		}
+
+		if (m_options.printDP) {
+			assert(direct_page.has_value);
+			if (direct_page.single_value) {
+				nw += fprintf(m_outFile, "%04X ", direct_page.value);
+			} else {
+				nw += fprintf(m_outFile, "**** ");
+			}
+		}
+
 		if (m_options.printProgramCounter) {
 			nw += fprintf(m_outFile, "%06X ", pc);
 		}
@@ -93,6 +192,7 @@ public:
 				nw += fprintf(m_outFile, "   ");
 			}
 		}
+
 		if (emitCommentPC && !overrideInstructionWithDB) {
 			nw += fprintf(m_outFile, "*/ ");
 		}
@@ -117,7 +217,6 @@ public:
 			assert(false);
 		}
 
-
 		if (!param.empty()) {
 			nw += fprintf(m_outFile, " %s", param.c_str());
 		}
@@ -126,19 +225,7 @@ public:
 			nw += fprintf(m_outFile, "*/ ");
 		}
 
-		int nwtarget = 56;
-		while (nw > nwtarget) {
-			nwtarget += 8;
-		}
-
-		if (!lineComment.empty()) {
-			while (nw < nwtarget) {
-				nw += fprintf(m_outFile, " ");
-			}
-			fprintf(m_outFile, "; %s", lineComment.c_str());
-		}
-
-		fprintf(m_outFile, "\n");
+		writeCommentHelper(nw, adjusted_column(nw), line_comment);
 
 		if (overrideInstructionWithDB) {
 			fprintf(m_outFile, ".DB ");
@@ -147,7 +234,6 @@ public:
 			}
 			fprintf(m_outFile, "\n");
 		}
-
 
 		m_nextPC = pc + numBytesUsed;
 	}
@@ -169,16 +255,16 @@ private:
 		if (m_outFile == nullptr) {
 			m_bankOpen = false;
 			m_sectionCounter = 0;
-			m_outFile = fopen(m_options.outFile.c_str(), "wb");
+			m_outFile = fopen(m_options.asm_file.c_str(), "wb");
 			if (m_outFile == nullptr) {
 				std::stringstream ss;
-				ss << "Could not open output file '" << m_options.outFile << "'";
+				ss << "Could not open output file '" << m_options.asm_file << "'";
 				throw std::runtime_error(ss.str());
 			}
 
-			if (!m_options.asmHeaderFile.empty()) {
+			if (!m_options.asm_header_file.empty()) {
 				std::vector<unsigned char> header;
-				readFile(m_options.asmHeaderFile, header);
+				readFile(m_options.asm_header_file, header);
 				fwrite(&header[0], header.size(), 1, m_outFile);
 			}
 		}
@@ -196,7 +282,7 @@ private:
 			m_bankOpen = true;
 		} else if (m_nextPC != pc && advancePC) {
 
-			const size_t holeSize = pc - m_nextPC;
+			const uint32_t holeSize = pc - m_nextPC;
 
 			if (holeSize > 1024 || ((m_nextPC >> 16) != (pc >> 16))) {
 				emitBankEnd();
