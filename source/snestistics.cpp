@@ -1015,7 +1015,7 @@ int main(const int argc, const char * const argv[]) {
 			Profile profile("Create trace log");
 
 			bool need_scripting = true;
-			Scripting *scripting = create_scripting("C:/mine/translate-snes-game/sfw-translation/tools/snestistics/data/test.nut");
+			Scripting *scripting = create_scripting("C:/mine/snestistics/data/test.nut");
 			write_trace_log(options, rom_accessor, annotations, scripting);
 
 			if (scripting)
