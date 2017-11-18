@@ -11,6 +11,9 @@ addons:
     - gcc-multilib
     - g++-multilib
 
+notifications:
+  email: false
+
 # Enable container-based builds.
 sudo: false
 
