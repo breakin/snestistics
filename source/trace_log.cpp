@@ -8,6 +8,7 @@
 #include <stack>
 #include <unordered_set>
 #include <memory>
+#include "replay.h"
 
 //extern void trace_log_parameters(FILE *report, const EmulateRegisters &regs, const Pointer pc, int indent_width);
 bool trace_log_filter(Pointer pc, Pointer function_start, Pointer function_end, const char * const function_name) { return true; }
@@ -68,21 +69,20 @@ void trace_fix_depth(TraceState &state) {
 
 namespace snestistics {
 
-void write_trace_log(const Options &options, const RomAccessor &rom, const AnnotationResolver &annotations, Scripting *scripting) {
-
-	LargeBitfield script_breakpoints(256*64*1024);
-	if (scripting) {
-		scripting_trace_log_init(scripting, script_breakpoints);
-	}
+void write_trace_log(const Options &options, const RomAccessor &rom, const AnnotationResolver &annotations, scripting_interface::Scripting *scripting) {
+	
+	CUSTOM_ASSERT(options.trace_files.size() == 1);
 
 	FILE *report = fopen(options.trace_log.c_str(), "wt");
 
-	// These are reads to memory other than ROM/SRAM (outside what we emulate)
-	EmulateRegisters regs(rom);
+	Replay replay(rom, options.trace_files[0].c_str());
 
-	CUSTOM_ASSERT(options.trace_files.size() == 1);
+	scripting_interface::ScriptingHandle scripting_replay = scripting ? scripting_interface::create_replay(scripting, &replay) : nullptr;
 
-	EmulateReplay replay(options.trace_files[0]);
+	if (scripting) {
+		scripting_interface::scripting_trace_log_init(scripting, scripting_replay);
+	}
+
 	TraceState ts;
 	ts.report = report;
 	ts.current_depths.push(TRACE_START_INDENTATION);
@@ -96,7 +96,8 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 	const uint32_t capture_nmi_first = options.trace_log_nmi_first, capture_nmi_last = options.trace_log_nmi_last;
 
 	printf("Skipping to nmi %d\n", capture_nmi_first);
-	bool success = replay.skip_until_nmi<EmulateRegisters>(options, regs, capture_nmi_first);
+	EmulateRegisters &regs = replay.regs;
+	bool success = replay.replay.skip_until_nmi<EmulateRegisters>(options, regs, capture_nmi_first);
 	assert(success);
 
 	uint32_t current_nmi = capture_nmi_first;
@@ -107,12 +108,11 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 
 		const uint32_t pc = regs._PC;
 
-		if (do_logging_for_current_function && scripting && script_breakpoints[pc]) {
-			scripting_trace_log_parameter_printer(scripting, &regs);
-			//trace_log_parameters(report, regs, pc, ts.current_depths.top() * 2 + 1);
+		if (do_logging_for_current_function && scripting && replay.breakpoints[pc]) {
+			scripting_trace_log_parameter_printer(scripting, scripting_replay);
 		}
 
-		bool more = replay.next<EmulateRegisters>(regs);
+		bool more = replay.replay.next<EmulateRegisters>(regs);
 		const uint32_t jump_pc  = regs._PC;
 
 		if (!more)
@@ -238,5 +238,7 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 	}
 
 	fclose(report);
+	if (scripting)
+		scripting_interface::destroy_handle(scripting, scripting_replay);
 }
 }

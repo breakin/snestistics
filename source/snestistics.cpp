@@ -1015,11 +1015,11 @@ int main(const int argc, const char * const argv[]) {
 			Profile profile("Create trace log");
 
 			bool need_scripting = true;
-			Scripting *scripting = create_scripting("C:/mine/snestistics/data/test.nut");
+			scripting_interface::Scripting *scripting = scripting_interface::create_scripting("C:/mine/snestistics/data/test.nut");
 			write_trace_log(options, rom_accessor, annotations, scripting);
 
 			if (scripting)
-				destroy_scripting(scripting);
+				scripting_interface::destroy_scripting(scripting);
 		}
 
 		if (options.asm_file.empty()) {
