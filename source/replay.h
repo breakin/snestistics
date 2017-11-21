@@ -11,4 +11,5 @@ struct Replay {
 	EmulateRegisters regs;
 	snestistics::EmulateReplay replay;
 	LargeBitfield breakpoints;
+	Registers temp_registers;
 };

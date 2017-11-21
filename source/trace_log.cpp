@@ -9,8 +9,9 @@
 #include <unordered_set>
 #include <memory>
 #include "replay.h"
+#include "report_writer.h"
 
-//extern void trace_log_parameters(FILE *report, const EmulateRegisters &regs, const Pointer pc, int indent_width);
+// Rewrite trace_log_filter to be more like breakpoints so don't need to invoke script
 bool trace_log_filter(Pointer pc, Pointer function_start, Pointer function_end, const char * const function_name) { return true; }
 
 namespace {
@@ -77,7 +78,11 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 
 	Replay replay(rom, options.trace_files[0].c_str());
 
+	ReportWriter rw;
+	rw.report = report;
+
 	scripting_interface::ScriptingHandle scripting_replay = scripting ? scripting_interface::create_replay(scripting, &replay) : nullptr;
+	scripting_interface::ScriptingHandle scripting_report_writer = scripting ? scripting_interface::create_report_writer(scripting, &rw) : nullptr;
 
 	if (scripting) {
 		scripting_interface::scripting_trace_log_init(scripting, scripting_replay);
@@ -109,7 +114,8 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 		const uint32_t pc = regs._PC;
 
 		if (do_logging_for_current_function && scripting && replay.breakpoints[pc]) {
-			scripting_trace_log_parameter_printer(scripting, scripting_replay);
+			rw.indentation = ts.current_depths.top() * 2 + 1; // Set indentation
+			scripting_trace_log_parameter_printer(scripting, scripting_replay, scripting_report_writer);
 		}
 
 		bool more = replay.replay.next<EmulateRegisters>(regs);
@@ -238,7 +244,9 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 	}
 
 	fclose(report);
-	if (scripting)
+	if (scripting) {
 		scripting_interface::destroy_handle(scripting, scripting_replay);
+		scripting_interface::destroy_handle(scripting, scripting_report_writer);
+	}
 }
 }

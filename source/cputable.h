@@ -488,8 +488,8 @@ typedef CombinationT<bool> CombinationBool;
 typedef CombinationT<uint8_t> Combination8;
 typedef CombinationT<uint16_t> Combination16;
 
-struct Registers {
-	Registers() : P(0x1FF), pb(-1), pc(-1), db(-1), dp(-1), reg_A(-1), reg_X(-1), reg_Y(-1) {}
+struct CPURegisters {
+	CPURegisters() : P(0x1FF), pb(-1), pc(-1), db(-1), dp(-1), reg_A(-1), reg_X(-1), reg_Y(-1) {}
 	MagicWord P; // processor status
 	MagicByte pb;
 	MagicWord pc;
@@ -507,5 +507,5 @@ enum ResultType {
 	SA_NOT_IMPLEMENTED
 };
 
-ResultType evaluateOp(const RomAccessor &rom_accessor, const uint8_t* ops, const Registers &reg, MagicByte *resultBnk, MagicWord *resultAdr, bool *depend_DB = nullptr, bool *depend_DP = nullptr, bool *depend_X = nullptr, bool *depend_Y = nullptr);
+ResultType evaluateOp(const RomAccessor &rom_accessor, const uint8_t* ops, const CPURegisters &reg, MagicByte *resultBnk, MagicWord *resultAdr, bool *depend_DB = nullptr, bool *depend_DP = nullptr, bool *depend_X = nullptr, bool *depend_Y = nullptr);
 Pointer lorom_bank_remap(const Pointer resolveAddress);

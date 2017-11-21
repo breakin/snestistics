@@ -9,21 +9,9 @@
 #include <stdio.h>
 #include "utils.h"
 #include <algorithm>
-#include <memory>
 #include "api.h"
 
 namespace scripting_interface {
-
-	/*
-		TODO:
-			* Test having multiple files
-				* Can they include each other or do we need to specify them to our binary?
-	*/
-	/*
-
-		doc bugs:
-			sq_get it works on class and instance as well
-	*/
 
 #ifdef SQUNICODE
 #define scvprintf vfwprintf
@@ -188,35 +176,62 @@ namespace scripting_interface {
 	struct Scripting {
 		Scripting() {}
 		~Scripting() {
-			class_replay.reset();
-			class_tracelog.reset();
+			delete class_replay;
+			delete class_report_writer;
 			sq_close(v);
 		}
-		std::unique_ptr<ScriptClass> class_replay;
-		std::unique_ptr<ScriptClass> class_tracelog;
+		ScriptClass* class_replay = nullptr;
+		ScriptClass* class_report_writer = nullptr;
 		HSQUIRRELVM v;
 	};
 
 	namespace {
+		Registers *register_func(HSQUIRRELVM v) {
+			Scripting *scripting = static_cast<Scripting*>(sq_getforeignptr(v));
+			Replay *t = scripting->class_replay->native_ptr<Replay>(v);
+			return replay_registers(t);
+		}
 
-		SQInteger api_replay_a(HSQUIRRELVM v) {
+		SQInteger api_replay_pc(HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->pc); return 1; }
+		SQInteger api_replay_a (HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->a ); return 1; }
+		SQInteger api_replay_x (HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->x ); return 1; }
+		SQInteger api_replay_y (HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->y ); return 1; }
+		SQInteger api_replay_p (HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->p ); return 1; }
+		SQInteger api_replay_s (HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->s ); return 1; }
+		SQInteger api_replay_dp(HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->dp); return 1; }
+		SQInteger api_replay_db(HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->db); return 1; }
+
+		SQInteger api_replay_read_byte(HSQUIRRELVM v) {
 			Scripting *scripting = static_cast<Scripting*>(sq_getforeignptr(v));
 			Replay *t = scripting->class_replay->native_ptr<Replay>(v);
-			sq_pushinteger(v, register_a(t));
+			SQInteger address;
+			sq_getinteger(v, 2, &address);
+			sq_pushinteger(v, replay_read_byte(t, (uint32_t)address));
 			return 1;
 		}
-		SQInteger api_replay_pc(HSQUIRRELVM v) {
+		SQInteger api_replay_read_word(HSQUIRRELVM v) {
 			Scripting *scripting = static_cast<Scripting*>(sq_getforeignptr(v));
 			Replay *t = scripting->class_replay->native_ptr<Replay>(v);
-			sq_pushinteger(v, register_pc(t));
+			SQInteger address;
+			sq_getinteger(v, 2, &address);
+			sq_pushinteger(v, replay_read_word(t, (uint32_t)address));
 			return 1;
 		}
+		SQInteger api_replay_read_long(HSQUIRRELVM v) {
+			Scripting *scripting = static_cast<Scripting*>(sq_getforeignptr(v));
+			Replay *t = scripting->class_replay->native_ptr<Replay>(v);
+			SQInteger address;
+			sq_getinteger(v, 2, &address);
+			sq_pushinteger(v, replay_read_long(t, (uint32_t)address));
+			return 1;
+		}
+
 		SQInteger api_replay_add_breakpoint(HSQUIRRELVM v) {
 			Scripting *scripting = static_cast<Scripting*>(sq_getforeignptr(v));
 			Replay *t = scripting->class_replay->native_ptr<Replay>(v);
 			SQInteger pc;
 			sq_getinteger(v, 2, &pc);
-			add_breakpoint(t, (uint32_t)pc);
+			replay_add_breakpoint(t, (uint32_t)pc);
 			return 0;
 		}
 		SQInteger api_replay_add_breakpoint_range(HSQUIRRELVM v) {
@@ -225,12 +240,15 @@ namespace scripting_interface {
 			SQInteger pc0, pc1;
 			sq_getinteger(v, 2, &pc0);
 			sq_getinteger(v, 3, &pc1);
-			add_breakpoint_range(t, (uint32_t)pc0, (uint32_t)pc1);
+			replay_add_breakpoint_range(t, (uint32_t)pc0, (uint32_t)pc1);
 			return 0;
 		}
-		SQInteger api_tracelog_print_line(HSQUIRRELVM v) {
+		SQInteger api_report_writer_print(HSQUIRRELVM v) {
 			Scripting *scripting = static_cast<Scripting*>(sq_getforeignptr(v));
-			TraceLog *t = scripting->class_tracelog->native_ptr<TraceLog>(v);
+			ReportWriter *t = scripting->class_report_writer->native_ptr<ReportWriter>(v);
+			const SQChar* str;
+			sq_getstring(v, 2, &str);
+			report_writer_print(t, str, (uint32_t)strlen(str));
 			return 0;
 		}
 
@@ -238,18 +256,27 @@ namespace scripting_interface {
 			HSQUIRRELVM &v = scripting->v;
 			{
 				ScopedValidateTop top(v);
-				scripting->class_replay = std::make_unique<ScriptClass>(v, "Replay");
-				auto &e = *scripting->class_replay.get();
-				e.add_function("a", api_replay_a);
+				scripting->class_replay = new ScriptClass(v, "Replay");
+				auto &e = *scripting->class_replay;
 				e.add_function("pc", api_replay_pc);
+				e.add_function("a",  api_replay_a);
+				e.add_function("x",  api_replay_x);
+				e.add_function("y",  api_replay_y);
+				e.add_function("p",  api_replay_p);
+				e.add_function("s",  api_replay_s);
+				e.add_function("dp", api_replay_dp);
+				e.add_function("db", api_replay_db);
+				e.add_function("read_byte", api_replay_read_byte);
+				e.add_function("read_word", api_replay_read_word);
+				e.add_function("read_long", api_replay_read_long);
 				e.add_function("add_breakpoint", api_replay_add_breakpoint);
 				e.add_function("add_breakpoint_range", api_replay_add_breakpoint_range);
 			}
 			{
 				ScopedValidateTop top(v);
-				scripting->class_tracelog = std::make_unique<ScriptClass>(v, "Tracelog");
-				auto &e = *scripting->class_tracelog.get();
-				e.add_function("print_line", api_tracelog_print_line);
+				scripting->class_report_writer = new ScriptClass(v, "ReportWriter");
+				auto &e = *scripting->class_report_writer;
+				e.add_function("print", api_report_writer_print);
 			}
 		}
 
@@ -300,8 +327,8 @@ namespace scripting_interface {
 		delete scripting;
 	}
 
-	ScriptingHandle create_tracelog(Scripting *s, TraceLog *t) {
-		return s->class_tracelog->create_instance_handle(t);
+	ScriptingHandle create_report_writer(Scripting *s, ReportWriter *t) {
+		return s->class_report_writer->create_instance_handle(t);
 	}
 
 	ScriptingHandle create_replay(Scripting *s, Replay *t) {
@@ -336,7 +363,7 @@ namespace scripting_interface {
 		sq_settop(v, top);
 	}
 
-	void scripting_trace_log_parameter_printer(Scripting *scripting, ScriptingHandle replay) {
+	void scripting_trace_log_parameter_printer(Scripting *scripting, ScriptingHandle replay, ScriptingHandle report_writer) {
 		HSQUIRRELVM &v = scripting->v;
 		SQInteger top = sq_gettop(v);
 		sq_pushroottable(v);
@@ -345,7 +372,8 @@ namespace scripting_interface {
 		if (success) {
 			sq_pushroottable(v);
 			sq_pushobject(v, *(HSQOBJECT*)replay);
-			sq_call(v, 2, SQTrue, SQTrue);
+			sq_pushobject(v, *(HSQOBJECT*)report_writer);
+			sq_call(v, 3, SQTrue, SQTrue);
 			sq_pop(v, 1);
 		}
 		else {

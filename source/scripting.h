@@ -19,11 +19,11 @@ namespace scripting_interface {
 
 	typedef void* ScriptingHandle;
 
-	ScriptingHandle create_tracelog(Scripting *s, TraceLog *t);
+	ScriptingHandle create_report_writer(Scripting *s, ReportWriter *t);
 	ScriptingHandle create_replay(Scripting *s, Replay *t);
 	void destroy_handle(Scripting *s, ScriptingHandle h);
 
 	void scripting_trace_log_init(Scripting *scripting, ScriptingHandle replay);
-	void scripting_trace_log_parameter_printer(Scripting *scripting, ScriptingHandle replay);
+	void scripting_trace_log_parameter_printer(Scripting *scripting, ScriptingHandle replay, ScriptingHandle report_writer);
 
 }

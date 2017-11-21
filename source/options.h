@@ -43,7 +43,7 @@ struct Options {
 	std::string trace_file_op_cache(int k) const { return trace_files[k] + ".op.temp"; }
 
 	// Trace log
-	std::string trace_log;
+	std::string trace_log, trace_log_script;
 	uint32_t trace_log_nmi_first=5000, trace_log_nmi_last=10000;
 };
 

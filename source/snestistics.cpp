@@ -1014,8 +1014,13 @@ int main(const int argc, const char * const argv[]) {
 		if (!options.trace_log.empty()) {
 			Profile profile("Create trace log");
 
-			bool need_scripting = true;
-			scripting_interface::Scripting *scripting = scripting_interface::create_scripting("C:/mine/snestistics/data/test.nut");
+			bool has_scripting = !options.trace_log_script.empty();
+
+			scripting_interface::Scripting *scripting = nullptr;
+			
+			if (!options.trace_log_script.empty())
+				scripting = scripting_interface::create_scripting(options.trace_log_script.c_str());
+			
 			write_trace_log(options, rom_accessor, annotations, scripting);
 
 			if (scripting)
@@ -1234,7 +1239,7 @@ int main(const int argc, const char * const argv[]) {
 							}
 						}
 
-						Registers reg;
+						CPURegisters reg;
 						reg.P = vit.P;
 						reg.dp = vit.DP;
 						reg.db = vit.DB;
