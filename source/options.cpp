@@ -82,6 +82,9 @@ void parseOptions(const int argc, const char * const argv[], Options &options) {
 		} else if (cmd == "-tracelog") {
 			options.trace_log = opt;
 			k++;
+		} else if (cmd == "-tracelogscript") {
+			options.trace_log_script = opt;
+			k++;			
 		} else if (cmd == "-nmi_first") {
 			options.trace_log_nmi_first = parseInt(opt);
 			k++;

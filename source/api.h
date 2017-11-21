@@ -6,35 +6,35 @@
 	TODO: What prefixes do we want for types and functions?
 	TODO: What about strings? UTF8?
 
-	Rom
-	Replay
-		add_breakpoint
-		add_breakpoint_range
-		Registers
-		Memory
-		PPU
-			WRAM (rename)
-	Annotations
-	TraceLog
-		print_line (indentation from outside)
-
-
-	Trace (output from emulator).. Rename capture?
-
-	Rewind
+	DESIGN:
+		I would love If Registers was actually part of Replay.
+		We could pimpl away stuff instead of having it completely opaque.
 */
 
-// TODO: Are we allowed to use stdint.h in a C-api? Probably not!
+// TODO: Are we allowed to use stdint.h in a C-api?
 #include <stdint.h>
 
 struct Replay;
-struct TraceLog;
+struct ReportWriter;
+
+struct Registers {
+	uint32_t pc;
+	uint16_t a, x, y, p, s, dp;
+	uint8_t db;
+};
 
 // Replay
-void add_breakpoint(Replay* e, uint32_t pc);
-void add_breakpoint_range(Replay* e, uint32_t pc0, uint32_t p1);
-uint16_t register_a(Replay *e);
-uint32_t register_pc(Replay *e);
+void replay_add_breakpoint(Replay* replay, uint32_t pc);
+void replay_add_breakpoint_range(Replay* replay, uint32_t pc0, uint32_t p1);
 
-// TraceLog
-void print_line          (TraceLog *t, const char * const str, int len);
+Registers *replay_registers(Replay *replay);
+
+/*
+	NOTE: All of these will eventually read with bank-wrapping
+*/
+uint8_t  replay_read_byte(Replay *replay, uint32_t address);
+uint16_t replay_read_word(Replay *replay, uint32_t address);
+uint32_t replay_read_long(Replay *replay, uint32_t address);
+
+// Report
+void report_writer_print(ReportWriter *report_writer, const char * const str, uint32_t len);

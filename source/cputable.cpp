@@ -77,7 +77,7 @@ uint32_t calculateFormattingandSize(const uint8_t * data, const bool acc16, cons
 	}
 }
 
-ResultType evaluateOp(const RomAccessor &rom_accessor, const uint8_t * ops, const Registers & reg, MagicByte * result_bank, MagicWord * result_addr, bool *depend_DB, bool *depend_DP, bool *depend_X, bool *depend_Y) {
+ResultType evaluateOp(const RomAccessor &rom_accessor, const uint8_t * ops, const CPURegisters & reg, MagicByte * result_bank, MagicWord * result_addr, bool *depend_DB, bool *depend_DP, bool *depend_X, bool *depend_Y) {
 
 	assert(!depend_DB || !(*depend_DB));
 	assert(!depend_DP || !(*depend_DP));
