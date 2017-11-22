@@ -6,7 +6,6 @@ set(SOURCES
 	cputable.h
 	emulate.cpp
 	emulate.h
-	emulate_replay.h
 	options.cpp
 	options.h
 	romaccessor.h

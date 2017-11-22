@@ -1,7 +1,9 @@
 #include "rewind.h"
 #include "emulate.h"
-#include "emulate_replay.h"
+#include "replay.h"
 #include "emulate_generate/optables.h"
+#include "options.h"
+#include <map>
 #include <algorithm>
 
 // NOTE: Instructions like BRK and NMI (not an instruction but still) both write (stack) and reads (IRQ vector).. Does not work well with current method since we have data_pointer
@@ -1229,9 +1231,9 @@ void rewind_report(const Options &options, const RomAccessor &rom, const Annotat
 
 	const uint32_t original_nmi = track_nmi;
 	int nmi = original_nmi;
-	EmulateRegisters regs(rom);
-	EmulateReplay replay(options.trace_files[0]);
-	replay.skip_until_nmi(options, regs, nmi);
+	Replay replay(rom, options.trace_files[0].c_str());
+	EmulateRegisters &regs = replay.regs;
+	replay.skip_until_nmi(options.trace_file_skip_cache(0).c_str(), nmi);
 
 	std::vector<tracking::Event> out_events;
 	std::vector<tracking::Value> out_values;
@@ -1266,7 +1268,7 @@ void rewind_report(const Options &options, const RomAccessor &rom, const Annotat
 
 		uint8_t opcode = regs._memory[regs._PC];
 
-		if (!replay.next<EmulateRegisters>(regs))
+		if (!replay.next())
 			break;
 
 		if (regs.event == Events::NMI) nmi++;
@@ -1601,11 +1603,11 @@ void rewind_report(const Options &options, const RomAccessor &rom, const Annotat
 		printf("Re-emuluate to find values for all connections...\n");
 
 		// TODO: We should be able to use regs now instead of creating a new one!
-		EmulateRegisters regs2(rom);
+		EmulateRegisters regs2 = replay.regs;
 		regs2._read_function = nullptr;
 		regs2._write_function = nullptr;
 		regs2._callback_context = nullptr;
-		replay.skip_until_nmi(options, regs2, original_nmi);
+		replay.skip_until_nmi(options.trace_file_skip_cache(0).c_str(), original_nmi);
 
 		uint32_t next_event = (uint32_t)out_events.size()-1;
 		uint64_t next_op = out_events[next_event].opcount;
@@ -1614,7 +1616,7 @@ void rewind_report(const Options &options, const RomAccessor &rom, const Annotat
 
 		for (uint64_t opcount = 0; next_event != 0; opcount++) {
 			
-			replay.next(regs2); // Is this correct to run op first and then see registers? I think so
+			replay.next(); // Is this correct to run op first and then see registers? I think so
 
 			if (opcount == next_op) {
 				const tracking::Event &e = out_events[next_event];
