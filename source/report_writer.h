@@ -7,7 +7,16 @@
 	One such report is the assembler output and the trace log.
 */
 
+struct StringBuilder;
+
 struct ReportWriter {
+	ReportWriter(const char * const filename);
+	~ReportWriter();
+
 	FILE *report;
 	int indentation=0;
+
+	void writeComment(const char * const str);
+	void writeComment(StringBuilder &sb);
+	void writeSeperator(const char * const text);
 };

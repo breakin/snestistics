@@ -21,31 +21,7 @@
 #include "trace.h"
 #include "rewind.h"
 #include "scripting.h"
-
-struct ReportWriter {
-	ReportWriter(const std::string &filename) {
-		_report = fopen(filename.c_str(), "wt");
-		if (!_report) {
-			printf("Could not open report file %s\n", filename.c_str());
-			throw std::runtime_error("Could not open report file!");
-		}
-	}
-	~ReportWriter() {
-		fclose(_report);
-	}
-
-	FILE *_report = nullptr;
-
-	void writeComment(const char * const str) { fprintf(_report, "%s\n", str); }
-	void writeComment(StringBuilder &sb) { writeComment(sb.c_str()); sb.clear(); }
-
-	void writeSeperator(const char * const text) {
-		fprintf(_report, "\n");
-		fprintf(_report, "; =====================================================================================================\n");
-		fprintf(_report, "; %s\n", text);
-		fprintf(_report, "; =====================================================================================================\n");
-	}
-};
+#include "report_writer.h"
 
 using namespace snestistics;
 
@@ -1037,7 +1013,7 @@ int main(const int argc, const char * const argv[]) {
 
 		std::unique_ptr<ReportWriter> report_writer;
 		if (!options.asm_report_file.empty())
-			report_writer.reset(new ReportWriter(options.asm_report_file));
+			report_writer.reset(new ReportWriter(options.asm_report_file.c_str()));
 
 		// TODO: Maybe run once before guess_range as well to find longer ranges
 		predict(options.predict_mode, report_writer.get(), rom_accessor, trace, annotations);
