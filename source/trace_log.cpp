@@ -1,6 +1,5 @@
 #include "trace_log.h"
 #include "emulate.h"
-#include "emulate_replay.h"
 #include "romaccessor.h"
 #include "annotations.h"
 #include "options.h"
@@ -74,12 +73,9 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 	
 	CUSTOM_ASSERT(options.trace_files.size() == 1);
 
-	FILE *report = fopen(options.trace_log.c_str(), "wt");
-
 	Replay replay(rom, options.trace_files[0].c_str());
 
-	ReportWriter rw;
-	rw.report = report;
+	ReportWriter rw(options.trace_log.c_str());
 
 	scripting_interface::ScriptingHandle scripting_replay = scripting ? scripting_interface::create_replay(scripting, &replay) : nullptr;
 	scripting_interface::ScriptingHandle scripting_report_writer = scripting ? scripting_interface::create_report_writer(scripting, &rw) : nullptr;
@@ -89,7 +85,7 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 	}
 
 	TraceState ts;
-	ts.report = report;
+	ts.report = rw.report;
 	ts.current_depths.push(TRACE_START_INDENTATION);
 
 	trace_separator(ts, "START");
@@ -132,7 +128,7 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 		bool is_return = false;
 
 		if (regs.event == Events::NMI) {
-			trace_indent_line(ts); fprintf(report, "  # NMI %d\n", current_nmi);
+			trace_indent_line(ts); fprintf(rw.report, "  # NMI %d\n", current_nmi);
 			ts.current_depths.push(TRACE_START_INDENTATION);
 			trace_separator(ts, "NMI");
 			//printf("Tracelog for nmi %d (%.1f%%)\n", current_nmi, (1+current_nmi-capture_nmi_first)*100.0f/(capture_nmi_last-capture_nmi_first+1));
@@ -141,13 +137,13 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 			// This have no impact. If we skip frames it will not happen.
 			continue;
 		} else if (regs.event == Events::IRQ) {
-			trace_indent_line(ts); fprintf(report, "  # IRQ\n");
+			trace_indent_line(ts); fprintf(rw.report, "  # IRQ\n");
 			ts.current_depths.push(TRACE_START_INDENTATION);
 			trace_separator(ts, "IRQ");
 			continue;
 		} else if (regs.event == Events::RTI) {
 			if (do_logging_for_current_function)
-				fprintf(report, "\n --- RETURN FROM INTERRUPT --- \n\n");
+				fprintf(rw.report, "\n --- RETURN FROM INTERRUPT --- \n\n");
 			ts.current_depths.pop();
 			trace_fix_depth(ts);
 		} else if (regs.event == Events::JMP_OR_JML) {
@@ -174,9 +170,9 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 			annotations.resolve_annotation(pc, &target_function );
 
 			if (target_function) {
-				trace_indent_line(ts); fprintf(report, "WARNING: Was in function %s but now running in %s %06X\n", current_function->name.c_str(), target_function->name.c_str(), pc);
+				trace_indent_line(ts); fprintf(rw.report, "WARNING: Was in function %s but now running in %s %06X\n", current_function->name.c_str(), target_function->name.c_str(), pc);
 			} else {
-				trace_indent_line(ts); fprintf(report, "WARNING: Was in function %s but now running outside at %06X\n", current_function->name.c_str(), pc);
+				trace_indent_line(ts); fprintf(rw.report, "WARNING: Was in function %s but now running outside at %06X\n", current_function->name.c_str(), pc);
 			}
 			current_function = target_function;
 
@@ -211,13 +207,13 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 			if (do_logging_for_current_function && current_function != target_function) {
 				if (target_function) {
 					if (target_function->trace_type == Annotation::TRACETYPE_IGNORE) {
-						trace_indent_line(ts); fprintf(report, "Ignoring %s\n", target_function->name.c_str());
+						trace_indent_line(ts); fprintf(rw.report, "Ignoring %s\n", target_function->name.c_str());
 					}
 					spacing += trace_indent_line(ts);
-					spacing += fprintf(report, "%s", target_function->name.c_str());
+					spacing += fprintf(rw.report, "%s", target_function->name.c_str());
 				} else {
 					spacing += trace_indent_line(ts);
-					spacing += fprintf(report, "Jumped from %06X to %06X (not annotated)", pc, jump_pc);
+					spacing += fprintf(rw.report, "Jumped from %06X to %06X (not annotated)", pc, jump_pc);
 
 					if (missing_annotation.find(jump_pc) == missing_annotation.end()) {
 						missing_annotation.insert(jump_pc);
@@ -232,18 +228,17 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 		if (spacing > 0) {
 			int move = 76-spacing;
 			while (move<0) move+=8;
-			for (int k=0; k<move; k++) fputc(' ', report);
-			fprintf(report, "X=%04X Y=%04X A=%04X DB=%02X DP=%04X S=%04X P=%04X PC=%06X [%06X-%06X] NMI=%d\n", regs._X, regs._Y, regs._A, regs._DB, regs._DP, regs._S, regs._P, regs._PC, current_function ? current_function->startOfRange : 0, current_function ? current_function->endOfRange : 0, current_nmi);
+			for (int k=0; k<move; k++) fputc(' ', rw.report);
+			fprintf(rw.report, "X=%04X Y=%04X A=%04X DB=%02X DP=%04X S=%04X P=%04X PC=%06X [%06X-%06X] NMI=%d\n", regs._X, regs._Y, regs._A, regs._DB, regs._DP, regs._S, regs._P, regs._PC, current_function ? current_function->startOfRange : 0, current_function ? current_function->endOfRange : 0, current_nmi);
 		}
 
 		if (print_missing_annotation) {
 			trace_indent_line(ts);
-			fprintf(report, "MISSING ANNOTATION FOR %06X (only reporting once)\n", jump_pc);
+			fprintf(rw.report, "MISSING ANNOTATION FOR %06X (only reporting once)\n", jump_pc);
 			printf("Missing annotation at pc %06X\n", jump_pc);
 		}
 	}
 
-	fclose(report);
 	if (scripting) {
 		scripting_interface::destroy_handle(scripting, scripting_replay);
 		scripting_interface::destroy_handle(scripting, scripting_report_writer);
