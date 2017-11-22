@@ -1,7 +1,8 @@
 set(SOURCES
 	annotations.cpp
 	annotations.h
-	asmwrite_wladx.h
+	asm_writer.cpp
+	asm_writer.h
 	cputable.cpp
 	cputable.h
 	emulate.cpp

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "report_writer.h"
-#include <stdint.h>
 #include "utils.h"
 
 void report_writer_print(ReportWriter *report_writer, const char * const str, uint32_t len) {
@@ -25,9 +24,14 @@ ReportWriter::~ReportWriter() {
 	fclose(report);
 }
 
-void ReportWriter::writeComment(const char * const str) { fprintf(report, "%s\n", str); }
+void ReportWriter::writeComment(const char * const str) {
+	fprintf(report, "%s\n", str);
+}
 
-void ReportWriter::writeComment(StringBuilder & sb) { writeComment(sb.c_str()); sb.clear(); }
+void ReportWriter::writeComment(StringBuilder & sb) {
+	writeComment(sb.c_str());
+	sb.clear();
+}
 
 void ReportWriter::writeSeperator(const char * const text) {
 	fprintf(report, "\n");
