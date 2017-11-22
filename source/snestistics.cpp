@@ -20,6 +20,7 @@
 #include "trace_log.h"
 #include "trace.h"
 #include "rewind.h"
+#include "scripting.h"
 
 struct ReportWriter {
 	ReportWriter(const std::string &filename) {
@@ -1012,7 +1013,18 @@ int main(const int argc, const char * const argv[]) {
 		// Write trace log if requested
 		if (!options.trace_log.empty()) {
 			Profile profile("Create trace log");
-			write_trace_log(options, rom_accessor, annotations);
+
+			bool has_scripting = !options.trace_log_script.empty();
+
+			scripting_interface::Scripting *scripting = nullptr;
+			
+			if (!options.trace_log_script.empty())
+				scripting = scripting_interface::create_scripting(options.trace_log_script.c_str());
+			
+			write_trace_log(options, rom_accessor, annotations, scripting);
+
+			if (scripting)
+				scripting_interface::destroy_scripting(scripting);
 		}
 
 		if (options.asm_file.empty()) {
@@ -1227,7 +1239,7 @@ int main(const int argc, const char * const argv[]) {
 							}
 						}
 
-						Registers reg;
+						CPURegisters reg;
 						reg.P = vit.P;
 						reg.dp = vit.DP;
 						reg.db = vit.DB;

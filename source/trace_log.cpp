@@ -4,11 +4,14 @@
 #include "romaccessor.h"
 #include "annotations.h"
 #include "options.h"
+#include "scripting.h"
 #include <stack>
 #include <unordered_set>
 #include <memory>
+#include "replay.h"
+#include "report_writer.h"
 
-void trace_log_parameters(FILE *report, const EmulateRegisters &regs, const Pointer pc, int indent_width) { return; }
+// Rewrite trace_log_filter to be more like breakpoints so don't need to invoke script
 bool trace_log_filter(Pointer pc, Pointer function_start, Pointer function_end, const char * const function_name) { return true; }
 
 namespace {
@@ -67,15 +70,24 @@ void trace_fix_depth(TraceState &state) {
 
 namespace snestistics {
 
-void write_trace_log(const Options &options, const RomAccessor &rom, const AnnotationResolver &annotations) {
-	FILE *report = fopen(options.trace_log.c_str(), "wt");
-
-	// These are reads to memory other than ROM/SRAM (outside what we emulate)
-	EmulateRegisters regs(rom);
-
+void write_trace_log(const Options &options, const RomAccessor &rom, const AnnotationResolver &annotations, scripting_interface::Scripting *scripting) {
+	
 	CUSTOM_ASSERT(options.trace_files.size() == 1);
 
-	EmulateReplay replay(options.trace_files[0]);
+	FILE *report = fopen(options.trace_log.c_str(), "wt");
+
+	Replay replay(rom, options.trace_files[0].c_str());
+
+	ReportWriter rw;
+	rw.report = report;
+
+	scripting_interface::ScriptingHandle scripting_replay = scripting ? scripting_interface::create_replay(scripting, &replay) : nullptr;
+	scripting_interface::ScriptingHandle scripting_report_writer = scripting ? scripting_interface::create_report_writer(scripting, &rw) : nullptr;
+
+	if (scripting) {
+		scripting_interface::scripting_trace_log_init(scripting, scripting_replay);
+	}
+
 	TraceState ts;
 	ts.report = report;
 	ts.current_depths.push(TRACE_START_INDENTATION);
@@ -89,7 +101,8 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 	const uint32_t capture_nmi_first = options.trace_log_nmi_first, capture_nmi_last = options.trace_log_nmi_last;
 
 	printf("Skipping to nmi %d\n", capture_nmi_first);
-	bool success = replay.skip_until_nmi<EmulateRegisters>(options, regs, capture_nmi_first);
+	EmulateRegisters &regs = replay.regs;
+	bool success = replay.replay.skip_until_nmi<EmulateRegisters>(options, regs, capture_nmi_first);
 	assert(success);
 
 	uint32_t current_nmi = capture_nmi_first;
@@ -100,10 +113,12 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 
 		const uint32_t pc = regs._PC;
 
-		if (do_logging_for_current_function)
-			trace_log_parameters(report, regs, pc, ts.current_depths.top() * 2 + 1);
+		if (do_logging_for_current_function && scripting && replay.breakpoints[pc]) {
+			rw.indentation = ts.current_depths.top() * 2 + 1; // Set indentation
+			scripting_trace_log_parameter_printer(scripting, scripting_replay, scripting_report_writer);
+		}
 
-		bool more = replay.next<EmulateRegisters>(regs);
+		bool more = replay.replay.next<EmulateRegisters>(regs);
 		const uint32_t jump_pc  = regs._PC;
 
 		if (!more)
@@ -120,7 +135,7 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 			trace_indent_line(ts); fprintf(report, "  # NMI %d\n", current_nmi);
 			ts.current_depths.push(TRACE_START_INDENTATION);
 			trace_separator(ts, "NMI");
-			printf("Tracelog for nmi %d (%.1f%%)\n", current_nmi, (1+current_nmi-capture_nmi_first)*100.0f/(capture_nmi_last-capture_nmi_first+1));
+			//printf("Tracelog for nmi %d (%.1f%%)\n", current_nmi, (1+current_nmi-capture_nmi_first)*100.0f/(capture_nmi_last-capture_nmi_first+1));
 			current_nmi++;
 		} else if (regs.event == Events::RESET) {
 			// This have no impact. If we skip frames it will not happen.
@@ -229,5 +244,9 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 	}
 
 	fclose(report);
+	if (scripting) {
+		scripting_interface::destroy_handle(scripting, scripting_replay);
+		scripting_interface::destroy_handle(scripting, scripting_report_writer);
+	}
 }
 }
