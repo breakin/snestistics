@@ -1,5 +1,3 @@
-#pragma once
-
 #include "report_writer.h"
 #include "utils.h"
 

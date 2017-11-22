@@ -1,5 +1,7 @@
 #include "options.h"
 #include <cstdlib>
+#include <cstring> // strcmp
+#include <stdexcept> // std::runtime_error
 
 namespace {
 	bool parseBool(const char * const s) {

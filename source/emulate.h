@@ -36,7 +36,6 @@ enum class Events : uint8_t {
 	RTS_OR_RTL=32,
 	BRANCH=64,
 	RTI=128,
-	DMA
 };
 
 enum class MemoryAccessType {
