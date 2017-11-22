@@ -174,6 +174,7 @@ void init_table_entry(const uint8_t opcode, OpEffect &e) {
 	case Operand::IMMEDIATE_MEMORY:
 	case Operand::MANUAL:
 	case Operand::BRANCH_8:
+	case Operand::BRANCH_16:
 		break;
 	};
 
