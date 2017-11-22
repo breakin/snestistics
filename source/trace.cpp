@@ -1,7 +1,7 @@
 #include "trace.h"
 #include "options.h"
 #include "emulate.h"
-#include "emulate_replay.h"
+#include "replay.h"
 #include "romaccessor.h"
 #include <algorithm>
 #include <memory>
@@ -145,9 +145,9 @@ void create_trace(const Options &options, const int trace_file_index, const RomA
 	std::set<OpRecord> op_trace;
 	CallbackContext memory_accesses;
 
-	snestistics::EmulateReplay replay(options.trace_files[trace_file_index]);
+	Replay replay(rom_accessor, options.trace_files[trace_file_index].c_str());
 
-	EmulateRegisters regs(rom_accessor);
+	EmulateRegisters &regs = replay.regs;
 	regs._read_function = read_function;
 	regs._write_function = write_function;
 	regs._dma_function = dma_function;
@@ -167,7 +167,7 @@ void create_trace(const Options &options, const int trace_file_index, const RomA
 			const uint16_t X_before = regs._X, Y_before = regs._Y, DP_before = regs._DP, P_before = regs._P;
 			const uint8_t DB_before = regs._DB;
 
-			if (!replay.next<EmulateRegisters>(regs))
+			if (!replay.next())
 				break;
 
 			if (nmi != last_reported_nmi && (nmi%100)==0) {
