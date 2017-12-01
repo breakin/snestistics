@@ -1,7 +1,7 @@
 #include "rewind.h"
 #include "emulate.h"
 #include "replay.h"
-#include "emulate_generate/optables.h"
+#include "generated/optables.h"
 #include "options.h"
 #include <map>
 #include <algorithm>

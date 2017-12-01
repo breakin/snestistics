@@ -26,11 +26,13 @@ set(SOURCES
 	rewind.cpp
 	rewind.h
 	utils.h
+	optables.json
+	optables_generate.py
 )
 
 # Actually trigger re-generation from here
 SET(GENERATED_SOURCE
-	emulate_generate/optables.h
+	generated/optables.h
 )
 
 SET(DATA
@@ -39,6 +41,14 @@ SET(DATA
 
 SET(TESTDATA
 	../testdata/trace_log_test.nut
+)
+
+add_custom_command(
+	PRE_BUILD
+	COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/optables_generate.py
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/optables_generate.py ${CMAKE_CURRENT_SOURCE_DIR}/optables.json
+	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/generated/optables.h
+	COMMENT "Generating optables.h"
 )
 
 add_executable(snestistics ${SOURCES} ${GENERATED_SOURCE} ${DATA} ${TESTDATA})

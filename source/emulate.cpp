@@ -10,7 +10,7 @@
 
 namespace {
 
-#include "emulate_generate/optables.h"
+#include "generated/optables.h"
 
 inline void jump(EmulateRegisters &regs, uint32_t target, uint32_t mask, Events ev) {
 	CUSTOM_ASSERT(regs.event == Events::NONE);

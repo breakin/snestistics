@@ -1,9 +1,72 @@
 import json
+import os
 
-with open('optab.json') as data_file:    
-    ops = json.load(data_file)
+class CommaList(object):
+	def __init__(self, f, newLine = True, comma = True, indent = "", newLineFreq = 1):
+		self.hang = False
+		self.f = f
+		self.indent = indent
+		self.emitted = 0
+		self.newLineFreq = newLineFreq
 
-out = open("optables.h", "wt")
+		self.comma = comma
+		self.newLine = newLine
+
+		if newLine and comma: self.item_break = ",\n"
+		elif newLine: self.item_break = "\n"
+		elif comma: self.item_break = ", "
+		if newLine: self.finalizer = "\n"
+	def write(self, line):
+		if self.hang:
+			self.emitted = self.emitted  + 1
+			emitNewLine = False
+			if self.newLine and self.emitted == self.newLineFreq:
+				emitNewLine = True
+				self.emitted = 0
+
+			if self.comma:
+				self.f.write(",")
+			if emitNewLine:
+				self.f.write("\n")
+			elif self.comma:
+				self.f.write(" ")
+		self.f.write(self.indent + line)
+		self.hang = True
+	def finish(self):
+		if self.newLine:
+			self.f.write(self.finalizer)
+
+dirname, filename = os.path.split(os.path.abspath(__file__))
+absolute_json_file_name = dirname + "/optables.json"
+absolute_output_h_file_name = dirname + "/generated/optables.h"
+
+with open(absolute_json_file_name, "rt") as file: 
+	ops = json.load(file)
+
+# resave can be used if we want to change optab.json programmatically
+# the file is plain json but to make it more readable the json-encoder is "hand"-coded
+# TODO: Maybe use commalist instead of first here
+def resave_json(b):
+	f = open(absolute_json_file_name, "wt")
+	f.write("[\n")
+	first_line = True
+	for l in b:
+		if not first_line:
+			f.write(",\n")
+		first_line = False
+		f.write("\t[")
+		first = True
+		for w in l:
+			if not first:
+				f.write(", ")
+			first = False
+			f.write("\"" + w + "\"")
+		f.write("]")
+	f.write("\n]\n")
+
+#resave_json(ops)
+
+out = open(absolute_output_h_file_name, "wt")
 
 sizes = set([])
 sizes.add("WIDE")

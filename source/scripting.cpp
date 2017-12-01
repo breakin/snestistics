@@ -194,8 +194,14 @@ namespace scripting_interface {
 
 		SQInteger api_replay_pc(HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->pc); return 1; }
 		SQInteger api_replay_a (HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->a ); return 1; }
+		SQInteger api_replay_al(HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->a&0xFF ); return 1; }
+		SQInteger api_replay_ah(HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->a>>8   ); return 1; }
 		SQInteger api_replay_x (HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->x ); return 1; }
+		SQInteger api_replay_xl(HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->x&0xFF ); return 1; }
+		SQInteger api_replay_xh(HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->x>>8   ); return 1; }
 		SQInteger api_replay_y (HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->y ); return 1; }
+		SQInteger api_replay_yl(HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->y&0xFF ); return 1; }
+		SQInteger api_replay_yh(HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->y>>8   ); return 1; }
 		SQInteger api_replay_p (HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->p ); return 1; }
 		SQInteger api_replay_s (HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->s ); return 1; }
 		SQInteger api_replay_dp(HSQUIRRELVM v) { sq_pushinteger(v, register_func(v)->dp); return 1; }
@@ -260,8 +266,14 @@ namespace scripting_interface {
 				auto &e = *scripting->class_replay;
 				e.add_function("pc", api_replay_pc);
 				e.add_function("a",  api_replay_a);
+				e.add_function("al",  api_replay_al);
+				e.add_function("ah",  api_replay_ah);
 				e.add_function("x",  api_replay_x);
+				e.add_function("xl",  api_replay_xl);
+				e.add_function("xh",  api_replay_xh);
 				e.add_function("y",  api_replay_y);
+				e.add_function("yl",  api_replay_yl);
+				e.add_function("yh",  api_replay_yh);
 				e.add_function("p",  api_replay_p);
 				e.add_function("s",  api_replay_s);
 				e.add_function("dp", api_replay_dp);
