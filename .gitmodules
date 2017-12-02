@@ -1,3 +1,6 @@
 [submodule "deps/squirrel"]
 	path = deps/squirrel
 	url = https://github.com/albertodemichelis/squirrel.git
+[submodule "deps/snes9x-snestistics"]
+	path = deps/snes9x-snestistics
+	url = https://github.com/breakin/snes9x-snestistics.git
