@@ -324,7 +324,7 @@ Replay::~Replay() {
 }
 
 void replay_add_breakpoint(Replay* replay, uint32_t pc) {
-	if (pc >= 0 && pc < 1024*64*256)
+	if (pc < 1024*64*256)
 		replay->breakpoints.setBit(pc);
 }
 void replay_add_breakpoint_range(Replay* replay, uint32_t p0, uint32_t p1) {

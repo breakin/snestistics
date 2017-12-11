@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 2.8.11)
 project(snestistics)
 
+
 find_package(PythonInterp)
 
 set(CMAKE_CXX_STANDARD 11)

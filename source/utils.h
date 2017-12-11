@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstring> // memset
+#include <stdexcept> // std::runtime_error
 #include <string>
 #include <vector>
 #include <stdlib.h>
