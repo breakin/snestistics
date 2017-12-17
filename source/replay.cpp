@@ -323,11 +323,11 @@ Replay::~Replay() {
 	#endif
 }
 
-void replay_add_breakpoint(Replay* replay, uint32_t pc) {
+void replay_set_breakpoint(Replay* replay, uint32_t pc) {
 	if (pc < 1024*64*256)
 		replay->breakpoints.setBit(pc);
 }
-void replay_add_breakpoint_range(Replay* replay, uint32_t p0, uint32_t p1) {
+void replay_set_breakpoint_range(Replay* replay, uint32_t p0, uint32_t p1) {
 	if (p1 < p0)
 		return;
 

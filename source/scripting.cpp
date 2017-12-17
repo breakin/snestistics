@@ -232,21 +232,21 @@ namespace scripting_interface {
 			return 1;
 		}
 
-		SQInteger api_replay_add_breakpoint(HSQUIRRELVM v) {
+		SQInteger api_replay_set_breakpoint(HSQUIRRELVM v) {
 			Scripting *scripting = static_cast<Scripting*>(sq_getforeignptr(v));
 			Replay *t = scripting->class_replay->native_ptr<Replay>(v);
 			SQInteger pc;
 			sq_getinteger(v, 2, &pc);
-			replay_add_breakpoint(t, (uint32_t)pc);
+			replay_set_breakpoint(t, (uint32_t)pc);
 			return 0;
 		}
-		SQInteger api_replay_add_breakpoint_range(HSQUIRRELVM v) {
+		SQInteger api_replay_set_breakpoint_range(HSQUIRRELVM v) {
 			Scripting *scripting = static_cast<Scripting*>(sq_getforeignptr(v));
 			Replay *t = scripting->class_replay->native_ptr<Replay>(v);
 			SQInteger pc0, pc1;
 			sq_getinteger(v, 2, &pc0);
 			sq_getinteger(v, 3, &pc1);
-			replay_add_breakpoint_range(t, (uint32_t)pc0, (uint32_t)pc1);
+			replay_set_breakpoint_range(t, (uint32_t)pc0, (uint32_t)pc1);
 			return 0;
 		}
 		SQInteger api_report_writer_print(HSQUIRRELVM v) {
@@ -281,8 +281,8 @@ namespace scripting_interface {
 				e.add_function("read_byte", api_replay_read_byte);
 				e.add_function("read_word", api_replay_read_word);
 				e.add_function("read_long", api_replay_read_long);
-				e.add_function("add_breakpoint", api_replay_add_breakpoint);
-				e.add_function("add_breakpoint_range", api_replay_add_breakpoint_range);
+				e.add_function("set_breakpoint", api_replay_set_breakpoint);
+				e.add_function("set_breakpoint_range", api_replay_set_breakpoint_range);
 			}
 			{
 				ScopedValidateTop top(v);

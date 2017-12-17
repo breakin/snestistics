@@ -24,8 +24,8 @@ struct Registers {
 };
 
 // Replay
-void replay_add_breakpoint(Replay* replay, uint32_t pc);
-void replay_add_breakpoint_range(Replay* replay, uint32_t pc0, uint32_t p1);
+void replay_set_breakpoint(Replay* replay, uint32_t pc);
+void replay_set_breakpoint_range(Replay* replay, uint32_t pc0, uint32_t p1);
 
 Registers *replay_registers(Replay *replay);
 
