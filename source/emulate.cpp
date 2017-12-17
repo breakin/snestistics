@@ -2,6 +2,9 @@
 #include "utils.h"
 #include <cstdio>
 #include "trace.h"
+#include "generated/optables.h"
+
+using namespace snestistics;
 
 /*
 	NOTE: In snesx9 all indexed mode index by X.W or Y.W, but that is because XH/YH are zero when in 8-bit-mode.
@@ -9,8 +12,6 @@
 */
 
 namespace {
-
-#include "generated/optables.h"
 
 inline void jump(EmulateRegisters &regs, uint32_t target, uint32_t mask, Events ev) {
 	CUSTOM_ASSERT(regs.event == Events::NONE);

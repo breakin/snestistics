@@ -39,6 +39,7 @@ class CommaList(object):
 dirname, filename = os.path.split(os.path.abspath(__file__))
 absolute_json_file_name = dirname + "/optables.json"
 absolute_output_h_file_name = dirname + "/generated/optables.h"
+absolute_output_cpp_file_name = dirname + "/generated/optables.cpp"
 
 with open(absolute_json_file_name, "rt") as file: 
 	ops = json.load(file)
@@ -66,7 +67,15 @@ def resave_json(b):
 
 #resave_json(ops)
 
+namespace = "snestistics"
+
 out = open(absolute_output_h_file_name, "wt")
+out.write("#pragma once\n\n")
+out.write("namespace " + namespace + "{\n\n")
+
+out_cpp = open(absolute_output_cpp_file_name, "wt")
+out_cpp.write("#include \"optables.h\"\n\n")
+out_cpp.write("namespace " + namespace + "{\n\n")
 
 sizes = set([])
 sizes.add("WIDE")
@@ -90,7 +99,7 @@ def write_enum(name, array):
 		count+=1
 	out.write(intend_0 + "};\n\n")
 
-	out.write(intend_0 + "static const char * const " + name + "_names[" + str(len(s)) + "]={\n")
+	out.write(intend_0 + "static const char* const " + name + "_names[" + str(len(s)) + "]={\n")
 	for a in s:
 		out.write(intend_0 + intend + "\"" + a + "\",\n")
 	out.write(intend_0 + "};\n\n")	
@@ -107,13 +116,18 @@ out.write(intend_0 + intend + "bool load_operand;\n")
 out.write(intend_0 + "};\n")
 out.write("\n")
 
-out.write(intend_0 + "static const char * const mnemonic_names[]={ // as used in an assembler\n")
-for a in range(256):
-	m = ops[a][1]
-	out.write(intend_0 + intend + "\"" + m + "\",\n")
-out.write(intend_0 + "};\n\n")
+out.write(intend_0 + "extern const char* const mnemonic_names[256]; // as used in an assembler\n")
+out_cpp.write(intend_0 + "const char* const mnemonic_names[256] = {\n")
+for row in range(16):
+	for col in range(16):
+		a = row*16+col
+		m = ops[a][1]
+		out_cpp.write(intend_0 + intend + "\"" + m + "\",")
+	out_cpp.write("\n")
+out_cpp.write(intend_0 + "};\n\n")
 
-out.write(intend_0 + "static const OpCode op_codes[256]={\n")
+out.write(intend_0 + "extern const OpCode op_codes[256];\n")
+out_cpp.write(intend_0 + "const OpCode op_codes[256] = {\n")
 for o in ops:
 	load_operand = "true"
 	b = o[2]
@@ -125,6 +139,11 @@ for o in ops:
 	if o[3].startswith("IMMEDIATE"): load_operand = "false"
 	if o[3] == "MANUAL": load_operand = "false"
 	a = ("{{Operation::{0:<3} InstructionSize::{2:<7} Operand::{1:<38} {5:<5}}}, // {3} {4}".format(o[2]+",", o[3]+",", o[4]+",", o[0], o[1], load_operand))
-	out.write(intend_0 + intend + a + "\n")
-out.write(intend_0 + "};\n\n")
+	out_cpp.write(intend_0 + intend + a + "\n")
+out_cpp.write(intend_0 + "};\n\n")
+
+out.write("}\n")
+out_cpp.write("}\n")
+
 out.close()
+out_cpp.close()

@@ -26,13 +26,14 @@ set(SOURCES
 	rewind.cpp
 	rewind.h
 	utils.h
-	optables.json
-	optables_generate.py
 )
 
 # Actually trigger re-generation from here
 SET(GENERATED_SOURCE
+	optables.json
+	optables_generate.py
 	generated/optables.h
+	generated/optables.cpp
 )
 
 SET(DATA
@@ -59,6 +60,6 @@ target_link_libraries(snestistics sqstdlib_static)
 include_directories("../deps/squirrel/include")
 
 source_group("source" FILES ${SOURCES})
-source_group("generated" FILES ${GENERATED_SOURCE})
+source_group("generate" FILES ${GENERATED_SOURCE})
 source_group("data" FILES ${DATA})
 source_group("testdata" FILES ${TESTDATA})

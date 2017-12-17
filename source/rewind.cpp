@@ -6,6 +6,8 @@
 #include <map>
 #include <algorithm>
 
+using namespace snestistics;
+
 // NOTE: Instructions like BRK and NMI (not an instruction but still) both write (stack) and reads (IRQ vector).. Does not work well with current method since we have data_pointer
 //       Works out since we ignore IRQ_VECTOR and NMI_VECTOR-reads though..
 
