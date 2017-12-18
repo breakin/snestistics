@@ -17,6 +17,30 @@
 
 namespace {
 
+template<typename T>
+struct CombinationT {
+	T value = (T)0;
+	bool single_value = true;
+	bool has_value = false;
+
+	void operator=(const T t) {
+		if (has_value) {
+			if (t != value) {
+				single_value = false;
+				value = (T)0;
+			}
+		} else {
+			has_value = true;
+			single_value = true;
+			value = t;
+		}
+	}
+};
+
+typedef CombinationT<bool> CombinationBool;
+typedef CombinationT<uint8_t> Combination8;
+typedef CombinationT<uint16_t> Combination16;
+
 class AsmWriteWLADX {
 private:
 	const Options &m_options;

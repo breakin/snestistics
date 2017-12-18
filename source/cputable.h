@@ -464,30 +464,6 @@ struct MagicT {
 typedef MagicT<uint8_t> MagicByte;
 typedef MagicT<uint16_t> MagicWord;
 
-template<typename T>
-struct CombinationT {
-	T value = (T)0;
-	bool single_value = true;
-	bool has_value = false;
-
-	void operator=(const T t) {
-		if (has_value) {
-			if (t != value) {
-				single_value = false;
-				value = (T)0;
-			}
-		} else {
-			has_value = true;
-			single_value = true;
-			value = t;
-		}
-	}
-};
-
-typedef CombinationT<bool> CombinationBool;
-typedef CombinationT<uint8_t> Combination8;
-typedef CombinationT<uint16_t> Combination16;
-
 struct CPURegisters {
 	CPURegisters() : P(0x1FF), pb(-1), pc(-1), db(-1), dp(-1), reg_A(-1), reg_X(-1), reg_Y(-1) {}
 	MagicWord P; // processor status
@@ -508,4 +484,6 @@ enum ResultType {
 };
 
 ResultType evaluateOp(const RomAccessor &rom_accessor, const uint8_t* ops, const CPURegisters &reg, MagicByte *resultBnk, MagicWord *resultAdr, bool *depend_DB = nullptr, bool *depend_DP = nullptr, bool *depend_X = nullptr, bool *depend_Y = nullptr);
+
 Pointer lorom_bank_remap(const Pointer resolveAddress);
+
