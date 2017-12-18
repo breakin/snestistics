@@ -48,6 +48,23 @@ public:
 		return false;
 	}
 
+	Pointer lorom_bank_remap(const Pointer resolve_address) const {
+		uint16_t adr = resolve_address & 0xffff;
+		if (adr >= 0x8000) return resolve_address;
+
+		uint8_t bank = resolve_address >> 16;
+		if ((bank >= 0x00 && bank <= 0x3F) || (bank >= 0x80 && bank <= 0xBF)) {
+			if (adr < 0x2000) {
+				return 0x7E0000|adr;
+			} else  {
+				// A bit of a hack. Make all memory mapped adresses go to bank 0 so we can annotate them once
+				return adr; // Strip bank from resolve_adress
+			}
+		} else {
+			return resolve_address;
+		}
+	}
+
 private:
 	static uint8_t bank(const Pointer p) { return p >> 16; }
 	static uint16_t adr(const Pointer p) { return p & 0xffff; }
@@ -75,6 +92,27 @@ private:
 			return (map_mirror(size, pos - mask));
 		else
 			return (mask + map_mirror(size - mask, pos - mask));
+	}
+
+	inline bool is_cartridge_sram(uint8_t bank, uint16_t adr) const {
+		if (adr >= 0x8000) return false;
+		if (bank >= 0x70 && bank <= 0x7D) return true;
+		if (bank >= 0xF0 && bank <= 0xFf) return true;
+		return false;
+	}
+
+	inline bool is_ram(uint8_t bank, uint16_t adr) const {
+		if (bank >= 0x7E && bank <= 0x7F) return true;
+		if (adr >= 0x2000) return false;
+		if (bank >= 0x00 && bank <= 0x3f) return true;
+		if (bank >= 0x80 && bank <= 0xBF) return true;
+		return false;
+	}
+
+	inline bool is_rom(uint8_t bank, uint16_t adr) const {
+		if (adr < 0x8000) return false;
+		if (bank == 0x7E || bank == 0x7F) return false;
+		return true;
 	}
 };
 
