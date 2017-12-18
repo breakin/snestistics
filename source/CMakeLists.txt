@@ -30,10 +30,10 @@ set(SOURCES
 
 # Actually trigger re-generation from here
 SET(GENERATED_SOURCE
-	optables.json
-	optables_generate.py
-	generated/optables.h
-	generated/optables.cpp
+	instruction_tables.json
+	instruction_tables_generate.py
+	instruction_tables.h
+	instruction_tables.cpp
 )
 
 SET(DATA
@@ -46,10 +46,10 @@ SET(TESTDATA
 
 add_custom_command(
 	PRE_BUILD
-	COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/optables_generate.py
-	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/optables_generate.py ${CMAKE_CURRENT_SOURCE_DIR}/optables.json
-	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/generated/optables.h
-	COMMENT "Generating optables.h"
+	COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/instruction_tables_generate.py
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/instruction_tables_generate.py ${CMAKE_CURRENT_SOURCE_DIR}/instruction_tables.json
+	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/instruction_tables.h
+	COMMENT "Generating instruction_tables.h"
 )
 
 add_executable(snestistics ${SOURCES} ${GENERATED_SOURCE} ${DATA} ${TESTDATA})

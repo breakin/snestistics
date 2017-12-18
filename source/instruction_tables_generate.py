@@ -37,14 +37,13 @@ class CommaList(object):
 			self.f.write(self.finalizer)
 
 dirname, filename = os.path.split(os.path.abspath(__file__))
-absolute_json_file_name = dirname + "/optables.json"
-absolute_output_h_file_name = dirname + "/generated/optables.h"
-absolute_output_cpp_file_name = dirname + "/generated/optables.cpp"
+absolute_json_file_name = dirname + "/instruction_tables.json"
+absolute_output_h_file_name = dirname + "/instruction_tables.h"
+absolute_output_cpp_file_name = dirname + "/instruction_tables.cpp"
 
 with open(absolute_json_file_name, "rt") as file: 
 	ops = json.load(file)
 
-# resave can be used if we want to change optab.json programmatically
 # the file is plain json but to make it more readable the json-encoder is "hand"-coded
 # TODO: Maybe use commalist instead of first here
 def resave_json(b):
@@ -71,11 +70,11 @@ namespace = "snestistics"
 
 out = open(absolute_output_h_file_name, "wt")
 out.write("#pragma once\n\n")
-out.write("namespace " + namespace + "{\n\n")
+out.write("namespace " + namespace + " {\n\n")
 
 out_cpp = open(absolute_output_cpp_file_name, "wt")
-out_cpp.write("#include \"optables.h\"\n\n")
-out_cpp.write("namespace " + namespace + "{\n\n")
+out_cpp.write("#include \"instruction_tables.h\"\n\n")
+out_cpp.write("namespace " + namespace + " {\n\n")
 
 sizes = set([])
 sizes.add("WIDE")

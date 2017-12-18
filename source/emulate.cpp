@@ -2,7 +2,7 @@
 #include "utils.h"
 #include <cstdio>
 #include "trace.h"
-#include "generated/optables.h"
+#include "instruction_tables.h"
 
 using namespace snestistics;
 
