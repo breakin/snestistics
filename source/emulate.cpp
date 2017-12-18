@@ -454,12 +454,8 @@ void execute_op(EmulateRegisters &regs) {
 		pointer = regs.DP() + (uint16_t)regs.read_byte_PC();
 	} else if (info.mode == Operand::DIRECT_PAGE_INDEXED_X) {
 		pointer = regs.DP() + (uint16_t)regs.read_byte_PC() + regs.X();
-		//if (use_db) pointer |= regs.DB() << 16;
-		//else pointer |= regs.PC(0xFF0000);
 	} else if (info.mode == Operand::DIRECT_PAGE_INDEXED_Y) {
 		pointer = regs.DP() + (uint16_t)regs.read_byte_PC() + regs.Y();
-		//if (use_db) pointer |= regs.DB() << 16;
-		//else pointer |= regs.PC(0xFF0000);
 	} else if (info.mode == Operand::DIRECT_PAGE_INDIRECT) {
 		uint16_t indirection_pointer_at = regs.read_byte_PC() + regs.DP(); // Always bank 0
 		pointer = regs. read_word(indirection_pointer_at, MemoryAccessType::FETCH_INDIRECT);

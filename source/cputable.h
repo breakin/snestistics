@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include "utils.h"
+#include "instruction_tables.h"
 
 /*
 	TODO:
@@ -12,6 +13,12 @@
 */
 
 class RomAccessor;
+
+extern bool branches[256];
+extern bool jumps[256];
+extern bool pushpops[256];
+
+void initLookupTables();
 
 inline bool is_memory_accumulator_wide(const uint16_t P) { return (P&0x20)==0; }
 inline bool is_index_wide(const uint16_t P) { return (P&0x10)==0; }
@@ -285,120 +292,160 @@ static OpCodeInfo opCodeInfo[256]=
 
 namespace cputable {
 
+	namespace old { // These will be removed shortly
+		inline bool is_indirect(const uint8_t op) {
+			const OpCodeInfo &i = opCodeInfo[op];
+			switch (i.adressMode) {
+			case 9:
+			case 10:
+			case 11:
+			case 13:
+			case 20:
+			case 21:
+			case 22:
+			case 23:
+			case 27:
+				return true;
+			default:
+				return false;
+			}
+		}
+
+		inline bool address_depend_x(const uint8_t op) {
+			const int am = opCodeInfo[op].adressMode;
+			switch(am) {
+			case 7:
+			case 10:
+			case 15:
+			case 18:
+			case 23:
+			case 29:
+				return true;
+			default:
+				return false;
+			};
+		}
+		inline bool address_depend_y(const uint8_t op) {
+			const int am = opCodeInfo[op].adressMode;
+			switch(am) {
+			case 8:
+			case 11:
+			case 13:
+			case 16:
+			case 20:
+				return true;
+			default:
+				return false;
+			};
+		}
+		inline bool address_depend_db(const uint8_t op) {
+			const int am = opCodeInfo[op].adressMode;
+			switch(am) {
+			case 14:
+			case 15:
+			case 16:
+				return true;
+			default:
+				return false;
+			};
+		}
+		inline bool address_depend_dp(const uint8_t op) {
+			const int am = opCodeInfo[op].adressMode;
+			switch(am) {
+			case 6:
+			case 9:
+				return true;
+			default:
+				return false;
+			};
+		}
+	}
+
 	inline bool is_indirect(const uint8_t op) {
-		const OpCodeInfo &i = opCodeInfo[op];
-		switch (i.adressMode) {
-		case 9:
-		case 10:
-		case 11:
-		case 13:
-		case 20:
-		case 21:
-		case 22:
-		case 23:
-		case 27:
+		const snestistics::Operand am = snestistics::op_codes[op].mode;
+		switch (am) {
+		case snestistics::Operand::ABSOLUTE_INDEXED_X_INDIRECT:
+		case snestistics::Operand::ABSOLUTE_INDIRECT:
+		case snestistics::Operand::ABSOLUTE_INDIRECT_LONG:
+		case snestistics::Operand::DIRECT_PAGE_INDEXED_X_INDIRECT:
+		case snestistics::Operand::DIRECT_PAGE_INDIRECT:
+		case snestistics::Operand::DIRECT_PAGE_INDIRECT_INDEXED_Y:
+		case snestistics::Operand::STACK_RELATIVE_INDIRECT_INDEXED_Y:
+			CUSTOM_ASSERT(old::is_indirect(op));
 			return true;
 		default:
+			CUSTOM_ASSERT(!old::is_indirect(op));
 			return false;
 		}
 	}
 
 	inline bool address_depend_x(const uint8_t op) {
-		const int am = opCodeInfo[op].adressMode;
+		const snestistics::Operand am = snestistics::op_codes[op].mode;
 		switch(am) {
-		case 7:
-		case 10:
-		case 15:
-		case 18:
-		case 23:
-		case 29:
+		case snestistics::Operand::ABSOLUTE_INDEXED_X:
+		case snestistics::Operand::ABSOLUTE_INDEXED_X_INDIRECT:
+		case snestistics::Operand::ABSOLUTE_LONG_INDEXED_X:
+		case snestistics::Operand::DIRECT_PAGE_INDEXED_X:
+		case snestistics::Operand::DIRECT_PAGE_INDEXED_X_INDIRECT:
+			CUSTOM_ASSERT(old::address_depend_x(op));
 			return true;
 		default:
+			CUSTOM_ASSERT(!old::address_depend_x(op));
 			return false;
 		};
 	}
 	inline bool address_depend_y(const uint8_t op) {
-		const int am = opCodeInfo[op].adressMode;
+		const snestistics::Operand am = snestistics::op_codes[op].mode;
 		switch(am) {
-		case 8:
-		case 11:
-		case 13:
-		case 16:
-		case 20:
+		case snestistics::Operand::ABSOLUTE_INDEXED_Y:
+		case snestistics::Operand::DIRECT_PAGE_INDEXED_Y:
+		case snestistics::Operand::DIRECT_PAGE_INDIRECT_INDEXED_Y:
+		case snestistics::Operand::DIRECT_PAGE_INDIRECT_LONG_INDEXED_Y:
+		case snestistics::Operand::STACK_RELATIVE_INDIRECT_INDEXED_Y:
+			CUSTOM_ASSERT(old::address_depend_y(op));
 			return true;
 		default:
+			CUSTOM_ASSERT(!old::address_depend_y(op));
 			return false;
 		};
 	}
 	inline bool address_depend_db(const uint8_t op) {
-		const int am = opCodeInfo[op].adressMode;
+		// Jumps don't use DB, they use PB instead
+		if(jumps[op])
+			return false;
+		const snestistics::Operand am = snestistics::op_codes[op].mode;
 		switch(am) {
-		case 14:
-		case 15:
-		case 16:
+		case snestistics::Operand::ABSOLUTE:
+		case snestistics::Operand::ABSOLUTE_INDEXED_X:
+		case snestistics::Operand::ABSOLUTE_INDEXED_Y:
+		case snestistics::Operand::ABSOLUTE_INDIRECT:
+		case snestistics::Operand::ABSOLUTE_INDEXED_X_INDIRECT:
+		case snestistics::Operand::DIRECT_PAGE_INDIRECT:
+		case snestistics::Operand::DIRECT_PAGE_INDIRECT_INDEXED_Y:
 			return true;
 		default:
 			return false;
 		};
 	}
 	inline bool address_depend_dp(const uint8_t op) {
-		const int am = opCodeInfo[op].adressMode;
+		const snestistics::Operand am = snestistics::op_codes[op].mode;
 		switch(am) {
-		case 6:
-		case 9:
+		case snestistics::Operand::DIRECT_PAGE:
+		case snestistics::Operand::DIRECT_PAGE_INDEXED_X:
+		case snestistics::Operand::DIRECT_PAGE_INDEXED_X_INDIRECT:
+		case snestistics::Operand::DIRECT_PAGE_INDEXED_Y:
+		case snestistics::Operand::DIRECT_PAGE_INDIRECT:
+		case snestistics::Operand::DIRECT_PAGE_INDIRECT_INDEXED_Y:
+		case snestistics::Operand::DIRECT_PAGE_INDIRECT_LONG:
+		case snestistics::Operand::DIRECT_PAGE_INDIRECT_LONG_INDEXED_Y:
+			CUSTOM_ASSERT(old::address_depend_dp(op));
 			return true;
 		default:
+			CUSTOM_ASSERT(!old::address_depend_dp(op));
 			return false;
 		};
 	}
 }
-
-extern bool branches[256];
-extern bool jumps[256];
-extern bool pushpops[256];
-
-void initLookupTables();
-
-struct AdressModeInfo {
-	int adressMode; // Just for readability, not used
-	int numBytes;
-	int numBitsForOpcode;
-	const char * const formattingString;
-	const char * const formattingWithLabelString;
-};
-
-static const AdressModeInfo g_oplut[] = {
-	{ 0, 1, 0, "",					""},								
-	{ 1, 3, 16, "#$%02X%02X",		""},				// special case for acc=8bit
-	{ 2, 3, 16, "#$%02X%02X",		"" },				// special case for index=8bit
-	{ 3, 2, 8, "#$%02X",			"" },				// special case for COP and BRK
-	{ 4, 2, 8, "#$%02X", "%s" },						// special case for branches (jumps or branch)
-	{ 5, 3, 8, "$%02X%02X", "%s" },
-	{ 6, 2, 8, "$%02X", "<%s" },	// TODO:FIX; <%%s is a hack since it assumes direct page = 0, at least validate that <label == the value...
-	{ 7, 2, 8, "$%02X,x", "" },
-	{ 8, 2, 8, "$%02X,y", "" },
-	{ 9, 2, 8, "($%02X)", "" },
-	{ 10, 2, 8, "($%02X,x)", "" },
-	{ 11, 2, 8, "($%02X),y", "" },
-	{ 12, 2, 8, "[$%02X]", "" },
-	{ 13, 2, 8, "[$%02X],y", "" },
-	{ 14, 3, 16, "$%02X%02X", "%s" },	// TODO:FIX; <%%s is a hack since it assumes data bank = :label.
-	{ 15, 3, 16, "$%02X%02X,x", "" },
-	{ 16, 3, 16, "$%02X%02X,y", "" },
-	{ 17, 4, 24, "$%02X%02X%02X", "%s" },
-	{ 18, 4, 24, "$%02X%02X%02X,x", "" },
-	{ 19, 2, 8, "$%02X,s", "" },
-	{ 20, 2, 8, "($%02X,s),y", "" },
-	{ 21, 3, 16, "($%02X%02X)", ""},
-	{ 22, 3, 16, "[$%02X%02X]", "" },
-	{ 23, 3, 16, "($%02X%02X,x)", "" },
-	{ 24, 1, 0, "A", "" },
-	{ 25, 3, 8, "$%02X, $%02X", "" },					// WLA DX wants byte order reversed for this one...
-	{ 26, 3, 16, "$%02X%02X", "" },
-	{ 27, 2, 8, "($%02X)", "" },
-	{ 28, 3, 16, "$%02X%02X", "%s" }, // same as 14 but for jumps (pb instead of db)
-	{ 29, 3, 16, "$%02X%02X,x", "" }, // same as 15 but for jumps (pb instead of db)
-};
 
 // Unpacked relative offset for branch operations
 inline int unpackSigned(const uint8_t packed) {
