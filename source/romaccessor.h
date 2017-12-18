@@ -58,17 +58,6 @@ private:
 		return mirrorAddr - (adr(pointer) & 0x8000) + adr(pointer);
 	}
 
-	// Unpacked relative offset for branch operations
-	// TODO: Move to shared space
-	static int unpackSigned(const uint8_t packed) {
-		if ((packed >= 0x80) != 0) {
-			return packed - 256;
-		}
-		else {
-			return packed;
-		}
-	}
-
 	// This function describes how ROM is repeated when ROM is smaller than adress space
 	static uint32_t map_mirror(uint32_t size, uint32_t pos)
 	{
