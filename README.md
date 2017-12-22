@@ -4,6 +4,7 @@ Under construction
 ==================
 This project is currently being refurbished but it will soon be back in all of its glory.
 The one thing that is not working is the snes-9x connection that is needed to produce the input to snestistics.
+I think that any users who want to try snestistics out should wait for blog posts describing how it was used. That way you time will not be wasted!
 
 High-level overview
 ===================
