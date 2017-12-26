@@ -37,7 +37,7 @@ void parseOptions(const int argc, const char * const argv[], Options &options) {
 		} else if (cmd == "-asmfile") {
 			options.asm_file = opt;
 			k++;
-		} else if (cmd == "-report") {
+		} else if (cmd == "-reportfile") {
 			options.asm_report_file = opt;
 			k++;
 		} else if (cmd == "-tracefile") {
