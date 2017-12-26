@@ -917,6 +917,7 @@ void entry_point_report(ReportWriter &writer, const Trace &trace, const Annotati
 
 int main(const int argc, const char * const argv[]) {
 	try {
+		CUSTOM_ASSERT(true==false);
 		initLookupTables();
 
 		Options options;

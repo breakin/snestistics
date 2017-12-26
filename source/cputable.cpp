@@ -10,7 +10,7 @@ void initLookupTables() {
 		jumps[ih] = false;
 		branches[ih] = false;
 		pushpops[ih] = false;
-		const char * const i = snestistics::Operation_names[ih];
+		const char * const i = snestistics::mnemonic_names[ih];
 		if (i[0] == 'J') {
 			jumps[ih] = true;
 		}

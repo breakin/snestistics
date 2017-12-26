@@ -13,11 +13,9 @@ namespace {
 }
 
 void parseOptions(const int argc, const char * const argv[], Options &options) {
-
 	bool error = false;
 
 	for (int k=1; k<argc; k++) {
-		
 		// Make sure we have a pair of strings
 		const std::string cmd(argv[k]);
 		const char * opt = "";

@@ -11,7 +11,7 @@
 #include <ctime>
 #include <cassert>
 
-#define CUSTOM_ASSERT(COND) assert(COND);
+#define CUSTOM_ASSERT(COND) { printf(#COND); assert(COND); }
 //#define CUSTOM_ASSERT(COND)
 
 typedef uint32_t Pointer;
