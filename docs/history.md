@@ -4,13 +4,13 @@ Before Early days (early 2013)
 ==============================
 When I was starting with SNES-things I thought I wanted to do a game. The dream was to make something Zelda-like since Zelda for the Snes was my all time favorite game growing up. I quickly realized that since the Snes had such a good graphics chip you needed actual graphics. I thought I could maybe borrow the graphics from Zelda itself while making my engine/editor. To bootstrap myself. I found map data online but it didn't have unique tiles due to animations. Then I found a convertor that extracted the graphics but somehow it didn't feel satisfying using it. Would it perhaps feel better if I extracted it myself?
 
-At the same time I was writing a very small game; a clone of the [Lady Bug][https://www.youtube.com/watch?v=_K7BHmrEsSk].
+At the same time I was writing a very small game; a clone of the [Lady Bug](https://www.youtube.com/watch?v=_K7BHmrEsSk).
 
 It was the game me and my wife played the most while visiting Barcade in New York. I never completed making this game, this statis screen on the first level was as far as I got:
 
-![First Level Recreated by me](/docs_source/images/ladybug-level.png)
+![First Level Recreated by me](/images/ladybug-level.png)
 
-![Tile Set](/docs_source/images/ladybug-tiles.png)
+![Tile Set](/images/ladybug-tiles.png)
 
 Trying to make the lady bug clone made me realize that I really wasn't a good 65816 programmer. At least not yet. Some times when you are bad at something you blame the tools but in my case I simply blamed inexperience. I felt like I needed to see the source code of something bigger than the tutorials I have seen. To get a feeling for how you organized something like a game. Something like Zelda...
 
