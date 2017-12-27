@@ -26,7 +26,7 @@ and regenerate the assembler source. The resulting function in the assembler sou
 Function B, no annotations
 ~~~~~~~~~~
 
-So that looks nicer! Are there any other benefits to adding annotations? I am glad you asked!
+So that looks nicer! Are there any other benefits to adding annotations? I'm glad you asked!
 
 Jumps to annotated function
 ---------------------------
