@@ -6,9 +6,11 @@ When I was starting with SNES-things I thought I wanted to do a game. The dream 
 
 At the same time I was writing a very small game; a clone of the [Lady Bug](https://www.youtube.com/watch?v=_K7BHmrEsSk).
 
-It was the game me and my wife played the most while visiting Barcade in New York. I never completed making this game, this statis screen on the first level was as far as I got:
+It was the game me and my wife played the most while visiting Barcade in New York. I never completed making this game, this static screen on the first level was as far as I got:
 
 ![First Level Recreated by me](/images/ladybug-level.png)
+
+Here is the tile set I created (note that SNES has X- and Y- mirror flags per tile so no mirroring here):
 
 ![Tile Set](/images/ladybug-tiles.png)
 
