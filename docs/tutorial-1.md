@@ -14,9 +14,7 @@ I am assuming that if you actually want to understand code here in depth you wil
 
 The Subject
 ===========
-The game we are going to take a closer look at is the japanese game Battle Pinball.
-
-![Battle Pinball in action](https://www.youtube.com/watch?v=VKIM2FrK2zY)
+The game we are going to take a closer look at is the japanese game [Battle Pinball](https://www.youtube.com/watch?v=VKIM2FrK2zY).
 
 While not sure we will actually attain anything specific with this game, one idea is to translate it into english. As you can see the intro and the level selector is in Japanese while in-game text seems to be a mix of english and japanese. When we were doing SFW we were in secret mode until we *knew* we could do it. This time we just start pulling on some threads in public to see where we end up. No promises!
 
