@@ -63,3 +63,5 @@ source_group("source" FILES ${SOURCES})
 source_group("generate" FILES ${GENERATED_SOURCE})
 source_group("data" FILES ${DATA})
 source_group("testdata" FILES ${TESTDATA})
+
+install(TARGETS snestistics DESTINATION "bin-$<PLATFORM_ID>-$<CONFIG>")
