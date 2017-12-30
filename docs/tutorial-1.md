@@ -38,9 +38,11 @@ Now when we are satisfied we select _Snestistics->Save trace and exit..._:
 
 ![Saving trace](/images/tutorial-1/saving-trace.png)
 
-The trace can now be found in the Rom directory and the files can look something like this:
+The trace can now be found in the _Roms_ directory and the files can look something like this:
 
 ![Locating trace](/images/tutorial-1/trace-file.png)
+
+Note that traces currently end up in the _current working directory_ so if you start a movie playback in snes9x the traces will end up in the directory of the movie instead. This will probably be fixed in a future version of snes9x-snestistics.
 
 Only the .trace-file is important and the other ones can be deleted.
 
