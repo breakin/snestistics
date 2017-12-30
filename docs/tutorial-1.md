@@ -188,6 +188,10 @@ Can the source code be compiled?
 --------------------------------
 The short story is that the source code is almost WLA-DX compatible and provided a correct header (something that can be given to snestistics using -asmheaderfile) it can almost be compiled OVER the ROM without causing a diff. A future post will revisit this topic and it will also discuss limitations.
 
+Other limitations
+=================
+If the game uses self-modifying code (writing code dynamically to RAM and running from RAM) there assembly listing will most likely be confusing (or _snestistics_ might even crash). If you want to RE a game using SMC please contact us and we might be able to help you at least get source code for the non SMC-parts. Other parts of snestistics still provide value even if SMC is used.
+
 Closing words
 =============
 That was all for today. In the next post we will look at how you can start annotating the source code once you start to discover what things do.
