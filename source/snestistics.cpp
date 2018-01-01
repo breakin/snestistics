@@ -969,6 +969,7 @@ int main(const int argc, const char * const argv[]) {
 		}
 
 		AnnotationResolver annotations;
+		annotations.add_mmio_annotations();
 		{
 			Profile profile("Loading game annotations");
 			if (options.auto_label_file.empty()) {

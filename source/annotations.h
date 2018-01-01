@@ -77,6 +77,8 @@ public:
 		delete[] _trace_annotation_for_adress;
 	}
 
+	void add_mmio_annotations();
+
 	void line_info(const Pointer p, std::string *label_out, std::string *comment_out, std::string *use_comment_out, bool force_label) const;
 
 	std::string label(const Pointer p, std::string *use_comment, bool force) const;
@@ -88,8 +90,6 @@ public:
 	std::vector<TraceAnnotation> _trace_annotations;
 
 	const TraceAnnotation* trace_annotation(const Pointer pc) const;
-
-	static void test_annotation_resolver();
 
 	Pointer find_last_free_before_or_at(const Pointer p, const Pointer stop) const {
 		// TODO: We could binary search annotations for stop instead to avoid linear search
@@ -136,6 +136,8 @@ private:
 	void load(std::istream &input, const std::string &error_file); // Can be called many times, end with finalize
 	void finalize();
 
+	// TODO: Make some sort of abstraction around these that bounds check
+	// We don't use std::vector due to debug performance when we resize it and set it to zero
 	int* _annotation_for_adress = nullptr;
 	int* _trace_annotation_for_adress = nullptr;
 	uint32_t _annotation_for_adress_size = 0;
