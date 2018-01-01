@@ -1,10 +1,4 @@
 ---
-layout: post
-date: 2017-12-27
-title: Snestistics Tutorial - Getting started
-tags: snes, snestistics
-theme: snestistics
-landing: drafts
 ---
 Introduction
 ============
@@ -58,11 +52,11 @@ snestistics
   -asmfile pinball.asm
   -reportfile pinball_report.txt
 ~~~~~~~~~~~~~~~~
-This assumes that you are standing in the directory where you've placed _battle_pinball.smc_ and _trace0.trace_. The outputs will be _pinball.asm_ and _pinball_report.txt_. There might be other output files (depending on settings for our snes9x variant9 but they can be ignored. There are many more [options available](DOC COMMAND LINE) but lets concentrate on these for today.
+This assumes that you are standing in the directory where you've placed _battle_pinball.smc_ and _trace0.trace_. The outputs will be _pinball.asm_ and _pinball_report.txt_. There might be other output files (depending on settings for our snes9x variant but they can be ignored. There are many more [options available](DOC COMMAND LINE) but lets concentrate on these for today.
 
-It is very important to note here that some games will work flawlessly out of the box while some will simply cause an error here (or even a crash). If you want to work on a game and you encounter issues here, don't hestiate to contact us and we will fix the issue. There are some known limitations discussed in the [snestistics readme](https://github.com/breakin/snestistics/).
+It is very important to note here that some games will work flawlessly out of the box while some will simply cause an error here (or even a crash). If you want to work on a game and you encounter issues here, don't hesitate to contact us and we will fix the issue. There are some known limitations discussed in the [snestistics readme](https://github.com/breakin/snestistics/).
 
-Since we re-emulate the CPU portion of the game session and our emulator is not very fast this can take quite some time, but the reuslt is cached so all future runs will be fast. It should be noted that there will be some files created next to the trace file that contains this cached data. If they are deleted they will be regenerated. They have a version so if a new version of snestistics is donwloaded they will also be regenerated.
+Since we re-emulate the CPU portion of the game session and our emulator is not very fast this can take quite some time, but the result is cached so all future runs will be fast. It should be noted that there will be some files created next to the trace file that contains this cached data. If they are deleted they will be regenerated. They have a version so if a new version of snestistics is downloaded they will also be regenerated.
 
 The assembler source
 ====================
@@ -82,7 +76,7 @@ label_8083DF:
     /* mI 00 0000 8083DF E2 20       */ sep.B #$20
 
 label_8083E1:
-    /* mI 80 0000 8083E1 AD 12 42    */ lda.W $4212                     ; 004212 [DB=80]
+    /* mI 80 0000 8083E1 AD 12 42    */ lda.W REG_FLAGS                 ; H/V Blank Flags and Joypad Status - [DB=80]
     /* mI 00 0000 8083E4 29 01       */ and.B #$01
     /* mI 00 0000 8083E6 D0 F9       */ bne.B label_8083E1
     /* mI 00 0000 8083E8 E2 10       */ sep.B #$10
@@ -93,7 +87,7 @@ label_8083E1:
 label_8083F0:
     /* Mi 80 0000 8083F0 BD CA 02    */ lda.W $02CA,x                   ; 7E02CA [DB=80 X=0, 2]
     /* Mi 80 0000 8083F3 9D D4 02    */ sta.W $02D4,x                   ; 7E02D4 [DB=80 X=0, 2]
-    /* Mi 80 0000 8083F6 BD 18 42    */ lda.W $4218,x                   ; 004218 [DB=80 X=0, 2]
+    /* Mi 80 0000 8083F6 BD 18 42    */ lda.W $4218,x                   ; REG_JOY1L Controller Port Data Registers (Pad 1 - Low) - [DB=80 X=0, 2]
     /* Mi 80 0000 8083F9 9D CA 02    */ sta.W $02CA,x                   ; 7E02CA [DB=80 X=0, 2]
     /* Mi 80 0000 8083FC 5D D4 02    */ eor.W $02D4,x                   ; 7E02D4 [DB=80 X=0, 2]
     /* Mi 80 0000 8083FF 3D CA 02    */ and.W $02CA,x                   ; 7E02CA [DB=80 X=0, 2]
@@ -203,7 +197,6 @@ Snestistics can be found at [github](https://github.com/breakin/snestistics).
 
 TBD before posting
 ==================
-* https://github.com/breakin/snestistics/blob/master/HISTORY.md - Varför snes9x, varför emulering?
-* Manual command line options - länk
-* Det känns fel att hw-regs kommer via labels som man måste addera själv, när de är oändringsbara (pga hw-register) och när de går via data-konceptet som nog måste bytas ut iaf... något vi ska fixa? Känns som något som kommer ge alla problem...
-* Gör så att snestistics annoterarar upp NMI, RESET etc... Det ska stå i koden.
+* https://github.com/breakin/snestistics/blob/master/HISTORY.md
+* Manual command line options - link
+* Make snestistics put vectors in asm output (NMI, RESET, ...)

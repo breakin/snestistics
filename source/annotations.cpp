@@ -11,6 +11,8 @@ struct DataMMIO {
 	const char * const use_comment;
 };
 
+// These are not gotten from https://en.wikibooks.org/wiki/Super_NES_Programming/SNES_Hardware_Registers
+// TODO: Update these description. Some are a bit too vague. Add LO/HI to all word-sized.
 static DataMMIO mmio_annotations[] = {
 	{ 0x002100, "REG_INIDISP", "Screen Display Register" },
 	{ 0x002101, "REG_OBJSEL", "Object Size and Character Size Register" },
@@ -100,8 +102,9 @@ static DataMMIO mmio_annotations[] = {
 	{ 0x00420B, "REG_MDMAEN", "DMA Enable Register" },
 	{ 0x00420C, "REG_HDMAEN", "HDMA Enable Register" },
 	{ 0x00420D, "REG_MEMSEL", "ROM Speed Register" },
-	{ 0x004210, "REG_RDNMI", "Interrupt Flag Registers" },
-	{ 0x004211, "REG_TIMEUP", "Interrupt Flag Registers" },
+	{ 0x004210, "REG_RDNMI", "NMI Enable" },
+	{ 0x004211, "REG_TIMEUP", "IRQ Flag By H/V Count Timer" },
+	{ 0x004212, "REG_FLAGS", "H/V Blank Flags and Joypad Status" },
 	{ 0x004213, "REG_RDIO", "IO Port Read Register" },
 	{ 0x004214, "REG_RDDIVL", "Multiplication Or Divide Result Registers (Low)" },
 	{ 0x004215, "REG_RDDIVH", "Multiplication Or Divide Result Registers (High)" },
