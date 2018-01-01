@@ -1,0 +1,14 @@
+@ Preliminary functions. This line is only to make the .labels-file easier to work with.
+@ Good place to add TODO that you can search for.
+; This function reads from the joypad
+; We can write as many comment lines here as we want and they will appear before the function
+# Reads joypad status
+function 8083DF 80840A JoyPad1
+comment 808405 "Here x is increased!"
+function 8082CC 808304 Unknown1
+
+function 80E412 80E43B Trampoline
+# Seems to be jump target
+function 80E486 80E4A9 JumpFunction1
+# Seems to be jump target
+function 80E56E 80E5A7 JumpFunction2

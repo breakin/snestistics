@@ -44,7 +44,7 @@ In a future post we will give more tips'n'trics to make things even better with 
 
 Running snestistics
 ===================
-Once you have your trace file you are ready to generate the assembler source. We assume that you are running snestistics from a shell such as bash or cmd.exe and that you've gotten snestistics pre-built for your platform somehow. The minimal command line parameters to generate assembler output are
+Once you have your trace file you are ready to generate the assembler source. We assume that you are running snestistics from a shell such as bash or cmd.exe and that you've gotten snestistics pre-built for your platform somehow. The minimal command line parameters to generate assembler output are (put them on one line, newlines here to make it easier to read!)
 ~~~~~~~~~~~~~~~~
 snestistics
   -romfile battle_pinball.smc
