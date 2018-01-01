@@ -1,10 +1,4 @@
 ---
-layout: post
-date: 2017-12-28
-title: Snestistics Tutorial - Annotations
-tags: snes, snestistics
-theme: snestistics
-landing: drafts
 ---
 Introduction
 ============
@@ -47,6 +41,9 @@ We hand-craft the following annotations and put them in the file _tutorial2.labe
 # Reads joypad status
 function 8083DF 80840A JoyPad1
 comment 808405 "Here x is increased!"
+function 8082CC 808304 Unknown1
+; This code is special so lets add a label to make it more visible!
+label 808407 ExtraLabel
 ~~~~~~~~~~
 
 We run snestistics again with a new command line option so it used our annotation file:
@@ -62,7 +59,7 @@ snestistics
 This regenerates the assembler source. Lets take a look at it now:
 ~~~~~~~~~~
 ; This function reads from the joypad
-; Haven't investigated much yet but could be cool
+; We can write as many comment lines here as we want and they will appear before the function
 JoyPad1:
     /* mI 00 0000 8083DF E2 20       */ sep.B #$20
 
@@ -85,6 +82,9 @@ _JoyPad1_8083F0:
     /* Mi 80 0000 808402 9D DE 02    */ sta.W $02DE,x                   ; 7E02DE [DB=80 X=0, 2]
     /* Mi 00 0000 808405 E8          */ inx
     /* Mi 00 0000 808406 E8          */ inx
+
+; This code is special so lets add a label to make it more visible!
+_JoyPad1_ExtraLabel:
     /* Mi 00 0000 808407 88          */ dey
     /* Mi 00 0000 808408 D0 E6       */ bne.B _JoyPad1_8083F0
     /* Mi 00 0000 80840A 60          */ rts
@@ -195,7 +195,7 @@ _Unknown1_8082EA:
     /* mI 00 0000 808304 60          */ rts
 ~~~~~~~~~~
 
-We added hundreds if not thousands of these Unknown functions during reverse engineering of SFW! We will see later why having unknown function ranges can help!
+We added hundreds if not thousands of these Unknown functions during reverse engineering of SFW! We will see later why annotated completely unknown function can help!
 
 Indirect jumps
 ---------------
@@ -233,27 +233,9 @@ Trampoline:
 
 This doesn't help us much. But if we actually investigated a function that we don't know how and why it is called (because address come from data) this is very helpful. It is all about revealing patterns! Remember that our real problem here is that we don't have the original source code and we know nothing about the game. At least for now!
 
-Functions
-=========
+What is a function?
+===================
 Our current concept is a function. We realize that since the games are not written in a high-level language that have consistent calling conventions this might not be a good fir for all games. This is an area where we are constantly trying to come up with new concepts for and each new game will probably push us to improve here.
-
-Auto-annotations
-================
-There are many small functions that does _something_. Often we don't need to know what they all do, but some of the tools in snestistics such as the trace log wants all program counters that are executed during a trace log session to be in annotated functions. When we did the SFW translation Anders did 1000s of functions manually (mostly since he wanted to help David out and he was procastrinating on the next feature for snestistics). Then one day he said enough and wrote an auto-detector that worked really well for SFW. It found an additional 500 functions and then there was no more manual work to be done.
-
-We've tried it on other games with worse results and this is a feature I imagine will be rewritten a lot. There are two modes in which it can be run. In one mode the auto-labels file is "special". If it is missing on disk it will be re-generated automatically. In the other mode the auto-labels file is simply supplied as a regular labels file once created. This enabled manual editing to fix up "broken" functions.
-
-~~~~~~~
-SHOW COMMAND LINES FOR GENERATION AND FOR USAGE (BOTH MODES)
-~~~~~~~
-
-See [manual](COMMAND LINE DOCS) for more command line options.
-
-Lets see how it fares on .Battle Pinball_.
-
-TODO:
-1. Test the different modes. See how many functions they each get. Add more options.
-2. Find buggy cases and show them.
 
 Closing words
 =============

@@ -6,7 +6,8 @@
 function 8083DF 80840A JoyPad1
 comment 808405 "Here x is increased!"
 function 8082CC 808304 Unknown1
-
+; This code is special so lets add a label to make it more visible!
+label 808407 ExtraLabel
 function 80E412 80E43B Trampoline
 # Seems to be jump target
 function 80E486 80E4A9 JumpFunction1
