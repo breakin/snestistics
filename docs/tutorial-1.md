@@ -121,6 +121,8 @@ What does each piece mean?
 
 The indicators in the comment are not perfect. They reflect the values encountered during our emulated session in snes9x. Maybe in a longer session this code will be called in other ways. If there is an uncertainty a star will be printed instead indicating that there was multiple choices.
 
+While we have no idea what this code does it seems that it access MMIO-mapped registers dealing with the joypad so it seems to access joypad data.
+
 Labels for jumps
 ----------------
 In our code snippet we have a jump in the form of a branch.
