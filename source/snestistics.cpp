@@ -969,9 +969,9 @@ int main(const int argc, const char * const argv[]) {
 		}
 
 		AnnotationResolver annotations;
-		annotations.add_mmio_annotations();
 		{
 			Profile profile("Loading game annotations");
+			annotations.add_mmio_annotations();
 			if (options.auto_label_file.empty()) {
 				// Don't load the auto-labels file if we are re-generating it
 				annotations.load(options.labels_files);

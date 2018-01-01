@@ -505,9 +505,6 @@ const Annotation * AnnotationResolver::resolve_annotation(Pointer resolve_adress
 }
 
 void AnnotationResolver::load(const std::vector<std::string> & filenames) {
-	if (filenames.empty()) {
-		return;
-	}
 	for (auto f : filenames) {
 		printf("Loading annotations from %s...\n", f.c_str());
 		std::ifstream loader;
