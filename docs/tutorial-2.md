@@ -208,7 +208,7 @@ function 80E486 80E4A9 JumpFunction1
 function 80E56E 80E5A7 JumpFunction2
 ~~~~~~~~~~
 
-Our indirect jump example from the [first](/tutorial-1) tutorial now looks like this:
+Our indirect jump example from the [first](tutorial-1) tutorial now looks like this:
 ~~~~~~~~~~
 Trampoline:
     /* mI 00 0000 80E412 C2 30       */ rep.B #$30
@@ -241,7 +241,7 @@ Closing words
 =============
 Working iteratively with labels is extremely powerful. The auto-annotator is very fun to play around with and when it works it saved so much work.
 
-[Here](/code/tutorial2.labels) is the full labels file if you want to experiment with it.
+[Here](code/tutorial2.labels) is the full labels file if you want to experiment with it.
 
 TODO
 ====
