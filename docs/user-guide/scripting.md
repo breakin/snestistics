@@ -9,4 +9,4 @@ API
 
 Functionality
 -------------
-* [TraceLog](tracelog-scripting)
+* [TraceLog](scripting-trace-log)
