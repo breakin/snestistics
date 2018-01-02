@@ -1,13 +1,13 @@
-Snestistics documentation
-=========================
+Snestistics User Guide
+======================
 
 Contents:
 
 .. toctree::
    :maxdepth: 1
 
-   userguide/index.rst
-
+   command_line_options.rst
+   scripting_api.rst
 
 Indices and tables
 ==================
