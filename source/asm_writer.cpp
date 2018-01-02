@@ -420,11 +420,11 @@ public:
 
 		} else if (numBits == 0) {
 		} else if (numBits == 8) {
-			nw += fprintf(m_outFile, ".B");
+			nw += fprintf(m_outFile, ".b");
 		} else if (numBits == 16) {
-			nw += fprintf(m_outFile, ".W");
+			nw += fprintf(m_outFile, ".w");
 		} else if (numBits == 24) {
-			nw += fprintf(m_outFile, ".L");
+			nw += fprintf(m_outFile, ".l");
 		} else {
 			assert(false);
 		}
