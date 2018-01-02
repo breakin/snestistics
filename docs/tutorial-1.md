@@ -19,7 +19,7 @@ Interlude
 While we own a physical copy of the game and have dumped it ourselves we are not allowed to share the ROM and also not allowed to share the source code for the ROM even though I've dissassemblied it myself. Thus you, the reader, will only see glimps and for the full picture (text really!) you will need to run snestistics on a ROM you've obtained yourself. Furthermore snestistics is constantly being updated/improved so the snippets shown here might not be fully accurate. We will try to update this tutorial series when snestistics is changed so that it is current.
 
 Running snes9x
-================
+==============
 The first step to obtain the disassembly is to use the special version of snes9x that has been patched to output a snestistics .trace file. Note that this only work under Windows for now.
 
 First start our version of snes9x (snes9x-snestistics.exe). Note the _Snestistics_ menu right next to the help menu.
@@ -75,30 +75,30 @@ First let's look at few lines:
 
 ~~~~~~~~~~~~~~~~
 label_8083DF:
-    /* mI 00 0000 8083DF E2 20       */ sep.B #$20
+    /* mI 80      8083DF E2 20       */ sep.b #$20
 
 label_8083E1:
-    /* mI 80 0000 8083E1 AD 12 42    */ lda.W REG_FLAGS                 ; H/V Blank Flags and Joypad Status - [DB=80]
-    /* mI 00 0000 8083E4 29 01       */ and.B #$01
-    /* mI 00 0000 8083E6 D0 F9       */ bne.B label_8083E1
-    /* mI 00 0000 8083E8 E2 10       */ sep.B #$10
-    /* mi 00 0000 8083EA A0 02       */ ldy.B #$02
-    /* mi 00 0000 8083EC C2 20       */ rep.B #$20
-    /* Mi 00 0000 8083EE A2 00       */ ldx.B #$00
+    /* mI 80      8083E1 AD 12 42    */ lda.w REG_FLAGS                 ; H/V Blank Flags and Joypad Status - [DB=80]
+    /* mI 80      8083E4 29 01       */ and.b #$01
+    /* mI 80      8083E6 D0 F9       */ bne.b label_8083E1
+    /* mI 80      8083E8 E2 10       */ sep.b #$10
+    /* mi 80      8083EA A0 02       */ ldy.b #$02
+    /* mi 80      8083EC C2 20       */ rep.b #$20
+    /* Mi 80      8083EE A2 00       */ ldx.b #$00
 
 label_8083F0:
-    /* Mi 80 0000 8083F0 BD CA 02    */ lda.W $02CA,x                   ; 7E02CA [DB=80 X=0, 2]
-    /* Mi 80 0000 8083F3 9D D4 02    */ sta.W $02D4,x                   ; 7E02D4 [DB=80 X=0, 2]
-    /* Mi 80 0000 8083F6 BD 18 42    */ lda.W $4218,x                   ; REG_JOY1L Controller Port Data Registers (Pad 1 - Low) - [DB=80 X=0, 2]
-    /* Mi 80 0000 8083F9 9D CA 02    */ sta.W $02CA,x                   ; 7E02CA [DB=80 X=0, 2]
-    /* Mi 80 0000 8083FC 5D D4 02    */ eor.W $02D4,x                   ; 7E02D4 [DB=80 X=0, 2]
-    /* Mi 80 0000 8083FF 3D CA 02    */ and.W $02CA,x                   ; 7E02CA [DB=80 X=0, 2]
-    /* Mi 80 0000 808402 9D DE 02    */ sta.W $02DE,x                   ; 7E02DE [DB=80 X=0, 2]
-    /* Mi 00 0000 808405 E8          */ inx
-    /* Mi 00 0000 808406 E8          */ inx
-    /* Mi 00 0000 808407 88          */ dey
-    /* Mi 00 0000 808408 D0 E6       */ bne.B label_8083F0
-    /* Mi 00 0000 80840A 60          */ rts
+    /* Mi 80      8083F0 BD CA 02    */ lda.w $02CA,x                   ; 7E02CA [DB=80 X=0, 2]
+    /* Mi 80      8083F3 9D D4 02    */ sta.w $02D4,x                   ; 7E02D4 [DB=80 X=0, 2]
+    /* Mi 80      8083F6 BD 18 42    */ lda.w $4218,x                   ; REG_JOY1L Controller Port Data Registers (Pad 1 - Low) - [DB=80 X=0, 2]
+    /* Mi 80      8083F9 9D CA 02    */ sta.w $02CA,x                   ; 7E02CA [DB=80 X=0, 2]
+    /* Mi 80      8083FC 5D D4 02    */ eor.w $02D4,x                   ; 7E02D4 [DB=80 X=0, 2]
+    /* Mi 80      8083FF 3D CA 02    */ and.w $02CA,x                   ; 7E02CA [DB=80 X=0, 2]
+    /* Mi 80      808402 9D DE 02    */ sta.w $02DE,x                   ; 7E02DE [DB=80 X=0, 2]
+    /* Mi 80      808405 E8          */ inx
+    /* Mi 80      808406 E8          */ inx
+    /* Mi 80      808407 88          */ dey
+    /* Mi 80      808408 D0 E6       */ bne.b label_8083F0
+    /* Mi 80      80840A 60          */ rts
 ~~~~~~~~~~~~~~~~
 
 First we have a label called _label_8083DF_. The number after the word _label_ shows the program counter needed to execute this code. In this case the snippets starts at offset $83FD in bank $80 (the $ here simply means that the number is written in hexadecimal form).
@@ -110,11 +110,11 @@ Then if we look at a line in the code we have:
 
 What does each piece mean?
 
-* The lower-case m indicates that we have a 8-bit accumulator (memory flag is set).
-* The upper-case I indicates that we have 16-bit index registers (index flag is not set).
-* The 80 means that the data bank was 80 when we came here
-* The 0000 means that the direct page was 0 when we came here
-* The 8083DF means that it is located at program counter $8083DF (bank $80, address $83DF).
+* The lower-case m indicates that we have a 8-bit accumulator (memory flag is set). If multiple values a * will be there instead.
+* The upper-case I indicates that we have 16-bit index registers (index flag is not set). If multiple values a * will be there instead.
+* The 80 means that the data bank was 80 for this instruction. If there was many options this field will simply be white spaces.
+* The column with four white spaces after 80 is room for the direct page. Since this piece of code doesn't care about the direct page register it seems to be called with all sorts of values and hence it is left blank.
+* The 8083DF means that this instruction is used when the program bank and program counter is $8083DF (bank $80, address $83DF).
 * C2 20 is the encoding of this opcode as bytes. This is what can be found in the ROM-file.
 * rep.B #$20 means that we clear the processor status flags for the flags in the number $20.
 	* Note how on the next line the accumulator is now 16-bit (upper-case M).
@@ -129,7 +129,7 @@ Labels for jumps
 ----------------
 In our code snippet we have a jump in the form of a branch.
 ~~~~~~~~~~~~~~~~
-    /* Mi 00 0000 808408 D0 E6       */ bne.B label_8083F0
+/* Mi 80      808408 D0 E6       */ bne.b label_8083F0
 ~~~~~~~~~~~~~~~~
 It is very convenient that we get the label name. That makes it easy to search for it in the assembly source.
 
@@ -137,25 +137,25 @@ Labels for indirect jumps
 -------------------------
 Some jumps are data-driven. That means that they get an address from somewhere (RAM or ROM) and then jumps to that address. Since that address might not be part of the ROM it may be hard to know the value by just looking at the source code. In _snestistics_ all indirect jump locations appear as a comment.
 ~~~~~~~~~~~~~~~~
-label_80E744:
-    /* *I 00 0000 80E744 C2 30       */ rep.B #$30
-    /* MI 00 0900 80E746 A5 70       */ lda.B $70                       ; 7E0970 [DP=900]
-    /* MI 00 0000 80E748 29 7F 00    */ and.W #$007F
-    /* MI 00 0000 80E74B 0A          */ asl A
-    /* MI 00 0000 80E74C AA          */ tax
-    /* MI 00 0000 80E74D 7C 50 E7    */ jmp.W ($E750,x)
-          ; label_80E76E [X=0000]
-          ; label_80E79C [X=0002]
-          ; label_80E7B6 [X=0004]
-          ; label_80E7E4 [X=0006]
-          ; label_80E7FE [X=0008]
-          ; label_80E82C [X=000A]
-          ; label_80E846 [X=000C]
-          ; label_80E87E [X=000E]
-          ; label_80E896 [X=0010]
-          ; label_80E8AB [X=0012]
-          ; label_80E8CD [X=0014]
-          ; label_80E90C [X=0016]
+label_80E412:
+    /* mI 80 0900 80E412 C2 30       */ rep.b #$30
+    /* MI 80 0900 80E414 A5 70       */ lda.b $70                       ; 7E0970 [DP=900]
+    /* MI 80 0900 80E416 29 7F 00    */ and.w #$007F
+    /* MI 80 0900 80E419 0A          */ asl A
+    /* MI 80 0900 80E41A AA          */ tax
+    /* MI 80 0900 80E41B 7C 1E E4    */ jmp.w ($E41E,x)
+          ; label_80E43C [X=0000]
+          ; label_80E460 [X=0002]
+          ; label_80E461 [X=0004]
+          ; label_80E485 [X=0006]
+          ; label_80E486 [X=0008]
+          ; label_80E4AA [X=000A]
+          ; label_80E4AB [X=000C]
+          ; label_80E4CF [X=000E]
+          ; label_80E4D0 [X=0010]
+          ; label_80E54E [X=0012]
+          ; label_80E56E [X=0014]
+          ; label_80E5A8 [X=0016]
 ~~~~~~~~~~~~~~~~
 
 We can see that in this unknown code starting at _label_80E744_ there is a jump to the indirect address located in ROM location `$80E750` plus the X register. Instead of needing to look up those pointers in a hex editor, snestistics outputs a list of all addresses jumped to in our emulated session.
@@ -168,12 +168,12 @@ Bonus
 ------------------------
 If we look at the line
 ~~~~~~~~~~~~~~~~
-/* Mi 80 0000 8083F0 BD CA 02    */ lda.W $02CA,x                   ; 7E02CA [DB=80 X=0, 2]
+/* Mi 80      8083F0 BD CA 02    */ lda.w $02CA,x                   ; 7E02CA [DB=80 X=0, 2]
 ~~~~~~~~~~~~~~~~
 we see that there are some extra stuff in the comment. It gives more information. In this case it says that this particular operation was executed with X=0 and X=2 with DB (data bank) $80. The number 7E02CA simply indicates that the base pointer is mapped to bank $7E where some of the RAM-memory is located. This is mostly to remind about how this variant of the op is working. If there had been more values of X it could look like this:
 
 ~~~~~~~~~~~~~~~~
-/* MI 00 0000 808623 9F 00 22 7E */ sta.L $7E2200,x                 ; 7E2200 [X=<0, 4, ..., 200>]
+/* MI         808623 9F 00 22 7E */ sta.l $7E2200,x                 ; 7E2200 [X=<0, 4, ..., 200>]
 ~~~~~~~~~~~~~~~~
 
 Here we can see that this line were run with X=0, X=4, X=8, X=12 and so on until X=200. The <> symbols indicate that we are dealing with a range. The difference between all the values in the range is the same. It can be deduced from the two first numbers.
