@@ -37,7 +37,6 @@ SET(GENERATED_SOURCE
 )
 
 SET(DATA
-	../data/hardware_reg.labels
 )
 
 SET(TESTDATA
