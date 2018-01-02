@@ -233,8 +233,8 @@ void create_trace(const Options &options, const int trace_file_index, const RomA
 				OpRecord o;
 				memset(&o, 0, sizeof(OpRecord)); // Make sure padding is zero since we serialize cache
 				o.PC = pc_before;
-				o.op_info.DB = regs.used_DB ? DB_before : 0;
-				o.op_info.DP = regs.used_DP ? DP_before : 0;
+				o.op_info.DB = DB_before;//regs.used_DB ? DB_before : 0;
+				o.op_info.DP = DP_before;//regs.used_DP ? DP_before : 0;
 				o.op_info.P = P_before & (0x10|0x20|0x100); // Index, memory, emulation
 				o.op_info.X = X_before & regs.used_X_mask;
 				o.op_info.Y = Y_before & regs.used_Y_mask;

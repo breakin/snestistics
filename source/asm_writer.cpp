@@ -380,7 +380,7 @@ public:
 			if (data_bank.single_value) {
 				nw += fprintf(m_outFile, "%02X ", data_bank.value);
 			} else {
-				nw += fprintf(m_outFile, "** ");
+				nw += fprintf(m_outFile, "   ");
 			}
 		}
 
@@ -389,7 +389,7 @@ public:
 			if (direct_page.single_value) {
 				nw += fprintf(m_outFile, "%04X ", direct_page.value);
 			} else {
-				nw += fprintf(m_outFile, "**** ");
+				nw += fprintf(m_outFile, "     ");
 			}
 		}
 
@@ -632,7 +632,7 @@ void asm_writer(ReportWriter &report, const Options &options, Trace &trace, cons
 		CombinationBool index_wide;
 
 		{
-			// NOTE: While an op might depend on say DB it might not use it if adress is in $0000-$1999
+			// NOTE-TODO: While an op might depend on say DB it might not use it if adress is in $0000-$1999
 
 			// Zero out unused registers so our sort get items in correct order
 			for (OpInfo &o : variants) {
