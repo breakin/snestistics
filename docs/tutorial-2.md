@@ -2,7 +2,7 @@
 ---
 Introduction
 ============
-So we have our assembler source. Now starts a cycle of reading assembler, understanding _something_ (small or big) and then to annotate the assembler source so we don't have to remember it all. In snestistics we have a file called a labels file where annotations can be added. Lets revisit the function from the first [tutorial](tutorial-1) that interacted with the joypad:
+So we have our assembler source. Now starts a cycle of reading assembler, understanding _something_ (small or big) and then to annotate the assembler source so we don't have to remember it all. In snestistics we have a file called a labels file where annotations can be added. Let's revisit the function from the first [tutorial](tutorial-1) that interacted with the joypad:
 
 ~~~~~~~~~~~~~~~~
 label_8083DF:
@@ -42,7 +42,7 @@ We hand-craft the following annotations and put them in the file _tutorial2.labe
 function 8083DF 80840A JoyPad1
 comment 808405 "Here x is increased!"
 function 8082CC 808304 Unknown1
-; This code is special so lets add a label to make it more visible!
+; This code is special so let's add a label to make it more visible!
 label 808407 ExtraLabel
 ~~~~~~~~~~
 
@@ -56,7 +56,7 @@ snestistics
   -labelsfile tutorial2.labels
 ~~~~~~~~~~~~~~~~
 
-This regenerates the assembler source. Lets take a look at it now:
+This regenerates the assembler source. Let's take a look at it now:
 ~~~~~~~~~~
 ; This function reads from the joypad
 ; We can write as many comment lines here as we want and they will appear before the function
@@ -83,7 +83,7 @@ _JoyPad1_8083F0:
     /* Mi 00 0000 808405 E8          */ inx
     /* Mi 00 0000 808406 E8          */ inx
 
-; This code is special so lets add a label to make it more visible!
+; This code is special so let's add a label to make it more visible!
 _JoyPad1_ExtraLabel:
     /* Mi 00 0000 808407 88          */ dey
     /* Mi 00 0000 808408 D0 E6       */ bne.B _JoyPad1_8083F0
@@ -96,7 +96,7 @@ Are there any other benefits to adding annotations besides comments? I'm glad yo
 
 Jumps to annotated function
 ---------------------------
-So lets search for the word JoyPad1 in the generated assembly source. We only get one hit (not counting the annotated function itself):
+So let's search for the word JoyPad1 in the generated assembly source. We only get one hit (not counting the annotated function itself):
 ~~~~~~~~~~
 label_8082C5:
     /* *I 00 0000 8082C5 20 CC 82    */ jsr.W label_8082CC
@@ -116,7 +116,7 @@ label_8082C5:
     /* Mi 00 0000 8082CB 60          */ rts
 ~~~~~~~~~~
 
-It would be much harder to know that it had something to do with JoyPad1! But what does _label_8082CC_ do? Lets look at it:
+It would be much harder to know that it had something to do with JoyPad1! But what does _label_8082CC_ do? Let's look at it:
 ~~~~~~~~~~
 label_8082CC:
     /* *I 00 0000 8082CC C2 10       */ rep.B #$10
@@ -150,7 +150,7 @@ label_8082EA:
     /* mI 00 0000 808304 60          */ rts
 ~~~~~~~~~~
 
-Well we don't know what it does (yet) and it is often hard to say without context, but what we can say is that it looks like a function. Lets add an annotation for it just for fun in tutorial2.labels:
+Well we don't know what it does (yet) and it is often hard to say without context, but what we can say is that it looks like a function. Let's add an annotation for it just for fun in tutorial2.labels:
 
 ~~~~~~~~~~
 function 8082CC 808304 Unknown1
@@ -199,7 +199,7 @@ We added hundreds if not thousands of these Unknown functions during reverse eng
 
 Indirect jumps
 ---------------
-Lets add some more annotations in our labels-file:
+Let's add some more annotations in our labels-file:
 ~~~~~~~~~~
 function 80E412 80E43B Trampoline
 # Seems to be jump target
@@ -235,7 +235,7 @@ This doesn't help us much. But if we actually investigated a function that we do
 
 What is a function?
 ===================
-Our current concept is a function. We realize that since the games are not written in a high-level language that have consistent calling conventions this might not be a good fir for all games. This is an area where we are constantly trying to come up with new concepts for and each new game will probably push us to improve here.
+Our current concept is a function. We realize that since the games are not written in a high-level language that have consistent calling conventions this might not be a good fit for all games. This is an area where we are constantly trying to come up with new concepts for and each new game will probably push us to improve here.
 
 Closing words
 =============
