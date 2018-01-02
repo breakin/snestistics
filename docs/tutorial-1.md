@@ -123,7 +123,7 @@ What does each piece mean?
 
 The indicators in the comment are not perfect. They reflect the values encountered during our emulated session in snes9x. Maybe in a longer session this code will be called in other ways. If there is an uncertainty a star will be printed instead indicating that there was multiple choices.
 
-While we have no idea how this code snippet is used, with some SNES experience it can already be deduced that it reads MMIO-mapped joypad inputs (from `$4218,x`) and stores the currently pressed button bitmask in RAM at `$02CA,x` as well as a bitmask for the buttons trigged since the last readout at `$02DE,x`. *We're going into DATA ANNOTATION territory here... but maybe it's fair to point out the raw pointers here, and hopefully add proper annotation to these addresses in a later paragraph/chapter?*
+While we have no idea how this code snippet is used, with some SNES experience it can already be deduced that it reads MMIO-mapped joypad inputs (from `$4218,x`) and stores the currently pressed button bitmask in RAM at `$02CA,x` as well as a bitmask for the buttons trigged since the last readout at `$02DE,x`. In the comment you can see the word joypad in two places so you don't have to know all MMIO-mapped stuff by heart!
 
 Labels for jumps
 ----------------
