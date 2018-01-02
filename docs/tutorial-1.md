@@ -10,15 +10,15 @@ We assume that if you actually want to understand the code presented here in dep
 
 The Subject
 ===========
-The game we are going to take a closer look at is the japanese game [Battle Pinball](https://www.youtube.com/watch?v=VKIM2FrK2zY).
+The game we are going to take a closer look at is the japanese game [Battle Pinball](https://www.youtube.com/watch?v=VKIM2FrK2zY), spin-off game in the [Compati Hero Series](https://en.wikipedia.org/wiki/Compati_Hero_Series).
 
-While not sure we will actually attain anything specific with this game, one idea is to translate it into english. As you can see the intro and the level selector is in Japanese while in-game text seems to be a mix of english and japanese. When we were doing SFW we were in secret mode until we *knew* we could do it. This time we just start pulling on some threads in public to see where we end up. No promises!
+While not sure we will actually attain anything specific with this game, two possible ideas is to add SaveRAM support for the high score list and translate the pretty minimal amount of Japanese text on display to English. As you can see the intro and the level selector is in Japanese while in-game text is a mix of English and Japanese. When we were doing SFW we worked in secret mode until we *knew* we could do it. This time we just start pulling on some threads in public to see where we end up. No promises!
 
 Interlude
 =========
 While we own a physical copy of the game and have dumped it ourselves we are not allowed to share the ROM and also not allowed to share the source code for the ROM even though I've dissassemblied it myself. Thus you, the reader, will only see glimps and for the full picture (text really!) you will need to run snestistics on a ROM you've obtained yourself. Furthermore snestistics is constantly being updated/improved so the snippets shown here might not be fully accurate. We will try to update this tutorial series when snestistics is changed so that it is current.
 
-Running snes-9x
+Running snes9x
 ================
 The first step to obtain the disassembly is to use the special version of snes9x that has been patched to output a snestistics .trace file. Note that this only work under Windows for now.
 
@@ -26,7 +26,7 @@ First start our version of snes9x (snes9x-snestistics.exe). Note the _Snestistic
 
 ![Booting up our Snes9x](/images/tutorial-1/startup.png)
 
-Now we load the _pinball battle_ ROM and let the game start. Here is an image from the intro:
+Now we load the _Battle Pinball_ ROM and let the game start. Here is an image from the intro:
 
 ![Intro for the game](/images/tutorial-1/intro.png)
 
@@ -49,12 +49,12 @@ Running snestistics
 Once you have your trace file you are ready to generate the assembler source. We assume that you are running snestistics from a shell such as bash or cmd.exe and that you've gotten snestistics pre-built for your platform somehow. The minimal command line parameters to generate assembler output are (put them on one line, newlines here to make it easier to read!)
 ~~~~~~~~~~~~~~~~
 snestistics
-  -romfile battle_pinball.smc
+  -romfile battle_pinball.sfc
   -tracefile trace0.trace
   -asmfile pinball.asm
   -reportfile pinball_report.txt
 ~~~~~~~~~~~~~~~~
-This assumes that you are standing in the directory where you've placed _battle_pinball.smc_ and _trace0.trace_. The outputs will be _pinball.asm_ and _pinball_report.txt_. There might be other output files (depending on settings for our snes9x variant but they can be ignored. There are many more [options available](DOC COMMAND LINE) but lets concentrate on these for today.
+This assumes that your working directory is where you've placed _battle_pinball.sfc_ and _trace0.trace_. The outputs will be _pinball.asm_ and _pinball_report.txt_. There might be other output files (depending on settings for our snes9x variant but they can be ignored. There are many more [options available](DOC COMMAND LINE) but let's concentrate on these for today.
 
 It is very important to note here that some games will work flawlessly out of the box while some will simply cause an error here (or even a crash). If you want to work on a game and you encounter issues here, don't hesitate to contact us and we will fix the issue. There are some known limitations discussed in the [snestistics readme](https://github.com/breakin/snestistics/).
 
@@ -65,13 +65,13 @@ The assembler source
 
 What is in the source code? 
 ---------------------------
-Snestistics only knows about operations that were executed during the emulation sessions done previously in snes9x. So unless all buttons were pressed, all levels were played etc there will be gaps. This can be seen as a good things or a bad thing; if you only recorded the first second of the game and the created the trace file then only instructions used during the first second will be included. 
+Snestistics only knows about operations that were executed during the emulation sessions done previously in snes9x. So unless the tracefile(s) cover 100% of the game's code there will be gaps in the disassembly. This can be a good thing or a bad thing; if you only recorded the first second of the game and the created the trace file then only instructions used during the first second will be included. 
 
-Ok enough about that. Lets look at some random source code to see what it looks like!
+OK, enough about that. Let's look at some random source code to see what it looks like!
 
 A line of code
 --------------
-First lets look at few lines:
+First let's look at few lines:
 
 ~~~~~~~~~~~~~~~~
 label_8083DF:
@@ -123,7 +123,7 @@ What does each piece mean?
 
 The indicators in the comment are not perfect. They reflect the values encountered during our emulated session in snes9x. Maybe in a longer session this code will be called in other ways. If there is an uncertainty a star will be printed instead indicating that there was multiple choices.
 
-While we have no idea what this code does it seems that it access MMIO-mapped registers dealing with the joypad so it seems to access joypad data.
+While we have no idea how this code snippet is used, with some SNES experience it can already be deduced that it reads MMIO-mapped joypad inputs (from `$4218,x`) and stores the currently pressed button bitmask in RAM at `$02CA,x` as well as a bitmask for the buttons trigged since the last readout at `$02DE,x`. *We're going into DATA ANNOTATION territory here... but maybe it's fair to point out the raw pointers here, and hopefully add proper annotation to these addresses in a later paragraph/chapter?*
 
 Labels for jumps
 ----------------
@@ -135,7 +135,7 @@ It is very convenient that we get the label name. That makes it easy to search f
 
 Labels for indirect jumps
 -------------------------
-Some jumps are data-driven. That means that they either get an address from somewhere (memory or ROM) and then jumps to that address. Since that address might not be part of the ROM (or hard to find) it is hard to find when just looking at the source code. In _Snestistics_ it appears as a comment.
+Some jumps are data-driven. That means that they get an address from somewhere (RAM or ROM) and then jumps to that address. Since that address might not be part of the ROM it may be hard to know the value by just looking at the source code. In _snestistics_ all indirect jump locations appear as a comment.
 ~~~~~~~~~~~~~~~~
 label_80E744:
     /* *I 00 0000 80E744 C2 30       */ rep.B #$30
@@ -158,7 +158,7 @@ label_80E744:
           ; label_80E90C [X=0016]
 ~~~~~~~~~~~~~~~~
 
-We can see that in this unknown code starting at _label_80E744_ there is a jump to the indirect address located in RAM-memory plus the X register. It would be hard to guess where this jump goes so debugging in an emulator might be the best chance. But since we already emulated it we know where the jump went in our emulated session.
+We can see that in this unknown code starting at _label_80E744_ there is a jump to the indirect address located in ROM location `$80E750` plus the X register. Instead of needing to look up those pointers in a hex editor, snestistics outputs a list of all addresses jumped to in our emulated session.
 
 Where does the program "start"?
 -------------------------------
