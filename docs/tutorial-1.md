@@ -182,7 +182,7 @@ This feature is powerful if you want to know what values of X, Y, DB or DP were 
 
 Formatting
 ----------
-There are many command line switches to toggle things on/off. They can be nice if you want a more clean source code or if you need more information only sometimes. Regenerating the source code is very fast (supposed to be faster than one second) so fast to switch. See the [command-line documentation]((http://breakin.github.io/snestistics/user-guide/userguide/command_line_options.html).
+There are many command line switches to toggle things on/off. They can be nice if you want a more clean source code or if you need more information only sometimes. Regenerating the source code is very fast (supposed to be faster than one second) so fast to switch. See the [command-line documentation](http://breakin.github.io/snestistics/user-guide/userguide/command_line_options.html).
 
 Can the source code be compiled?
 --------------------------------
