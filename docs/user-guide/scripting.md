@@ -5,7 +5,7 @@ Some features of snestitics can only be reached from scripts. Currently snestist
 API
 ---
 * [Replay](api/replay)
-* [ReportWriter](api/reportwriter)
+* [ReportWriter](api/report-writer)
 
 Functionality
 -------------
