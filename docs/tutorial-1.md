@@ -42,7 +42,7 @@ Note that traces currently end up in the _current working directory_ so if you s
 
 Only the .trace-file is important and the other ones can be deleted.
 
-In a future post we will give more tips'n'trics to make things even better with regards to trace file creation in snes9x. For more information on why we are using an emulator and why it happens to currently be snes9x see [here](https://github.com/breakin/snestistics/blob/master/HISTORY.md).
+In a future post we will give more tips'n'trics to make things even better with regards to trace file creation in snes9x. For more information on why we are using an emulator and why it happens to currently be snes9x see [here](history).
 
 Running snestistics
 ===================
@@ -54,7 +54,7 @@ snestistics
   -asmfile pinball.asm
   -reportfile pinball_report.txt
 ~~~~~~~~~~~~~~~~
-This assumes that your working directory is where you've placed _battle_pinball.sfc_ and _trace0.trace_. The outputs will be _pinball.asm_ and _pinball_report.txt_. There might be other output files (depending on settings for our snes9x variant but they can be ignored. There are many more [options available](DOC COMMAND LINE) but let's concentrate on these for today.
+This assumes that your working directory is where you've placed _battle_pinball.sfc_ and _trace0.trace_. The outputs will be _pinball.asm_ and _pinball_report.txt_. There might be other output files (depending on settings for our snes9x variant) but they can be ignored. There are many more [options available](http://breakin.github.io/snestistics/user-guide/userguide/command_line_options.html) but let's concentrate on these for today.
 
 It is very important to note here that some games will work flawlessly out of the box while some will simply cause an error here (or even a crash). If you want to work on a game and you encounter issues here, don't hesitate to contact us and we will fix the issue. There are some known limitations discussed in the [snestistics readme](https://github.com/breakin/snestistics/).
 
@@ -182,7 +182,7 @@ This feature is powerful if you want to know what values of X, Y, DB or DP were 
 
 Formatting
 ----------
-There are many command line switches to toggle things on/off. They can be nice if you want a more clean source code or if you need more information only sometimes. Regenerating the source code is very fast (supposed to be faster than one second) so fast to switch. See [command-line documentation](DOC COMMAND LINE).
+There are many command line switches to toggle things on/off. They can be nice if you want a more clean source code or if you need more information only sometimes. Regenerating the source code is very fast (supposed to be faster than one second) so fast to switch. See [command-line documentation]((http://breakin.github.io/snestistics/user-guide/userguide/command_line_options.html).
 
 Can the source code be compiled?
 --------------------------------
@@ -201,6 +201,4 @@ Snestistics can be found at [github](https://github.com/breakin/snestistics).
 
 TBD before posting
 ==================
-* https://github.com/breakin/snestistics/blob/master/HISTORY.md
-* Manual command line options - link
 * Make snestistics put vectors in asm output (NMI, RESET, ...)

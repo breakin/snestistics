@@ -49,7 +49,7 @@ label 808407 ExtraLabel
 We run snestistics again with a new command line option so it used our annotation file:
 ~~~~~~~~~~~~~~~~
 snestistics
-  -romfile battle_pinball.smc
+  -romfile battle_pinball.sfc
   -tracefile trace0.trace
   -asmfile pinball.asm
   -reportfile pinball_report.txt
