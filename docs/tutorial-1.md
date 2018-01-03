@@ -230,6 +230,3 @@ If the game uses self-modifying code (writing code dynamically to RAM and runnin
 Closing words
 =============
 That was all for today. In the next post we will look at how you can start annotating the source code once you start to discover what things do.
-
-Read more blog posts on snestistics [here](/snestistics.html).
-Snestistics can be found at [github](https://github.com/breakin/snestistics).
