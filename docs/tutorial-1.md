@@ -180,7 +180,7 @@ Lets look at the top of the generated assembly file in the _Headers_ section:
   IRQBRK $81B1
 .ENDEMUVECTOR
 ~~~~~~~~~~~~~~
-What does this tell us? Well we can see that the game starts execution in _label_008000_ and that whenever a NMI is generated _label_0081B8_ will be called. There is probably an empty handler at $81B1 but it is never called so there is no label in our code.
+What does this tell us? Well we can see that the game starts execution in _label_008000_ and that whenever a NMI is generated _label_0081B8_ will be called. There is probably an _empty handler_ at $81B1 but since it was never invoked there is no label in our code and thus hexadecimal addresses are generated here instead of label name.
 
 If we look in the code we see:
 ~~~~~~~~~~~~~~
@@ -197,7 +197,7 @@ and
 label_0081B8:
     /* **         0081B8 5C BC 81 80 */ jmp.l label_8081BC
 ~~~~~~~~~~~~~~
-These two comments are automatically added. They signal that this label is special somehow.
+These two comments are automatically added. They signal that these labels is special somehow.
 
 Bonus
 ------------------------
