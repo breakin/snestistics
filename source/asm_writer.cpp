@@ -449,6 +449,39 @@ public:
 
 		m_nextPC = pc + numBytesUsed;
 	}
+
+	inline void writeVectorSingle(const char * const name, const AnnotationResolver &annotations, const LargeBitfield &labels, const uint16_t target_at) {
+		uint16_t target = *(uint16_t*)m_romData.evalPtr(target_at);
+		// NOTE: We don't require an annotation for the label, but it must have be part of trace such that
+		//       a label is emitted in the source. Otherwise revert to hex
+		if (labels[target]) {
+			std::string label_name = annotations.label(target, nullptr, true);
+			if (!label_name.empty()) {
+				fprintf(m_outFile, "  %-6s %s\n", name, label_name.c_str());
+				return;
+			}
+		}
+		fprintf(m_outFile, "  %-6s $%06X\n", name, target);
+	}
+
+	void writeVectors(const AnnotationResolver &annotations, const LargeBitfield &trace) {
+		fprintf(m_outFile, ".SNESNATIVEVECTOR      ; Define Native Mode interrupt vector table\n");
+		writeVectorSingle("COP",   annotations, trace, 0xFFE4);
+		writeVectorSingle("BRK",   annotations, trace, 0xFFE6);
+		writeVectorSingle("ABORT", annotations, trace, 0xFFE8);
+		writeVectorSingle("NMI",   annotations, trace, 0xFFEA);
+		writeVectorSingle("IRQ",   annotations, trace, 0xFFEE);
+		fprintf(m_outFile, ".ENDNATIVEVECTOR\n");
+
+		fprintf(m_outFile, "\n.SNESEMUVECTOR         ; Define Emulation Mode interrupt vector table\n");
+		writeVectorSingle("COP",    annotations, trace, 0xFFF4);
+		writeVectorSingle("ABORT",  annotations, trace, 0xFFF8);
+		writeVectorSingle("NMI",    annotations, trace, 0xFFFA);
+		writeVectorSingle("RESET",  annotations, trace, 0xFFFC);
+		writeVectorSingle("IRQBRK", annotations, trace, 0xFFFE);
+		fprintf(m_outFile, ".ENDEMUVECTOR\n");
+	}
+
 private:
 
 	void emitBankStart(const Pointer pc) {
@@ -526,13 +559,19 @@ private:
 void asm_writer(ReportWriter &report, const Options &options, Trace &trace, const AnnotationResolver &annotations, const RomAccessor &rom_accessor) {
 	AsmWriteWLADX writer(report, options, rom_accessor);
 
+	for (const Annotation &a : annotations._annotations) {
+		if (a.type == ANNOTATION_FUNCTION || (a.type == ANNOTATION_LINE && !a.name.empty()))
+			trace.labels.setBit(a.startOfRange);
+	}
+
+	writer.writeSeperator("Header");
+	writer.writeVectors(annotations, trace.labels);
+
 	writer.writeSeperator("Data");
 
 	// Generate EQU for each label
 	// TODO: Only include USED labels?
 	for (const Annotation &a : annotations._annotations) {
-		if (a.type == ANNOTATION_FUNCTION || (a.type == ANNOTATION_LINE && !a.name.empty()))
-			trace.labels.setBit(a.startOfRange);
 		if (a.type != ANNOTATION_DATA)
 			continue;
 
@@ -540,7 +579,6 @@ void asm_writer(ReportWriter &report, const Options &options, Trace &trace, cons
 		// TODO: Validate so this doesn't mess thing up when we use it
 		char target[512];
 		sprintf(target, "$%04X", a.startOfRange&0xFFFF);
-
 		writer.writeDefine(a.name, target, a.comment.empty() ? a.useComment : a.comment);
 	}
 
