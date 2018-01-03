@@ -233,7 +233,3 @@ That was all for today. In the next post we will look at how you can start annot
 
 Read more blog posts on snestistics [here](/snestistics.html).
 Snestistics can be found at [github](https://github.com/breakin/snestistics).
-
-TBD before posting
-==================
-* Make snestistics put vectors in asm output (NMI, RESET, ...)
