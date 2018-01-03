@@ -236,16 +236,16 @@ void AnnotationResolver::add_vector_comment(const RomAccessor &rom, const char *
 }
 
 void AnnotationResolver::add_vector_annotations(const RomAccessor &rom) {
-	add_vector_comment(rom, "Vector: Native COP",      0xFFE4);
-	add_vector_comment(rom, "Vector: Native BRK",      0xFFE6);
-	add_vector_comment(rom, "Vector: Native ABORT",    0xFFE8);
-	add_vector_comment(rom, "Vector: Native NMI",      0xFFEA);
-	add_vector_comment(rom, "Vector: Native IRQ",      0xFFEE);
-	add_vector_comment(rom, "Vector: Emulation COP",   0xFFF4);
-	add_vector_comment(rom, "Vector: Emulation BRK",   0xFFF8);
-	add_vector_comment(rom, "Vector: Emulation ABORT", 0xFFFA);
-	add_vector_comment(rom, "Vector: Emulation NMI",   0xFFFC);
-	add_vector_comment(rom, "Vector: Emulation IRQ",   0xFFFE);
+	add_vector_comment(rom, "Vector: Native COP",       0xFFE4);
+	add_vector_comment(rom, "Vector: Native BRK",       0xFFE6);
+	add_vector_comment(rom, "Vector: Native ABORT",     0xFFE8);
+	add_vector_comment(rom, "Vector: Native NMI",       0xFFEA);
+	add_vector_comment(rom, "Vector: Native IRQ",       0xFFEE);
+	add_vector_comment(rom, "Vector: Emulation COP",    0xFFF4);
+	add_vector_comment(rom, "Vector: Emulation ABORT",  0xFFF8);
+	add_vector_comment(rom, "Vector: Emulation NMI",    0xFFFA);
+	add_vector_comment(rom, "Vector: Emulation RESET",  0xFFFC);
+	add_vector_comment(rom, "Vector: Emulation IRQBRK", 0xFFFE);
 }
 
 void AnnotationResolver::load(std::istream &input, const std::string &error_file) {
