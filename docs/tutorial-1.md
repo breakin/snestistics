@@ -162,7 +162,42 @@ We can see that in this unknown code starting at _label_80E744_ there is a jump 
 
 Where does the program "start"?
 -------------------------------
-TODO: Add support to mark NMI and RESET and then show how it looks here.
+Lets look at the top of the generated assembly file in the _Headers_ section:
+~~~~~~~~~~~~~~
+.SNESNATIVEVECTOR      ; Define Native Mode interrupt vector table
+  COP    $81B1
+  BRK    $81B1
+  ABORT  $81B1
+  NMI    label_0081B8
+  IRQ    $8192
+.ENDNATIVEVECTOR
+
+.SNESEMUVECTOR         ; Define Emulation Mode interrupt vector table
+  COP    $81B1
+  ABORT  $81B1
+  NMI    $81B1
+  RESET  label_008000
+  IRQBRK $81B1
+.ENDEMUVECTOR
+~~~~~~~~~~~~~~
+What does this tell us? Well we can see that the game starts execution in _label_008000_ and that whenever a NMI is generated _label_0081B8_ will be called. There is probably an empty handler at $81B1 but it is never called so there is no label in our code.
+
+If we look in the code we see:
+~~~~~~~~~~~~~~
+; Vector: Emulation RESET
+label_008000:
+    /* mi 00 0000 008000 78          */ sei
+    /* mi 00 0000 008001 C2 09       */ rep.b #$09
+    /* mi 00 0000 008003 FB          */ xce
+    /* mi 00 0000 008004 5C 08 80 80 */ jmp.l label_808008
+~~~~~~~~~~~~~~
+and
+~~~~~~~~~~~~~~
+; Vector: Native NMI
+label_0081B8:
+    /* **         0081B8 5C BC 81 80 */ jmp.l label_8081BC
+~~~~~~~~~~~~~~
+These two comments are automatically added. They signal that this label is special somehow.
 
 Bonus
 ------------------------
