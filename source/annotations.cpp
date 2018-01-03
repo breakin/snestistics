@@ -4,10 +4,11 @@
 #include <sstream>
 #include "utils.h"
 #include <fstream>
+#include "romaccessor.h"
 
 struct DataMMIO {
 	uint32_t address;
-	const char * const name;	
+	const char * const name;
 	const char * const use_comment;
 };
 
@@ -138,7 +139,7 @@ static DataMMIO mmio_annotations[] = {
 	{ 0x004316, "REG_DAS1H", "DMA Size Registers / HDMA Indirect Address Registers 1" },
 	{ 0x004317, "REG_DASB1", "HDMA Indirect Address Registers (Bank) 1" },
 	{ 0x004318, "REG_A2A1L", "HDMA Mid Frame Table Address Registers 1" },
-	{ 0x004319, "REG_A2A1H", "HDMA Mid Frame Table Address Registers1" },
+	{ 0x004319, "REG_A2A1H", "HDMA Mid Frame Table Address Registers 1" },
 	{ 0x00431A, "REG_NTLR1", "HDMA Line Counter Register 1" },
 	{ 0x004320, "REG_DMAP2", "(H)DMA Control Register 2" },
 	{ 0x004321, "REG_BBAD2", "(H)DMA Destination Register 2" },
@@ -149,7 +150,7 @@ static DataMMIO mmio_annotations[] = {
 	{ 0x004326, "REG_DAS2H", "DMA Size Registers / HDMA Indirect Address Registers 2" },
 	{ 0x004327, "REG_DASB2", "HDMA Indirect Address Registers (Bank) 2" },
 	{ 0x004328, "REG_A2A2L", "HDMA Mid Frame Table Address Registers 2" },
-	{ 0x004329, "REG_A2A2H", "HDMA Mid Frame Table Address Registers2" },
+	{ 0x004329, "REG_A2A2H", "HDMA Mid Frame Table Address Registers 2" },
 	{ 0x00432A, "REG_NTLR2", "HDMA Line Counter Register 2" },
 	{ 0x004330, "REG_DMAP3", "(H)DMA Control Register 3" },
 	{ 0x004331, "REG_BBAD3", "(H)DMA Destination Register 3" },
@@ -160,7 +161,7 @@ static DataMMIO mmio_annotations[] = {
 	{ 0x004336, "REG_DAS3H", "DMA Size Registers / HDMA Indirect Address Registers 3" },
 	{ 0x004337, "REG_DASB3", "HDMA Indirect Address Registers (Bank) 3" },
 	{ 0x004338, "REG_A2A3L", "HDMA Mid Frame Table Address Registers 3" },
-	{ 0x004339, "REG_A2A3H", "HDMA Mid Frame Table Address Registers3" },
+	{ 0x004339, "REG_A2A3H", "HDMA Mid Frame Table Address Registers 3" },
 	{ 0x00433A, "REG_NTLR3", "HDMA Line Counter Register 3" },
 	{ 0x004340, "REG_DMAP4", "(H)DMA Control Register 4" },
 	{ 0x004341, "REG_BBAD4", "(H)DMA Destination Register 4" },
@@ -171,7 +172,7 @@ static DataMMIO mmio_annotations[] = {
 	{ 0x004346, "REG_DAS4H", "DMA Size Registers / HDMA Indirect Address Registers 4" },
 	{ 0x004347, "REG_DASB4", "HDMA Indirect Address Registers (Bank) 4" },
 	{ 0x004348, "REG_A2A4L", "HDMA Mid Frame Table Address Registers 4" },
-	{ 0x004349, "REG_A2A4H", "HDMA Mid Frame Table Address Registers4" },
+	{ 0x004349, "REG_A2A4H", "HDMA Mid Frame Table Address Registers 4" },
 	{ 0x00434A, "REG_NTLR4", "HDMA Line Counter Register 4" },
 	{ 0x004350, "REG_DMAP5", "(H)DMA Control Register 5" },
 	{ 0x004351, "REG_BBAD5", "(H)DMA Destination Register 5" },
@@ -182,7 +183,7 @@ static DataMMIO mmio_annotations[] = {
 	{ 0x004356, "REG_DAS5H", "DMA Size Registers / HDMA Indirect Address Registers 5" },
 	{ 0x004357, "REG_DASB5", "HDMA Indirect Address Registers (Bank) 5" },
 	{ 0x004358, "REG_A2A5L", "HDMA Mid Frame Table Address Registers 5" },
-	{ 0x004359, "REG_A2A5H", "HDMA Mid Frame Table Address Registers5" },
+	{ 0x004359, "REG_A2A5H", "HDMA Mid Frame Table Address Registers 5" },
 	{ 0x00435A, "REG_NTLR5", "HDMA Line Counter Register 5" },
 	{ 0x004360, "REG_DMAP6", "(H)DMA Control Register 6" },
 	{ 0x004361, "REG_BBAD6", "(H)DMA Destination Register 6" },
@@ -193,7 +194,7 @@ static DataMMIO mmio_annotations[] = {
 	{ 0x004366, "REG_DAS6H", "DMA Size Registers / HDMA Indirect Address Registers 6" },
 	{ 0x004367, "REG_DASB6", "HDMA Indirect Address Registers (Bank) 6" },
 	{ 0x004368, "REG_A2A6L", "HDMA Mid Frame Table Address Registers 6" },
-	{ 0x004369, "REG_A2A6H", "HDMA Mid Frame Table Address Registers6" },
+	{ 0x004369, "REG_A2A6H", "HDMA Mid Frame Table Address Registers 6" },
 	{ 0x00436A, "REG_NTLR6", "HDMA Line Counter Register 6" },
 	{ 0x004370, "REG_DMAP7", "(H)DMA Control Register 7" },
 	{ 0x004371, "REG_BBAD7", "(H)DMA Destination Register 7" },
@@ -204,7 +205,7 @@ static DataMMIO mmio_annotations[] = {
 	{ 0x004376, "REG_DAS7H", "DMA Size Registers / HDMA Indirect Address Registers 7" },
 	{ 0x004377, "REG_DASB7", "HDMA Indirect Address Registers (Bank) 7" },
 	{ 0x004378, "REG_A2A7L", "HDMA Mid Frame Table Address Registers 7" },
-	{ 0x004379, "REG_A2A7H", "HDMA Mid Frame Table Address Registers7" },
+	{ 0x004379, "REG_A2A7H", "HDMA Mid Frame Table Address Registers 7" },
 	{ 0x00437A, "REG_NTLR7", "HDMA Line Counter Register 7" }
 };
 
@@ -219,9 +220,32 @@ void AnnotationResolver::add_mmio_annotations() {
 		a.name = d.name;
 		a.comment_is_multiline = false;
 		a.startOfRange = a.endOfRange = d.address;
-		a.useComment = d.use_comment;		
+		a.useComment = d.use_comment;
 		_annotations[offset] = a;
 	}
+}
+
+void AnnotationResolver::add_vector_comment(const RomAccessor &rom, const char * const comment, const uint16_t target_at) {
+	uint16_t target = *(uint16_t*)rom.evalPtr(target_at);
+	Annotation a;
+	a.type = ANNOTATION_LINE;
+	a.startOfRange = a.endOfRange = target;
+	a.comment = comment;
+	a.comment_is_multiline = false;
+	_annotations.push_back(a);
+}
+
+void AnnotationResolver::add_vector_annotations(const RomAccessor &rom) {
+	add_vector_comment(rom, "Vector: Native COP",      0xFFE4);
+	add_vector_comment(rom, "Vector: Native BRK",      0xFFE6);
+	add_vector_comment(rom, "Vector: Native ABORT",    0xFFE8);
+	add_vector_comment(rom, "Vector: Native NMI",      0xFFEA);
+	add_vector_comment(rom, "Vector: Native IRQ",      0xFFEE);
+	add_vector_comment(rom, "Vector: Emulation COP",   0xFFF4);
+	add_vector_comment(rom, "Vector: Emulation BRK",   0xFFF8);
+	add_vector_comment(rom, "Vector: Emulation ABORT", 0xFFFA);
+	add_vector_comment(rom, "Vector: Emulation NMI",   0xFFFC);
+	add_vector_comment(rom, "Vector: Emulation IRQ",   0xFFFE);
 }
 
 void AnnotationResolver::load(std::istream &input, const std::string &error_file) {
@@ -298,7 +322,7 @@ void AnnotationResolver::load(std::istream &input, const std::string &error_file
 					printf("Function '%s' is only one byte long, treating as 'label' instead!\n", name);
 					a.endOfRange = a.startOfRange;
 				}
-			} else if (sscanf(buf, "line %06X", &a.startOfRange) > 0) {
+			} else if (sscanf(buf, "line %06X", &a.startOfRange) > 0) { // TODO: Does this makes sense?
 				a.type = ANNOTATION_LINE;
 				a.endOfRange = a.startOfRange;
 			} else if (sscanf(buf, "comment %06X \"%[^\"]", &a.startOfRange, mycomment) > 0) {
@@ -350,11 +374,26 @@ void AnnotationResolver::finalize() {
 
 	Pointer p = 0xFFFFFFFF;
 	for (int i=0; i<(int)_annotations.size(); ++i) {
-		const Annotation &a = _annotations[i];
+		Annotation &a = _annotations[i];
 		Pointer start = a.startOfRange;
 		if (start == p) {
-			printf("Annotation collision at %06X! Only one annotation can start at the same adress!\n", start);
-			throw std::runtime_error("Annotation collision!");
+			if (i != 0) {
+				Annotation &old = _annotations[i-1];
+				if (old.type == ANNOTATION_LINE && old.name.empty() && i != 0) {
+					if (a.comment.empty()) {
+						a.comment = old.comment;
+						a.comment_is_multiline = old.comment_is_multiline;
+					} else {
+						a.comment = old.comment + "\n" + a.comment;
+						a.comment_is_multiline = true;
+					}
+					old = Annotation(); // Make this annotation not count
+					old.startOfRange = old.endOfRange = start;
+				} else {
+					printf("Annotation collision at %06X! Only one annotation can start at the same adress!\n", start);
+					throw std::runtime_error("Annotation collision!");
+				}
+			}
 		}
 		p = start;
 		for (uint32_t k=a.startOfRange; k <= a.endOfRange; ++k) {
@@ -493,9 +532,10 @@ const Annotation * AnnotationResolver::resolve_annotation(Pointer resolve_adress
 
 	for (int k = start; k >= 0; --k) {
 		const Annotation &a = _annotations[k];
+		if (a.type == ANNOTATION_NONE) continue;
 		if (a.type == ANNOTATION_FUNCTION && a.endOfRange < resolve_adress)
 			break;
-		if (a.type == ANNOTATION_DATA && !found_data) found_data = &a;
+		if (!found_data && a.type == ANNOTATION_DATA && a.startOfRange >= resolve_adress && a.endOfRange <= resolve_adress) found_data = &a;
 		if (a.type == ANNOTATION_FUNCTION) {
 			if (function_scope) *function_scope = &a;
 			break;

@@ -972,6 +972,7 @@ int main(const int argc, const char * const argv[]) {
 		{
 			Profile profile("Loading game annotations");
 			annotations.add_mmio_annotations();
+			annotations.add_vector_annotations(rom_accessor);
 			if (options.auto_label_file.empty()) {
 				// Don't load the auto-labels file if we are re-generating it
 				annotations.load(options.labels_files);

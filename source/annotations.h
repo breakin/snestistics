@@ -7,6 +7,7 @@
 #include "utils.h"
 
 typedef uint32_t Pointer;
+class RomAccessor;
 
 enum AnnotationType {
 	ANNOTATION_NONE=0,
@@ -78,6 +79,7 @@ public:
 	}
 
 	void add_mmio_annotations();
+	void add_vector_annotations(const RomAccessor &rom);
 
 	void line_info(const Pointer p, std::string *label_out, std::string *comment_out, std::string *use_comment_out, bool force_label) const;
 
@@ -131,6 +133,8 @@ public:
 	}
 
 private:
+
+	void add_vector_comment(const RomAccessor &rom, const char * const comment, const uint16_t target_at);
 
 	// Prefer load(std::vector<string>)
 	void load(std::istream &input, const std::string &error_file); // Can be called many times, end with finalize

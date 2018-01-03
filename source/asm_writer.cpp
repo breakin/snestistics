@@ -450,39 +450,39 @@ public:
 		m_nextPC = pc + numBytesUsed;
 	}
 
-	inline void writeVectorSingle(const char * const name, const AnnotationResolver &annotations, const LargeBitfield &labels, const uint16_t target_at) {
+	void write_vectors(const AnnotationResolver &annotations, const LargeBitfield &trace) {
+		fprintf(m_outFile, ".SNESNATIVEVECTOR      ; Define Native Mode interrupt vector table\n");
+		write_vector_single("COP",   annotations, trace, 0xFFE4);
+		write_vector_single("BRK",   annotations, trace, 0xFFE6);
+		write_vector_single("ABORT", annotations, trace, 0xFFE8);
+		write_vector_single("NMI",   annotations, trace, 0xFFEA);
+		write_vector_single("IRQ",   annotations, trace, 0xFFEE);
+		fprintf(m_outFile, ".ENDNATIVEVECTOR\n");
+
+		fprintf(m_outFile, "\n.SNESEMUVECTOR         ; Define Emulation Mode interrupt vector table\n");
+		write_vector_single("COP",    annotations, trace, 0xFFF4);
+		write_vector_single("ABORT",  annotations, trace, 0xFFF8);
+		write_vector_single("NMI",    annotations, trace, 0xFFFA);
+		write_vector_single("RESET",  annotations, trace, 0xFFFC);
+		write_vector_single("IRQBRK", annotations, trace, 0xFFFE);
+		fprintf(m_outFile, ".ENDEMUVECTOR\n");
+	}
+
+private:
+
+	inline void write_vector_single(const char * const name, const AnnotationResolver &annotations, const LargeBitfield &labels, const uint16_t target_at) {
 		uint16_t target = *(uint16_t*)m_romData.evalPtr(target_at);
 		// NOTE: We don't require an annotation for the label, but it must have be part of trace such that
 		//       a label is emitted in the source. Otherwise revert to hex
-		if (labels[target]) {
+		if (labels[target] && (target & 0xFF0000) == 0) {
 			std::string label_name = annotations.label(target, nullptr, true);
 			if (!label_name.empty()) {
 				fprintf(m_outFile, "  %-6s %s\n", name, label_name.c_str());
 				return;
 			}
 		}
-		fprintf(m_outFile, "  %-6s $%06X\n", name, target);
+		fprintf(m_outFile, "  %-6s $%04X\n", name, target);
 	}
-
-	void writeVectors(const AnnotationResolver &annotations, const LargeBitfield &trace) {
-		fprintf(m_outFile, ".SNESNATIVEVECTOR      ; Define Native Mode interrupt vector table\n");
-		writeVectorSingle("COP",   annotations, trace, 0xFFE4);
-		writeVectorSingle("BRK",   annotations, trace, 0xFFE6);
-		writeVectorSingle("ABORT", annotations, trace, 0xFFE8);
-		writeVectorSingle("NMI",   annotations, trace, 0xFFEA);
-		writeVectorSingle("IRQ",   annotations, trace, 0xFFEE);
-		fprintf(m_outFile, ".ENDNATIVEVECTOR\n");
-
-		fprintf(m_outFile, "\n.SNESEMUVECTOR         ; Define Emulation Mode interrupt vector table\n");
-		writeVectorSingle("COP",    annotations, trace, 0xFFF4);
-		writeVectorSingle("ABORT",  annotations, trace, 0xFFF8);
-		writeVectorSingle("NMI",    annotations, trace, 0xFFFA);
-		writeVectorSingle("RESET",  annotations, trace, 0xFFFC);
-		writeVectorSingle("IRQBRK", annotations, trace, 0xFFFE);
-		fprintf(m_outFile, ".ENDEMUVECTOR\n");
-	}
-
-private:
 
 	void emitBankStart(const Pointer pc) {
 		fprintf(m_outFile, "\n");
@@ -565,7 +565,7 @@ void asm_writer(ReportWriter &report, const Options &options, Trace &trace, cons
 	}
 
 	writer.writeSeperator("Header");
-	writer.writeVectors(annotations, trace.labels);
+	writer.write_vectors(annotations, trace.labels);
 
 	writer.writeSeperator("Data");
 
@@ -603,7 +603,6 @@ void asm_writer(ReportWriter &report, const Options &options, Trace &trace, cons
 		//       This is mostly if the static jump predictor is predicting a jump into non-ops.
 		for (Pointer p(nextOp); p <= pc; ++p) {
 			if (trace.labels[p]) {
-
 				// Emit label?
 				std::string label, line_comment, line_use_comment;
 

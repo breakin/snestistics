@@ -291,76 +291,6 @@ static OpCodeInfo opCodeInfo[256]=
 };
 
 namespace cputable {
-
-	namespace old { // These will be removed shortly
-		inline bool is_indirect(const uint8_t op) {
-			const OpCodeInfo &i = opCodeInfo[op];
-			switch (i.adressMode) {
-			case 9:
-			case 10:
-			case 11:
-			case 13:
-			case 20:
-			case 21:
-			case 22:
-			case 23:
-			case 27:
-				return true;
-			default:
-				return false;
-			}
-		}
-
-		inline bool address_depend_x(const uint8_t op) {
-			const int am = opCodeInfo[op].adressMode;
-			switch(am) {
-			case 7:
-			case 10:
-			case 15:
-			case 18:
-			case 23:
-			case 29:
-				return true;
-			default:
-				return false;
-			};
-		}
-		inline bool address_depend_y(const uint8_t op) {
-			const int am = opCodeInfo[op].adressMode;
-			switch(am) {
-			case 8:
-			case 11:
-			case 13:
-			case 16:
-			case 20:
-				return true;
-			default:
-				return false;
-			};
-		}
-		inline bool address_depend_db(const uint8_t op) {
-			const int am = opCodeInfo[op].adressMode;
-			switch(am) {
-			case 14:
-			case 15:
-			case 16:
-				return true;
-			default:
-				return false;
-			};
-		}
-		inline bool address_depend_dp(const uint8_t op) {
-			const int am = opCodeInfo[op].adressMode;
-			switch(am) {
-			case 6:
-			case 9:
-				return true;
-			default:
-				return false;
-			};
-		}
-	}
-
 	inline bool is_indirect(const uint8_t op) {
 		const snestistics::Operand am = snestistics::op_codes[op].mode;
 		switch (am) {
@@ -371,10 +301,8 @@ namespace cputable {
 		case snestistics::Operand::DIRECT_PAGE_INDIRECT:
 		case snestistics::Operand::DIRECT_PAGE_INDIRECT_INDEXED_Y:
 		case snestistics::Operand::STACK_RELATIVE_INDIRECT_INDEXED_Y:
-			CUSTOM_ASSERT(old::is_indirect(op));
 			return true;
 		default:
-			CUSTOM_ASSERT(!old::is_indirect(op));
 			return false;
 		}
 	}
@@ -387,10 +315,8 @@ namespace cputable {
 		case snestistics::Operand::ABSOLUTE_LONG_INDEXED_X:
 		case snestistics::Operand::DIRECT_PAGE_INDEXED_X:
 		case snestistics::Operand::DIRECT_PAGE_INDEXED_X_INDIRECT:
-			CUSTOM_ASSERT(old::address_depend_x(op));
 			return true;
 		default:
-			CUSTOM_ASSERT(!old::address_depend_x(op));
 			return false;
 		};
 	}
@@ -402,10 +328,8 @@ namespace cputable {
 		case snestistics::Operand::DIRECT_PAGE_INDIRECT_INDEXED_Y:
 		case snestistics::Operand::DIRECT_PAGE_INDIRECT_LONG_INDEXED_Y:
 		case snestistics::Operand::STACK_RELATIVE_INDIRECT_INDEXED_Y:
-			CUSTOM_ASSERT(old::address_depend_y(op));
 			return true;
 		default:
-			CUSTOM_ASSERT(!old::address_depend_y(op));
 			return false;
 		};
 	}
@@ -438,10 +362,8 @@ namespace cputable {
 		case snestistics::Operand::DIRECT_PAGE_INDIRECT_INDEXED_Y:
 		case snestistics::Operand::DIRECT_PAGE_INDIRECT_LONG:
 		case snestistics::Operand::DIRECT_PAGE_INDIRECT_LONG_INDEXED_Y:
-			CUSTOM_ASSERT(old::address_depend_dp(op));
 			return true;
 		default:
-			CUSTOM_ASSERT(!old::address_depend_dp(op));
 			return false;
 		};
 	}
