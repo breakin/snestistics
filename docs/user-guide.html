@@ -1,0 +1,158 @@
+<meta charset="utf-8" emacsmode="-*- markdown -*-">
+<link rel="stylesheet" href="https://casual-effects.com/markdeep/latest/apidoc.css?">
+
+**Snestistics User Guide**
+
+Command Line Reference
+======================
+Here the command line options for snestistics will be described.
+
+Scripting
+=========
+Some features of snestistics can only be reached from scripts. Currently snestistics only supports scripts written in the scripting language squirrel. Here you can find all functions you can use when scripting.
+
+Trace Log
+---------
+When the trace log feature is enabled on the command line and a script is given snestistics expects the script to be a squirrel script with the following functions:
+
+~~~~~~
+trace_log_init(replay)
+    Replay replay: a replay object
+    returns: nothing
+~~~~~~
+This function is used for setup. Breakpoints can be set on the replay objects and global squirrel state can be constructed if the user wants that.
+
+~~~~~~
+trace_log_parameter_printer(replay, report)
+    Replay replay: a replay object
+    ReportWriter report: a report writer object
+    returns: nothing
+~~~~~~
+This function is called whenever the trace log hits a program counter that it has a breakpoint set for. The trace log system itself will print the name of the function and determine indentation, but this is a chance to do additional printing on some functions that are under investigation.
+
+Rewind
+------
+TODO.
+
+Scripting API
+=============
+
+Replay
+------
+These are the operations that can be performed on an instance of the Replay class.
+
+~~~~~~
+replay.set_breakpoint(pc)
+    integer pc: the program counter to set a break point at
+    returns: nothing
+~~~~~~
+
+~~~~~~
+replay.set_breakpoint_range(pc_start, pc_end)
+    integer pc_start: the first program counter to set a break point at
+    integer pc_end: the last program counter to set a break point at
+    returns: nothing
+~~~~~~
+
+~~~~~~
+replay.read_byte(address)
+    integer address: 24-bit address specifying where to read a byte (8-bit)
+    returns: integer
+~~~~~~
+
+~~~~~~
+replay.read_word(address)
+    integer address: 24-bit address specifying where to read a byte (16-bit)
+    returns: integer
+~~~~~~
+
+~~~~~~
+replay.read_long(address)
+    integer address: 24-bit address specifying where to read a byte (24-bit)
+    returns: integer
+~~~~~~
+
+~~~~~~
+replay.pc()
+    returns: current program counter
+~~~~~~
+
+~~~~~~
+replay.a()
+    returns: current value of register a (16-bit)
+~~~~~~
+
+~~~~~~
+replay.al()
+    returns: current low byte of register a (8-bit)
+~~~~~~
+
+~~~~~~
+replay.ah()
+    returns: current high byte of register a (8-bit)
+~~~~~~
+
+~~~~~~
+replay.x()
+    returns: current value of register x (16-bit)
+~~~~~~
+
+~~~~~~
+replay.xl()
+    returns: current low byte of register x (8-bit)
+~~~~~~
+
+~~~~~~
+replay.xh()
+    returns: current high byte of register x (8-bit)
+~~~~~~
+
+~~~~~~
+replay.y()
+    returns: current value of register y (16-bit)
+~~~~~~
+
+~~~~~~
+replay.yl()
+    returns: current low byte of register y (8-bit)
+~~~~~~
+
+~~~~~~
+replay.yh()
+    returns: current high byte of register y (8-bit)
+~~~~~~
+
+~~~~~~
+replay.p()
+    returns: current value of status register (16-bit)
+~~~~~~
+
+~~~~~~
+replay.s()
+    returns: current value of stack register (16-bit)
+~~~~~~
+
+~~~~~~
+replay.dp()
+    returns: current value of direct page register (16-bit)
+~~~~~~
+
+~~~~~~
+replay.db()
+    returns: current value of data bank register (8-bit)
+~~~~~~
+
+ReportWriter
+------------
+These are the operations that can be performed on an instance of the ReportWriter class:
+
+~~~~~~
+report_writer.print(str)
+    str: string to print
+    returns: nothing
+~~~~~~
+
+Will write the string str to the report at the current indentation level. Adds a newline automatically.
+
+<script>markdeepOptions={tocStyle:'medium'};</script>
+<!-- Markdeep: --><script src="https://casual-effects.com/markdeep/latest/markdeep.min.js?"></script>
