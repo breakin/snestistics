@@ -3,7 +3,7 @@
 struct Options;
 class RomAccessor;
 
-static const int CURRENT_CACHE_VERSION = 2;
+static const int CURRENT_CACHE_VERSION = 3;
 
 #include <cstdint>
 #include "utils.h"
