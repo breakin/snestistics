@@ -80,16 +80,17 @@ bool Replay::skip_until_nmi(const char * const skip_cache, const uint32_t target
 	// Note: Currently we can only skip to the point right AFTER an NMI so we do one nmi too little here
 	// Using do/while here is a bit bananas but helps with indentation :)
 	do {
-		FILE *f = fopen(skip_cache, "rb"); // The 0 here must be wrong if we do many
-		if (!f)
+		BigFile f;
+		f._file = fopen(skip_cache, "rb"); // The 0 here must be wrong if we do many
+		if (!f._file)
 			break;
 
 		snestistics::TraceSkipHeader header;
-		fread(&header, sizeof(header), 1, f);
+		f.read(&header, sizeof(header));
 
 		if (header.version != CURRENT_CACHE_VERSION) {
 			printf("Skip cache has wrong version, not using\n");
-			fclose(f);
+			fclose(f._file);
 			break;
 		}
 
@@ -98,12 +99,11 @@ bool Replay::skip_until_nmi(const char * const skip_cache, const uint32_t target
 
 		// Since skip information is to get AFTER an nmi just happened, we skip to the frame before
 		// We use emulation to get to the before NMI case
-		uint32_t skip = (target_skip_nmi) / nmi_per_skip;
-		const fpos_t j = skip * size_per_skip + sizeof(snestistics::TraceSkipHeader);
-		fsetpos(f, &j);
+		uint64_t skip = (target_skip_nmi) / nmi_per_skip;
+		f.set_offset(skip * size_per_skip + sizeof(snestistics::TraceSkipHeader));
 
 		snestistics::TraceSkip msg;
-		fread(&msg, sizeof(msg), 1, f);
+		f.read(&msg, sizeof(msg));
 		assert(msg.nmi <= target_skip_nmi);
 
 		// TODO: Don't leak STATE implementation like this
@@ -120,15 +120,13 @@ bool Replay::skip_until_nmi(const char * const skip_cache, const uint32_t target
 		for (int bank=0; bank<256; bank++)
 			memset(&regs._memory[bank*64*1024], 0, 0x8000);
 
-		fread(&regs._memory[0x7E0000], 1024*64, 1, f);
-		fread(&regs._memory[0x7F0000], 1024*64, 1, f);
+		f.read(&regs._memory[0x7E0000], 1024*64);
+		f.read(&regs._memory[0x7F0000], 1024*64);
 
 		assert(msg.nmi == skip * nmi_per_skip);
 
 		_current_nmi = msg.nmi;
-		fpos_t pos;
-		pos = (int64_t)msg.seek_offset_trace_file;
-		fsetpos(_trace_file, &pos);
+		_trace_file.set_offset(msg.seek_offset_trace_file);
 
 		_current_op = msg.current_op;
 		_accumulated_op_counter = msg.current_op-1;
@@ -136,12 +134,12 @@ bool Replay::skip_until_nmi(const char * const skip_cache, const uint32_t target
 		read_next_event();
 
 		#ifdef VERIFY_OPS
-			if (_trace_helper) {
-				fpos_t helper_pos = _current_op * (sizeof(snestistics::HelperType)+sizeof(snestistics::HelperOp));
-				fsetpos(_trace_helper, &helper_pos);
+			if (_trace_helper._file) {
+				uint64_t helper_pos = _current_op * (sizeof(snestistics::HelperType)+sizeof(snestistics::HelperOp));
+				_trace_helper.set_offset(helper_pos);
 			}
 		#endif
-		fclose(f);
+		fclose(f._file);
 	} while (false);
 
 	CUSTOM_ASSERT(_current_nmi <= target_skip_nmi);
@@ -172,7 +170,7 @@ bool Replay::next() {
 		// Now perform the next_op event!
 		if (_next_event.type == TraceEventType::EVENT_READ_BYTE) {
 			TraceEventReadByte rb;
-			size_t num_read = fread(&rb, sizeof(rb), 1, _trace_file);
+			size_t num_read = _trace_file.read(&rb, sizeof(rb));
 			CUSTOM_ASSERT(num_read == 1);
 			uint32_t r = regs.remap(rb.adress);
 			if (regs._debug)
@@ -181,7 +179,7 @@ bool Replay::next() {
 			read_next_event();
 		} else if (_next_event.type == TraceEventType::EVENT_READ_WORD) {
 			TraceEventReadWord rb;
-			size_t num_read = fread(&rb, sizeof(rb), 1, _trace_file);
+			size_t num_read = _trace_file.read(&rb, sizeof(rb));
 			CUSTOM_ASSERT(num_read == 1);
 			uint32_t shifted_bank = rb.adress & 0x00FF0000;
 			uint16_t l0 = rb.adress&0xFFFF;
@@ -211,11 +209,11 @@ bool Replay::next() {
 	// Note that NMI, RESET and IRQ are treated as ops so we can validate regs before/after in debug mode
 	#ifdef VERIFY_OPS
 		HelperOp h;
-		if (_trace_helper) {
+		if (_trace_helper._file) {
 			HelperType type;
-			fread(&type, sizeof(type), 1, _trace_helper);
+			_trace_helper.read(&type, sizeof(type));
 			CUSTOM_ASSERT(type == HelperType::HELPER_OP);
-			fread(&h, sizeof(h), 1, _trace_helper);
+			_trace_helper.read(&h, sizeof(h));
 			CUSTOM_ASSERT(h.current_op == _current_op);
 		}
 	#endif
@@ -224,7 +222,7 @@ bool Replay::next() {
 	const uint32_t PC_before_op = regs._PC;
 
 	#ifdef VERIFY_OPS
-		if (_trace_helper && do_event != Events::RESET) {
+		if (_trace_helper._file && do_event != Events::RESET) {
 			check_diff(_current_op, h.registers_before, h.registers_before, h.registers_after, regs, P_before_op, "BEFORE");
 		}
 	#endif
@@ -236,7 +234,7 @@ bool Replay::next() {
 
 	if (do_event == Events::RESET) {
 		TraceEventReset e;
-		fread(&e, sizeof(e), 1, _trace_file);
+		_trace_file.read(&e, sizeof(e));
 
 		// Clear out everything but ROM
 		for (int bank=0; bank<256; bank++)
@@ -253,27 +251,17 @@ bool Replay::next() {
 		regs._WRAM = (e.regs_after.wram_bank<<16)|e.regs_after.wram_address;
 
 		// Read RAM to support save games (NOTE: reads another 128k)
-		fread(&regs._memory[0x7E0000], 64*1024, 1, _trace_file);
-		fread(&regs._memory[0x7F0000], 64*1024, 1, _trace_file);
+		_trace_file.read(&regs._memory[0x7E0000], 64*1024);
+		_trace_file.read(&regs._memory[0x7F0000], 64*1024);
 
 		// We treat the RESET as a NMI (since it starts the _first_ frame, before first nmi)
 		// But we don't increase current_nmi here since we really wanted it to start at -1
-		{
-			fpos_t pos = 0;
-			int res = fgetpos(_trace_file, &pos);
-			assert(res == 0);
-			_last_after_nmi_offset = pos;
-		}
+		_last_after_nmi_offset = _trace_file._offset;
 		read_next_event();
 	} else if (do_event == Events::NMI) {
 		execute_nmi(regs);
 		_current_nmi++;
-		{
-			fpos_t pos = 0;
-			int res = fgetpos(_trace_file, &pos);
-			assert(res == 0);
-			_last_after_nmi_offset = pos;
-		}
+		_last_after_nmi_offset = _trace_file._offset;
 		read_next_event();
 	} else if (do_event == Events::IRQ) {
 		execute_irq(regs);
@@ -283,7 +271,7 @@ bool Replay::next() {
 	}
 
 	#ifdef VERIFY_OPS
-		if (_trace_helper) {
+		if (_trace_helper._file) {
 			check_diff(_current_op, h.registers_after, h.registers_before, h.registers_after, regs, P_before_op, "AFTER");
 		}
 	#endif
@@ -293,7 +281,7 @@ bool Replay::next() {
 
 void Replay::read_next_event() {
 	// NOTE: We only read header here, actual event is delayed until consumed
-	size_t num_read = fread(&_next_event, sizeof(_next_event), 1, _trace_file);
+	size_t num_read = _trace_file.read(&_next_event, sizeof(_next_event));
 	CUSTOM_ASSERT(num_read == 1);
 
 	_accumulated_op_counter += _next_event.op_counter_delta;
@@ -301,24 +289,25 @@ void Replay::read_next_event() {
 }
 
 Replay::Replay(const RomAccessor &rom, const char *const capture_file) : regs(rom), breakpoints(1024*64*256) {
-	_trace_file = fopen(capture_file, "rb");
+	_trace_file._file = fopen(capture_file, "rb");
+	CUSTOM_ASSERT(_trace_file._file);
 	#ifdef VERIFY_OPS
 	{
 		StringBuilder sb;
 		sb.add(capture_file);
 		sb.add("_helper");
-		_trace_helper = fopen(sb.c_str(), "rb"); // NOTE: If this fails that is OK
+		_trace_helper._file = fopen(sb.c_str(), "rb"); // NOTE: If this fails that is OK
 	}
 	#endif
 	read_next_event();
 }
 
 Replay::~Replay() {
-	fclose(_trace_file);
+	fclose(_trace_file._file);
 	#ifdef VERIFY_OPS
-		if (_trace_helper) {
-			fclose(_trace_helper);
-			_trace_helper = nullptr;
+		if (_trace_helper._file) {
+			fclose(_trace_helper._file);
+			_trace_helper._file = nullptr;
 		}
 	#endif
 }

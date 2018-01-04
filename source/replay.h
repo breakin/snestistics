@@ -21,9 +21,9 @@ struct Replay {
 	bool next();
 private:
 	snestistics::TraceEvent _next_event;
-	FILE *_trace_file = nullptr;
+	BigFile _trace_file;
 	#ifdef VERIFY_OPS
-		FILE *_trace_helper = nullptr;
+		BigFile _trace_helper;
 	#endif
 	uint64_t _accumulated_op_counter = 0;
 	uint64_t _next_event_op = 0;

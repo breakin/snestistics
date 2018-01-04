@@ -244,3 +244,35 @@ private:
 	T* _current_block = nullptr;
 	std::vector<T*> _blocks;
 };
+
+/*
+	fgetpos/fsetpos are annoying so I made this workaround
+	See: https://stackoverflow.com/questions/8875304/accessing-large-files-in-c
+	I opted for this stupid solution since it fit my need perfectly.
+	In most cases I will never need to do more than one seek.
+*/
+struct BigFile {
+	uint64_t _offset = 0;
+	FILE *_file = nullptr;
+	void set_offset(uint64_t offset) {
+		if (offset == _offset)
+			return;
+		if (offset < _offset) {
+			// We can't move back from SEEK_CUR so lets rewind and start over
+			rewind(_file);
+			_offset = 0;
+		}
+		uint64_t delta = offset - _offset;
+		while (delta>0) {
+			uint64_t step = delta <= 0x80000000ULL ? delta : 0x80000000ULL;
+			fseek(_file, (int32_t)step, SEEK_CUR);
+			delta -= step;
+		}
+		_offset = offset;
+	}
+	inline uint64_t read(void *buffer, uint64_t len) {
+		uint64_t r = fread(buffer, len, 1, _file);
+		_offset += len;
+		return r;
+	}
+};
