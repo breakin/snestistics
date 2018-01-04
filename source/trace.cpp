@@ -5,6 +5,7 @@
 #include "romaccessor.h"
 #include <algorithm>
 #include <memory>
+#include <iterator>
 
 namespace {
 
