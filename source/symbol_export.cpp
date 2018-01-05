@@ -2,7 +2,7 @@
 #include <cstdio>
 #include "annotations.h"
 
-void symbol_export_fma(const AnnotationResolver & annotations, const std::string & filename) {
+void symbol_export_fma(const AnnotationResolver & annotations, const std::string & filename, const bool allow_multiline_comments) {
 
 	// https://github.com/BenjaminSchulte/fma-snes65816/blob/master/docs/symbols.adoc
 	FILE *f = fopen(filename.c_str(), "wb");
@@ -34,9 +34,6 @@ void symbol_export_fma(const AnnotationResolver & annotations, const std::string
 
 		const std::string &write_comment = a.comment.empty() ? a.useComment : a.comment;
 
-		static const bool allow_multiline = false; // bsnes-plus currently only supports one line of comment
-
-												   // The actual comment
 		int comment_line_start = 0;
 		while (comment_line_start < write_comment.length()) {
 			for (int i = comment_line_start; i<write_comment.length(); ++i) {
@@ -48,14 +45,14 @@ void symbol_export_fma(const AnnotationResolver & annotations, const std::string
 					fwrite(&write_comment[comment_line_start], 1, write_length, f);
 					comment_line_start = i + 1;
 
-					if (!allow_multiline && comment_line_start < write_comment.length()) {
+					if (!allow_multiline_comments && comment_line_start < write_comment.length()) {
 						fprintf(f, " (first comment)");
 					}
 					fprintf(f, "\"\n");
 					break;
 				}
 			}
-			if (!allow_multiline)
+			if (!allow_multiline_comments)
 				break;
 		}
 	}
