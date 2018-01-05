@@ -991,6 +991,8 @@ int main(const int argc, const char * const argv[]) {
 			for (const Annotation &a : annotations._annotations) {
 				if (a.type == ANNOTATION_FUNCTION) {
 					fprintf(f, "%02X:%04X %s FUNC %d\n", a.startOfRange>>16, a.startOfRange&0xFFFF, a.name.c_str(), a.endOfRange-a.startOfRange+1);
+				} else if (a.type == ANNOTATION_LINE && !a.name.empty()) {
+					fprintf(f, "%02X:%04X %s FUNC %d\n", a.startOfRange >> 16, a.startOfRange & 0xFFFF, a.name.c_str(), 1);
 				}
 			}
 
