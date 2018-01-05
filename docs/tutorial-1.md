@@ -8,6 +8,18 @@ In order to do the [Super Famicon Wars (SFW) translation](http://www.romhacking.
 
 We assume that if you actually want to understand the code presented here in depth you will know some 65816 assembly and have a high-level understanding of the SNES.
 
+Limitations
+===========
+Before going into this we want warn about the current limitations of Snestistics. Some of these might change in the future:
+
+* Only support for LoROM games (not HiROM games)
+* Doesn't currently support games that do DMA from PPU to CPU (quite common)
+* Can't access SRAM content from trace log
+* No support for games where code is executed from RAM (bank $7e or $7f)
+* No idea how it will work if there are extension cartridges!
+
+This section will be updated as they limitations are lifted. If you want to RE a game using some of these features please contact us and we might be able to help you!
+
 The Subject
 ===========
 The game we are going to take a closer look at is the japanese game [Battle Pinball](https://www.youtube.com/watch?v=VKIM2FrK2zY), spin-off game in the [Compati Hero Series](https://en.wikipedia.org/wiki/Compati_Hero_Series).
@@ -222,10 +234,6 @@ There are many command line switches to toggle things on/off. They can be nice i
 Can the source code be compiled?
 --------------------------------
 The short story is that the source code is almost WLA-DX compatible and provided a correct header (something that can be given to snestistics using -asmheaderfile) it can almost be compiled OVER the ROM without causing a diff. A future post will revisit this topic and it will also discuss limitations.
-
-Other limitations
-=================
-If the game uses self-modifying code (writing code dynamically to RAM and running from RAM) there assembly listing will most likely be confusing (or _snestistics_ might even crash). If you want to RE a game using SMC please contact us and we might be able to help you at least get source code for the non SMC-parts. Other parts of snestistics still provide value even if SMC is used.
 
 Closing words
 =============
