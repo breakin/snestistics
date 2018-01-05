@@ -1,13 +1,13 @@
 #include "utils.h"
 #include "options.h"
 #include <sstream>
-#include "romaccessor.h"
+#include "rom_accessor.h"
 #include "cputable.h"
 #include "asm_writer.h"
 #include "report_writer.h"
 #include <algorithm>
 #include "annotations.h"
-#include "romaccessor.h"
+#include "rom_accessor.h"
 #include "trace.h"
 
 /*
@@ -224,11 +224,11 @@ typedef CombinationT<uint16_t> Combination16;
 class AsmWriteWLADX {
 private:
 	const Options &m_options;
-	FILE* m_outFile;
 	const RomAccessor &m_romData;
 	Pointer m_nextPC;
-	bool m_bankOpen;
-	int m_sectionCounter;
+	bool m_bankOpen = false;
+	int m_sectionCounter = 0;
+	FILE * const m_outFile;
 
 	inline int adjusted_column(const int s) {
 		int target = 72;
@@ -251,7 +251,7 @@ private:
 	ReportWriter &m_report;
 
 public:
-	AsmWriteWLADX(ReportWriter &report, const Options &options, const RomAccessor &romData) : m_options(options), m_report(report), m_romData(romData), m_nextPC(INVALID_POINTER), m_outFile(nullptr) {
+	AsmWriteWLADX(ReportWriter &report, const Options &options, const RomAccessor &romData) : m_options(options), m_report(report), m_romData(romData), m_nextPC(INVALID_POINTER), m_outFile(report.report) {
 	}
 	~AsmWriteWLADX() {
 		// TODO: Write footer I guess
@@ -263,7 +263,6 @@ public:
 	}
 
 	void writeDefine(const std::string &thing, const std::string &value, const std::string &description) {
-		prepareOpenFile();
 		int nw = fprintf(m_outFile, ".EQU %s %s", thing.c_str(), value.c_str());
 		writeCommentHelper(nw, adjusted_column(nw), description);
 	}
@@ -299,7 +298,6 @@ public:
 	}
 
 	void writeComment(const std::string &comment, const int start_pos = 0, const int target_column = 0) {
-		prepareOpenFile();
 		writeCommentHelper(start_pos, target_column, comment);
 	}
 
@@ -308,7 +306,6 @@ public:
 	}
 
 	void writeSeperator(const char * const text) {
-		prepareOpenFile();
 		m_report.writeSeperator(text);
 	}
 
@@ -496,24 +493,7 @@ private:
 		fprintf(m_outFile, "\n.ENDS\n\n");
 	}
 
-	bool m_first_prepare = true;
-
-	void prepareOpenFile() {
-		if (m_first_prepare) {
-			m_first_prepare = false;
-			m_bankOpen = false;
-			m_sectionCounter = 0;
-			m_outFile = m_report.report;
-			if (!m_options.asm_header_file.empty()) {
-				std::vector<unsigned char> header;
-				readFile(m_options.asm_header_file, header);
-				fwrite(&header[0], header.size(), 1, m_outFile);
-			}
-		}
-	}
-
 	void prepareWrite(const Pointer pc, const bool advancePC=true) {
-		prepareOpenFile();
 		if (m_nextPC == INVALID_POINTER){
 			m_nextPC = pc;
 		}
@@ -565,6 +545,15 @@ void asm_writer(ReportWriter &report, const Options &options, Trace &trace, cons
 	}
 
 	writer.writeSeperator("Header");
+
+	if (!options.asm_header_file.empty()) {
+		std::vector<unsigned char> header;
+		readFile(options.asm_header_file, header);
+		fwrite(&header[0], header.size(), 1, report.report);
+		char newline = '\n';
+		fwrite(&newline, 1, 1, report.report);
+	}
+
 	writer.write_vectors(annotations, trace.labels);
 
 	writer.writeSeperator("Data");

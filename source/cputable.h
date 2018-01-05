@@ -380,3 +380,7 @@ inline int unpackSigned(const uint8_t packed) {
 }
 
 uint32_t calculateFormattingandSize(const uint8_t *data, const bool acc16, const bool ind16, char *target, char *targetLabel, int *bitmodeNeeded);
+
+// Jumps, branches but not JSLs
+// If secondary target is set, it is always set to the next op after this op
+bool decode_static_jump(uint8_t opcode, const RomAccessor &rom, const Pointer pc, Pointer *target, Pointer *secondary_target);

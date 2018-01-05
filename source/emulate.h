@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstdio>
 #include "trace_format.h"
-#include "romaccessor.h"
+#include "rom_accessor.h"
 
 struct DmaTransfer;
 

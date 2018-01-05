@@ -89,8 +89,8 @@ void parseOptions(const int argc, const char * const argv[], Options &options) {
 			options.trace_log = opt;
 			needs_trace = true;
 			k++;
-		} else if (cmd == "-symboloutfile") {
-			options.symbol_out_file = opt;
+		} else if (cmd == "-symbolfmaoutfile") {
+			options.symbol_fma_out_file = opt;
 			k++;
 		} else if (cmd == "-tracelogscript") {
 			options.trace_log_script = opt;

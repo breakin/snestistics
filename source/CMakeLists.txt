@@ -9,7 +9,7 @@ set(SOURCES
 	emulate.h
 	options.cpp
 	options.h
-	romaccessor.h
+	rom_accessor.h
 	snestistics.cpp
 	scripting.cpp
 	scripting.h
@@ -25,6 +25,10 @@ set(SOURCES
 	report_writer.h
 	rewind.cpp
 	rewind.h
+	auto_annotate.cpp
+	auto_annotate.h
+	symbol_export.cpp
+	symbol_export.h
 	utils.h
 )
 
