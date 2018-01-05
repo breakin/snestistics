@@ -3,4 +3,4 @@ Welcome to a tutorial series for snestistics. While snestistics itself is writte
 These are the posts in the tutorial series. 
 
 1. [Introduction](tutorial-1)
-2. [Simple annotations](tutorial-2)
+2. [Annotations](tutorial-2)
