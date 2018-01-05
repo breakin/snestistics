@@ -14,6 +14,8 @@ namespace {
 
 void parseOptions(const int argc, const char * const argv[], Options &options) {
 	bool error = false;
+	
+	bool needs_trace = false;
 
 	for (int k=1; k<argc; k++) {
 		// Make sure we have a pair of strings
@@ -34,9 +36,11 @@ void parseOptions(const int argc, const char * const argv[], Options &options) {
 			k++;
 		} else if (cmd == "-asmfile") {
 			options.asm_file = opt;
+			needs_trace = true;
 			k++;
 		} else if (cmd == "-reportfile") {
 			options.asm_report_file = opt;
+			needs_trace = true;
 			k++;
 		} else if (cmd == "-tracefile") {
 			options.trace_files.push_back(opt);
@@ -46,6 +50,7 @@ void parseOptions(const int argc, const char * const argv[], Options &options) {
 			k++;
 		} else if (cmd == "-rewindfile") {
 			options.rewind_file = opt;
+			needs_trace = true;
 			k++;
 		} else if (cmd == "-sfc") {
 			options.rom_offset = 0;
@@ -69,8 +74,9 @@ void parseOptions(const int argc, const char * const argv[], Options &options) {
 			k++;
 		} else if (cmd == "-autoannotate") {
 			options.generate_auto_annotations = parseBool(opt);
+			needs_trace = true;
 			k++;
-		} else if (cmd == "-autolabels") {
+		} else if (cmd == "-autolabelsfile") {
 			options.auto_label_file = opt;
 			k++;
 		} else if (cmd == "-asm-print-pc") {
@@ -81,6 +87,10 @@ void parseOptions(const int argc, const char * const argv[], Options &options) {
 			k++;
 		} else if (cmd == "-tracelog") {
 			options.trace_log = opt;
+			needs_trace = true;
+			k++;
+		} else if (cmd == "-symboloutfile") {
+			options.symbol_out_file = opt;
 			k++;
 		} else if (cmd == "-tracelogscript") {
 			options.trace_log_script = opt;
@@ -103,7 +113,7 @@ void parseOptions(const int argc, const char * const argv[], Options &options) {
 		error = true;
 	}
 
-	if (options.trace_files.empty()) {
+	if (needs_trace && options.trace_files.empty()) {
 		printf("No trace file(s) specified with -tracefile\n");
 		error = true;
 	}

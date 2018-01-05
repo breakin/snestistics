@@ -983,6 +983,28 @@ int main(const int argc, const char * const argv[]) {
 			}
 		}
 
+		if (!options.symbol_out_file.empty()) {
+			FILE *f = fopen(options.symbol_out_file.c_str(), "wb");
+			fprintf(f, "#SNES65816\n");
+
+			fprintf(f, "\n[SYMBOL]\n");
+			for (const Annotation &a : annotations._annotations) {
+				if (a.type == ANNOTATION_FUNCTION) {
+					fprintf(f, "%02X:%04X %s FUNC %d\n", a.startOfRange>>16, a.startOfRange&0xFFFF, a.name.c_str(), a.endOfRange-a.startOfRange+1);
+				}
+			}
+
+			fprintf(f, "\n[COMMENT]\n");
+			for (const Annotation &a : annotations._annotations) {
+				if (a.type == ANNOTATION_LINE) {
+					if (!a.comment.empty() && !a.comment_is_multiline) {
+						fprintf(f, "%02X:%04X \"%s\"\n", a.startOfRange >> 16, a.startOfRange&0xFFFF, a.comment.c_str());
+					}
+				}
+			}
+			fclose(f);
+		}
+
 		// Make sure this happens after create_trace so skip file is fresh
 		if (!options.rewind_file.empty()) {
 			rewind_report(options, rom_accessor, annotations);

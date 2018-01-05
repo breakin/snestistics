@@ -38,6 +38,7 @@ struct Options {
 	std::vector<std::string> trace_files;
 	std::string rewind_file; // Very experimental, might be folded into something.. uses as a on/off switch for tracking prototype for now
 	std::string asm_header_file;
+	std::string symbol_out_file;
 
 	std::string trace_file_skip_cache(int k) const { return trace_files[k] + ".skip.temp"; }
 	std::string trace_file_op_cache(int k) const { return trace_files[k] + ".op.temp"; }
