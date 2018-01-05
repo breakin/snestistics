@@ -247,5 +247,3 @@ Working iteratively with labels is extremely powerful. The auto-annotator is ver
 TODO
 ====
 * It seems as if line-comment are not working (at least not as shown here...)
-
-<!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js"></script><script src="https://casual-effects.com/markdeep/latest/markdeep.min.js?"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

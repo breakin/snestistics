@@ -237,5 +237,3 @@ The short story is that the source code is almost WLA-DX compatible and provided
 Closing words
 =============
 That was all for today. In the next post we will look at how you can start annotating the source code once you start to discover what things do.
-
-<!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js"></script><script src="https://casual-effects.com/markdeep/latest/markdeep.min.js?"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
