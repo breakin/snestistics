@@ -1,5 +1,5 @@
 #include "cputable.h"
-#include "romaccessor.h"
+#include "rom_accessor.h"
 
 bool branches[256];
 bool jumps[256];
@@ -116,4 +116,45 @@ uint32_t calculateFormattingandSize(const uint8_t * data, const bool acc16, cons
 		if (bitmodeNeeded) *bitmodeNeeded = ami.numBitsForOpcode;
 		return nb;
 	}
+}
+
+// Jumps, branches but not JSLs
+// If secondary target is set, it is always set to the next op after this op
+bool decode_static_jump(uint8_t opcode, const RomAccessor & rom, const Pointer pc, Pointer * target, Pointer * secondary_target) {
+	*target = INVALID_POINTER;
+	*secondary_target = INVALID_POINTER;
+	if (opcode == 0x82) { // BRL
+		uint16_t v = *(uint16_t*)rom.evalPtr(pc + 1);
+		Pointer t = pc;
+		t += v;
+		if (v >= 0x8000)
+			t -= 0x10000;
+		*target = t;
+	}
+	else if (branches[opcode]) {
+		const Pointer target1 = pc + (unpackSigned(rom.evalByte(pc + 1)) + 2);
+		*target = pc + (unpackSigned(rom.evalByte(pc + 1)) + 2);
+		if (opcode != 0x80) {
+			*secondary_target = pc + 2;
+		}
+	}
+	else if (opcode == 0x4C) { // Absolute jump
+		Pointer p = *(uint16_t*)rom.evalPtr(pc + 1);
+		p |= pc & 0xFF0000;
+		*target = p;
+	}
+	else if (opcode == 0x5C) { // Absolute long jump
+		Pointer p = 0;
+		p |= rom.evalByte(pc + 1);
+		p |= rom.evalByte(pc + 2) << 8;
+		p |= rom.evalByte(pc + 3) << 16;
+		*target = p;
+	}
+	else if (opcode == 0x6C || opcode == 0x7C || opcode == 0xDC) {
+		// All of these are indeterminate, leave as INVALID_POINTER
+	}
+	else {
+		return false;
+	}
+	return true;
 }

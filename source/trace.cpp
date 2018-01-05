@@ -2,7 +2,7 @@
 #include "options.h"
 #include "emulate.h"
 #include "replay.h"
-#include "romaccessor.h"
+#include "rom_accessor.h"
 #include <algorithm>
 #include <memory>
 #include <iterator>

@@ -1,13 +1,13 @@
 #include "utils.h"
 #include "options.h"
 #include <sstream>
-#include "romaccessor.h"
+#include "rom_accessor.h"
 #include "cputable.h"
 #include "asm_writer.h"
 #include "report_writer.h"
 #include <algorithm>
 #include "annotations.h"
-#include "romaccessor.h"
+#include "rom_accessor.h"
 #include "trace.h"
 
 /*
