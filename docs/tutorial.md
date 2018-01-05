@@ -1,4 +1,7 @@
-Welcome to a tutorial series for snestistics. While snestistics itself is written by Anders Lindqvist (breakin) this tutorial is written by Anders and David "optiroc" Lindecrantz. See the [introduction](tutorial-1) for more information!
+---
+title: Tutorial - Index
+---
+Welcome to a tutorial series for snestistics. While snestistics itself is written by Anders Lindqvist (breakin) this tutorial is written by Anders and David "optiroc" Lindecrantz. This tutorial series will be updated to reflect the latest state of snestistics such that it will always serve as a good introduction to snestistics and reverse engineering Super Nintendo games.
 
 These are the posts in the tutorial series. 
 
