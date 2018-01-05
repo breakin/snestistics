@@ -115,14 +115,14 @@ First we have a label called _label_8083DF_. The number after the word _label_ s
 
 Then if we look at a line in the code we have:
 ~~~~~~~~~~~~~~~~
-/* mi 00 0000 8083EC C2 20       */ rep.B #$20
+/* mi 80 0000 8083EC C2 20       */ rep.B #$20
 ~~~~~~~~~~~~~~~~
 
 What does each piece mean?
 
 * The lower-case *m* indicates that we have a 8-bit accumulator (memory flag is set). If multiple values a * will be there instead.
 * The upper-case *I* indicates that we have 16-bit index registers (index flag is not set). If multiple values a * will be there instead.
-* The 80 means that the data bank was 80 for this instruction. If there was many options this field will simply be white spaces.
+* The 80 means that the data bank was $80 for this instruction. If there was many options this field will simply be white spaces.
 * The column with four white spaces after 80 is room for the direct page. Since this piece of code doesn't care about the direct page register it seems to be called with all sorts of values and hence it is left blank.
 * The 8083DF means that this instruction is used when the program bank and program counter is $8083DF (bank $80, address $83DF).
 * C2 20 is the encoding of this opcode as bytes. This is what can be found in the ROM-file.
