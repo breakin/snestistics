@@ -396,7 +396,9 @@ void predict(Options::PredictMode mode, ReportWriter *writer, const RomAccessor 
 			if (abort_unknown_P) {
 				if (writer) {
 					sb.clear();
-					sb.format("Aborting trace at %06X in %s due to unknown processor status", pc, pb.annotation->name.c_str());
+					sb.format("Aborting trace at %06X due to unknown processor status", pc);
+					if (pb.annotation)
+						sb.format("(in %s)", pb.annotation->name.c_str());
 					writer->writeComment(sb);
 				}
 				break;
@@ -443,7 +445,7 @@ void predict(Options::PredictMode mode, ReportWriter *writer, const RomAccessor 
 					trace.labels.setBit(target_jump);
 				}
 
-				if (writer && (!function || function != pb.annotation)) {
+				if (limit_to_functions && writer && (!function || function != pb.annotation)) {
 					sb.clear();
 					sb.format("Branch going out of %s to ", pb.annotation->name.c_str());
 					if (function) {
@@ -483,7 +485,9 @@ void predict(Options::PredictMode mode, ReportWriter *writer, const RomAccessor 
 			} else if (is_jsr) {
 				if (writer) {
 					sb.clear();
-					sb.format("Not following jump with subroutine (opcode %02X) at %06X in %s.", opcode, pc, pb.annotation->name.c_str());
+					sb.format("Not following jump with subroutine (opcode %02X) at %06X", opcode, pc);
+					if (pb.annotation)
+						sb.format("in %s.", pb.annotation->name.c_str());
 					writer->writeComment(sb);
 				}
 			} else if (opcode == 0x40 || opcode == 0x6B || opcode == 0x60) {
