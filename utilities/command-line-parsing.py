@@ -8,15 +8,15 @@ option_reference_re = re.compile("\${([^}]*)}") # Match ${word} with word ending
 
 options=[
 	Option("rom",        "rom",              "r",  "input",   "",      "ROM file. Currently only LoROM ROMs are allowed"),
-	Option("rom",        "rom-header",       "rh", "enum",    "auto",      "Specify header type of ROM"),
-	Option("rom",        "rom-size",         "rs", "int",     "0",     "Size of ROM cartridge (without header). When a 0 if specified this is determined as ROM file size minus ROM header size"),
-	Option("rom",        "rom-mode",         "rm", "enum",    "lorom",      "Type of ROM"),
+	Option("rom",        "romheader",        "rh", "enum",    "auto",      "Specify header type of ROM"),
+	Option("rom",        "romsize",          "rs", "int",     "0",     "Size of ROM cartridge (without header). When a 0 if specified this is determined as ROM file size minus ROM header size"),
+	Option("rom",        "rommode",          "rm", "enum",    "lorom",      "Type of ROM"),
 	Option("trace",      "trace",            "t",  "input*",  "",      "Trace file from an emulation session. Multiple allowed for assembly source listing (but not trace log or rewind)"),
 	Option("trace",      "regenerate",       "rg", "bool",    "false", "Regenerate emulation caches. Needs to be run if trace files has been updated"),
 	Option("trace",      "predict",          "p",  "enum",    "functions",      "Predict can add instructions that was not part of the trace by guessing"),
-	Option("tracelog",   "nmi-first",        "n0", "int",     "0",     "First NMI to consider for things that are nmi range based. Currently only affects the trace log"),
-	Option("tracelog",   "nmi-last",         "n1", "int",     "0",     "Last NMI to consider for things that are nmi range based. Currently only affects the trace log"),
-	Option("tracelog",   "tracelog",         "tl", "output",  "",      "Generated trace log. Nmi range can be controlled using ${nmi-first} and ${nmi-last}. Custom printing can be done using scripting"),
+	Option("tracelog",   "nmifirst",         "n0", "int",     "0",     "First NMI to consider for things that are nmi range based. Currently only affects the trace log"),
+	Option("tracelog",   "nmilast",          "n1", "int",     "0",     "Last NMI to consider for things that are nmi range based. Currently only affects the trace log"),
+	Option("tracelog",   "tracelog",         "tl", "output",  "",      "Generated trace log. Nmi range can be controlled using ${nmifirst} and ${nmilast}. Custom printing can be done using scripting"),
 	Option("tracelog",   "script",           "s",  "input",   "",      "A squirrel script. See scripting reference in the user guide for entry point functions as well as API specification"),
 	Option("annotation", "labels",           "l",  "input*",  "",      "A file containing annotations. Custom file format"),
 	Option("annotation", "autolabels",       "al", "inout",   "",      "A file containing annotations. These are special as it will be regenerated if deleted or if ${autoannotate} is specified"),
@@ -26,21 +26,21 @@ options=[
 	Option("report",     "report",           "rp", "output",  "",      "Generated assembly report. Companion file to ${asm}"),
 	Option("asm",        "asm",              "a",  "output",  "",      "Generated assembly listing"),
 	Option("asm",        "asmheader",        "ah", "input",   "",      "Content of this file will be pasted in the Header section of the generated assembly source listing"),
-	Option("asm",        "asm-pc",           "",   "bool",    "true",  "Print program counter in assembly source listing"),
-	Option("asm",        "asm-bytes",        "",   "bool",    "true",  "Print opcode bytes in assembly source listing"),
-	Option("asm",        "asm-lower-opcode", "",   "bool",    "true",  "Print lower-case opcode in assembly source listing"),
+	Option("asm",        "asmpc",            "ap", "bool",    "true",  "Print program counter in assembly source listing"),
+	Option("asm",        "asmbytes",         "ab", "bool",    "true",  "Print opcode bytes in assembly source listing"),
+	Option("asm",        "asmloweropcode",   "",   "bool",    "true",  "Print lower-case opcode in assembly source listing"),
 
 	# Future
 	# We could add an option to specify the format of the symbol file, but being able to export multiple in one go might be nice too
 ]
 
 enums={
-	"rom-header" : [
+	"romheader" : [
 		EnumOption("auto", "Size of ROM file % (32*1024)"),
 		EnumOption("none", "0"),
 		EnumOption("smc", "512"),
 	],
-	"rom-mode" : [
+	"rommode" : [
 		EnumOption("lorom", "LoROM"),
 		EnumOption("hirom", "HiROM"),
 	],
@@ -133,7 +133,7 @@ def write_documentation(file, section_prefix = "##"):
 					print("Oops, no such option '" + m.group(1) + "'!")
 				option = options_by_name[m.group(1)]
 				(name, type, multiple) = stripped_name_type(option)
-				return name
+				return "*" +name+"*"
 
 			# Replace "${ref}"" with "ref" after validating that there still is an option "ref"
 			description = option_reference_re.sub(option_reference_patcher, option.description)
