@@ -362,16 +362,20 @@ def generate_parser_source(file):
 		"		const char *const opt = k+1 != argc ? argv[k+1] : \"\";", # TODO: Check so this test makes sense
 		"",
 		"		<<TESTS>>",
-		"",
-		"		CUSTOM_ASSERT(!need_trace        || !options.trace_files.empty());",
-		"		CUSTOM_ASSERT(!need_rom          || !options.rom_file.empty());",
-		"		CUSTOM_ASSERT(!need_single_trace || options.trace_files.size() == 1);",
-		"",
-		"		if (error) {",
-		"			printf(\"There was an error in the command line.\\n\");",
-		"			syntax();",
-		"			exit(1);",
+		"		} else {",
+		"			printf(\"Switch '%s' not recognized\\n\", cmd);",
+		"			error = true;",
+		"			break;",
 		"		}",
+		"	}",
+		"	CUSTOM_ASSERT(!need_trace        || !options.trace_files.empty());",
+		"	CUSTOM_ASSERT(!need_rom          || !options.rom_file.empty());",
+		"	CUSTOM_ASSERT(!need_single_trace || options.trace_files.size() == 1);",
+		"",
+		"	if (error) {",
+		"		printf(\"There was an error in the command line.\\n\");",
+		"		syntax();",
+		"		exit(1);",
 		"	}",
 		"}"
 	]
@@ -431,8 +435,7 @@ def generate_parser_source(file):
 			if option.name in needs_by_option:
 				for need in sorted(needs_by_option[option.name]):
 					file.write("\t\t\tneed_" + need + " = true;\n")
-
-		file.write("\t\t}\n")
+			file.write("\t\t\tk++;\n")
 
 file = open("../docs/_includes/generated-command-line-reference.html", "wt")
 write_documentation(file, "##")

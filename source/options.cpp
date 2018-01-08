@@ -67,79 +67,108 @@ void parse_options(const int argc, const char * const argv[], Options &options) 
 
 		if (strcmp(cmd, "romfile")==0 || strcmp(cmd, "-r")==0) {
 			options.rom_file = opt;
+			k++;
 		} else if (strcmp(cmd, "romheader")==0 || strcmp(cmd, "-rh")==0) {
 			if (strcmp(opt, "none")==0) options.rom_header = Options::RH_NONE;
 			if (strcmp(opt, "copier")==0) options.rom_header = Options::RH_COPIER;
 			if (strcmp(opt, "auto")==0) options.rom_header = Options::RH_AUTO;
+			k++;
 		} else if (strcmp(cmd, "romsize")==0 || strcmp(cmd, "-rs")==0) {
 			options.rom_size = parse_uint(opt, error);
+			k++;
 		} else if (strcmp(cmd, "rommode")==0 || strcmp(cmd, "-rm")==0) {
 			if (strcmp(opt, "lorom")==0) options.rom_mode = Options::RM_LOROM;
 			if (strcmp(opt, "hirom")==0) options.rom_mode = Options::RM_HIROM;
+			k++;
 		} else if (strcmp(cmd, "tracefile")==0 || strcmp(cmd, "-t")==0) {
 			options.trace_files.push_back(opt);
 			need_rom = true;
+			k++;
 		} else if (strcmp(cmd, "regenerate")==0 || strcmp(cmd, "-rg")==0) {
 			options.regenerate = parse_bool(opt, error);
 			need_trace = true;
+			k++;
 		} else if (strcmp(cmd, "predict")==0 || strcmp(cmd, "-p")==0) {
 			if (strcmp(opt, "never")==0) options.predict = Options::PRD_NEVER;
 			if (strcmp(opt, "functions")==0) options.predict = Options::PRD_FUNCTIONS;
 			if (strcmp(opt, "everywhere")==0) options.predict = Options::PRD_EVERYWHERE;
 			need_trace = true;
+			k++;
 		} else if (strcmp(cmd, "nmifirst")==0 || strcmp(cmd, "-n0")==0) {
 			options.nmi_first = parse_uint(opt, error);
+			k++;
 		} else if (strcmp(cmd, "nmilast")==0 || strcmp(cmd, "-n1")==0) {
 			options.nmi_last = parse_uint(opt, error);
+			k++;
 		} else if (strcmp(cmd, "tracelogoutfile")==0 || strcmp(cmd, "-tl")==0) {
 			options.trace_log_out_file = opt;
 			need_single_trace = true;
 			need_trace = true;
+			k++;
 		} else if (strcmp(cmd, "scriptfile")==0 || strcmp(cmd, "-s")==0) {
 			options.script_file = opt;
+			k++;
 		} else if (strcmp(cmd, "labelsfile")==0 || strcmp(cmd, "-l")==0) {
 			options.labels_files.push_back(opt);
+			k++;
 		} else if (strcmp(cmd, "autolabelsfile")==0 || strcmp(cmd, "-al")==0) {
 			options.auto_labels_file = opt;
+			k++;
 		} else if (strcmp(cmd, "autoannotate")==0 || strcmp(cmd, "-aa")==0) {
 			options.auto_annotate = parse_bool(opt, error);
+			k++;
 		} else if (strcmp(cmd, "symbolfmaoutfile")==0 || strcmp(cmd, "-sf")==0) {
 			options.symbol_fma_out_file = opt;
+			k++;
 		} else if (strcmp(cmd, "rewindoutfile")==0 || strcmp(cmd, "-rw")==0) {
 			options.rewind_out_file = opt;
 			need_single_trace = true;
 			need_trace = true;
+			k++;
 		} else if (strcmp(cmd, "reportoutfile")==0 || strcmp(cmd, "-rp")==0) {
 			options.report_out_file = opt;
+			k++;
 		} else if (strcmp(cmd, "asmoutfile")==0 || strcmp(cmd, "-a")==0) {
 			options.asm_out_file = opt;
 			need_trace = true;
+			k++;
 		} else if (strcmp(cmd, "asmheaderfile")==0 || strcmp(cmd, "-ah")==0) {
 			options.asm_header_file = opt;
+			k++;
 		} else if (strcmp(cmd, "asmprintpc")==0 || strcmp(cmd, "-apc")==0) {
 			options.asm_print_pc = parse_bool(opt, error);
+			k++;
 		} else if (strcmp(cmd, "asmprintbytes")==0 || strcmp(cmd, "-ab")==0) {
 			options.asm_print_bytes = parse_bool(opt, error);
+			k++;
 		} else if (strcmp(cmd, "asmprintregistersizes")==0 || strcmp(cmd, "-ars")==0) {
 			options.asm_print_register_sizes = parse_bool(opt, error);
+			k++;
 		} else if (strcmp(cmd, "asmprintdb")==0 || strcmp(cmd, "-adb")==0) {
 			options.asm_print_db = parse_bool(opt, error);
+			k++;
 		} else if (strcmp(cmd, "asmprintdp")==0 || strcmp(cmd, "-adp")==0) {
 			options.asm_print_dp = parse_bool(opt, error);
+			k++;
 		} else if (strcmp(cmd, "asmlowercaseop")==0 || strcmp(cmd, "-")==0) {
 			options.asm_lower_case_op = parse_bool(opt, error);
+			k++;
 		} else if (strcmp(cmd, "asmcorrectwla")==0 || strcmp(cmd, "-")==0) {
 			options.asm_correct_wla = parse_bool(opt, error);
+			k++;
+		} else {
+			printf("Switch '%s' not recognized\n", cmd);
+			error = true;
+			break;
 		}
+	}
+	CUSTOM_ASSERT(!need_trace        || !options.trace_files.empty());
+	CUSTOM_ASSERT(!need_rom          || !options.rom_file.empty());
+	CUSTOM_ASSERT(!need_single_trace || options.trace_files.size() == 1);
 
-		CUSTOM_ASSERT(!need_trace        || !options.trace_files.empty());
-		CUSTOM_ASSERT(!need_rom          || !options.rom_file.empty());
-		CUSTOM_ASSERT(!need_single_trace || options.trace_files.size() == 1);
-
-		if (error) {
-			printf("There was an error in the command line.\n");
-			syntax();
-			exit(1);
-		}
+	if (error) {
+		printf("There was an error in the command line.\n");
+		syntax();
+		exit(1);
 	}
 }
