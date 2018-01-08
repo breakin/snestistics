@@ -4,6 +4,8 @@
 #   Make sure snestistics can give good command line syntax printing that is accurate
 #   Make sure that the snestistics command line parser and the documentation of the same match (by generating documentation)
 
+# IDEA: Have both short and long description. For doc we use short + long. For syntax we use short (unless maybe -h or something).
+
 import collections
 import re
 
@@ -32,10 +34,14 @@ options=[
 	Option("report",     "Report",           "rp", "output",  "",      "Generated assembly report. Companion file to ${Asm}"),
 	Option("asm",        "Asm",              "a",  "output",  "",      "Generated assembly listing"),
 	Option("asm",        "AsmHeader",        "ah", "input",   "",      "Content of this file will be pasted in the Header section of the generated assembly source listing"),
-	Option("asm",        "AsmPc",            "ap", "bool",    "true",  "Print program counter in assembly source listing"),
-	Option("asm",        "AsmBytes",         "ab", "bool",    "true",  "Print opcode bytes in assembly source listing"),
-	Option("asm",        "AsmLowerCaseOp",   "",   "bool",    "true",  "Print lower-case opcode in assembly source listing"),
-
+	Option("asm",        "AsmPrintPc",            "apc", "bool",    "true",  "Print program counter in assembly source listing"),
+	Option("asm",        "AsmPrintBytes",         "ab", "bool",    "true",  "Print opcode bytes in assembly source listing"),
+	#Option("asm",        "AsmPrintTraceComments",   "atc",   "bool", "true",  "Print data and jump targets based on trace in comments"),
+	Option("asm",        "AsmPrintRegisterSizes",     "ars",   "bool", "true",  "Print registers sizes in assembly source listing"),
+	Option("asm",        "AsmPrintDb",                "adb",   "bool", "true",  "Print data bank in assembly source listing"),
+	Option("asm",        "AsmPrintDp",                "adp",   "bool", "true",  "Print direct page in assembly source listing"),
+	Option("asm",        "AsmLowerCaseOp",       "",   "bool", "true",  "Print lower-case opcode in assembly source listing"),
+	Option("asm",        "AsmCorrectWla",        "",   "bool", "false", "Make sure generated source compiled in WLA DX"),
 	# Future
 	# We could add an option to specify the format of the symbol file, but being able to export multiple in one go might be nice too
 ]
@@ -43,8 +49,8 @@ options=[
 enums={
 	"RomHeader" : [
 		EnumOption("none", "No header"),
-		EnumOption("copier", "Copiers usually add a 512 byte header before the ROM"),
-		EnumOption("auto", "Tries to guess header. Assumes that files are composed of a header and then a multiple of 32KBs (32*1024 bytes)"),
+		EnumOption("copier", "512 byte header often added by copiers"),
+		EnumOption("auto", "Guess header. Assumes that files are composed of a header and then ROM data that is a multiple of 32KBs (32*1024 bytes)"),
 	],
 	"RomMode" : [
 		EnumOption("lorom", "LoROM"),
@@ -58,17 +64,25 @@ enums={
 }
 enums_prefix = {"RomHeader":"RH", "RomMode":"RM", "Predict":"PRD"}
 
+# Do not add meaningless but ok dependencies (such as asm-pc needing asm)
+needs={
+	"trace"        : set(["Asm", "TraceLog", "Rewind", "Regenerate", "Predict"]),
+	"single_trace" : set(["TraceLog", "Rewind"]),
+	"rom"          : set(["Trace"]),
+}
+
 options_by_name = {}
 
 for option in options:
 	options_by_name[option.name] = option
 
-# Do not add meaningless but ok dependencies (such as asm-pc needing asm)
-needs={
-	"trace"        : set(["asm", "tracelog", "rewind", "regenerate", "predict"]),
-	"single_trace" : set(["tracelog", "rewind"]),
-	"rom"          : set(["trace"]),
-}
+needs_by_option={}
+
+for need in needs:
+	for d in needs[need]:
+		if not d in needs_by_option:
+			needs_by_option[d] = set([])
+		needs_by_option[d].add(need)
 
 def validate_names():
 	# Validate unique names
@@ -96,9 +110,44 @@ def validate_names():
 					found = True
 			if not found:
 				print("Error, option " + o.name + " used unknown default value " + o.default)
+	for need in needs:
+		for d in needs[need]:
+			if not d.lower() in long_names:
+				print("Option " + d + " in needs is not an option")
 
 validate_names()
 
+def full_name(option, plural_s = False):
+	name = option.name
+	t = option.type
+	multiple = False
+	if t[-1]=='*':
+		t=t[:-1]
+		multiple = True
+	if t == "output":
+		name = name + "Out"
+	if t in ["input", "output", "inout"]:
+		name = name + "File"
+	if plural_s and multiple:
+		name = name + "s"
+	return name
+
+def variable_name(option):
+	return string_to_snake(full_name(option, True))
+
+def switch_name(option):
+	return full_name(option).lower()
+
+def short_switch_name(option):
+	return option.short_name.lower()
+
+def enum_switch_value_name(option, value):
+	return value.name.lower()
+
+def enum_variable_value_name(option, value):
+	return enums_prefix[option.name] + "_" + string_to_snake(value.name).upper()
+
+# TODO: Migrate users of this functions to variable_name, swtich_name and full_name
 def stripped_name_type(option):
 	type = option.type
 	multiple = False
@@ -184,7 +233,7 @@ def write_documentation(file, section_prefix = "##"):
 			file.write("\n")
 		file.write("\n")
 
-def generate_parser(file):
+def generate_parser_header(file):
 
 	parser_boilerplate = [
 		"#pragma once",
@@ -199,7 +248,7 @@ def generate_parser(file):
 		"<<CONTENT>>",
 		"};",
 		"",
-		"void parse(const int argc, const char* const argv, Options &options);"
+		"void parse_options(const int argc, const char * const argv[], Options &options);"
 	]
 
 	def enum_value_name(enum, value):
@@ -244,27 +293,24 @@ def generate_parser(file):
 				if not m.group(1) in options_by_name:
 					print("Oops, no such option '" + m.group(1) + "'!")
 				option = options_by_name[m.group(1)]
-				(name, type, multiple) = stripped_name_type(option)
-				return string_to_snake(name)
+				return variable_name(option)
 
 			# Replace "${ref}"" with "ref" after validating that there still is an option "ref"
 			description = option_reference_re.sub(option_reference_patcher, option.description)
 
 			# TODO: We need to do a pretty multi line printer using /**/ here
 
-			if not first_value:
-				file.write("\n")
-			first_value = False
+			print_description = False
 
-			file.write("\t// " + description + ".\n")
+			if print_description:
+				if not first_value:
+					file.write("\n")
+				first_value = False
+				file.write("\t// " + description + ".\n")
 
-			name = option.name
-			if option.type in ["output"]:
-				name = name + "Out"
-			if option.type in ["input", "output", "inout", "input*"]:
-				name = name + "File"
+			name = variable_name(option)
 
-			file.write("\t{:<28} {}".format(tt, string_to_snake(name)))
+			file.write("\t{:<28} {}".format(tt, name))
 			if option.default:
 				if option.type == "enum":
 					file.write(" = " + enum_value_name(option.name, option.default))
@@ -272,14 +318,129 @@ def generate_parser(file):
 					file.write(" = " + option.default)
 			file.write(";\n")
 
-file = open("../docs/_includes/command-line.html", "wt")
-#file.write("<meta charset=\"utf-8\">\n\n")
-#file.write("Command Line Reference:\n")
-#file.write("=======================\n")
+def generate_parser_source(file):
+
+	parser_boilerplate = [
+		"#include \"options.h\"",
+		"",
+		"// This file is generated by utilities/command-line-parsing.py",
+		"",
+		"#include \"utils.h\" // CUSTOM_ASSERT",
+		"#include <cstdlib>",
+		"#include <cstring> // strcmp",
+		"#include <stdexcept> // std::runtime_error",
+		"",
+		"namespace {",
+		"	bool parse_bool(const char * const s, bool &error) {",
+		"		if ((strcmp(s, \"true\" )==0) || (strcmp(s, \"on\" )==0) || (strcmp(s, \"1\" )==0)) return true;",
+		"		if ((strcmp(s, \"false\")==0) || (strcmp(s, \"off\")==0) || (strcmp(s, \"0\" )==0)) return false;",
+		"		error = true;",
+		"		return true;",
+		"	}",
+		"	uint32_t parse_uint(const char * const s, bool &error) {",
+		"		return atoi(s);",
+		"	}",
+		"",
+		"	void syntax() {",
+		"		printf(\"Snestistics Syntax:\\n\");",
+		"		<<SYNTAX>>",
+		"	}",
+		"}",
+		"",
+		"void parse_options(const int argc, const char * const argv[], Options &options) {",
+		"	bool error = false;",
+		"	bool had_option = false;",
+		"	<<NEEDS>>",
+		"",
+		"	for (int k=1; k<argc; k++) {",
+		"		if (!had_option && argv[k][0] != '-')",
+		"			continue; // When launched from .bat files sometimes the name of the binary is in both argv[0] and argv[1]",
+		"",
+		"		had_option = true;",
+		"",
+		"		const char *const cmd = &argv[k][1];",
+		"		const char *const opt = k+1 != argc ? argv[k+1] : \"\";", # TODO: Check so this test makes sense
+		"",
+		"		<<TESTS>>",
+		"",
+		"		CUSTOM_ASSERT(!need_trace        || !options.trace_files.empty());",
+		"		CUSTOM_ASSERT(!need_rom          || !options.rom_file.empty());",
+		"		CUSTOM_ASSERT(!need_single_trace || options.trace_files.size() == 1);",
+		"",
+		"		if (error) {",
+		"			printf(\"There was an error in the command line.\\n\");",
+		"			syntax();",
+		"			exit(1);",
+		"		}",
+		"	}",
+		"}"
+	]
+
+	for line in parser_boilerplate:
+		if line != "\t<<NEEDS>>" and line != "\t\t<<TESTS>>" and line != "\t\t<<SYNTAX>>":
+			file.write(line)
+			file.write("\n")
+			continue
+
+		if line == "\t<<NEEDS>>":
+			for need in needs:
+				file.write("\tbool need_" + need + " = false;\n")
+			continue
+
+		if line == "\t\t<<SYNTAX>>":
+			file.write("")
+
+			for option in options:
+				def option_reference_patcher(m):
+					if not m.group(1) in options_by_name:
+						print("Oops, no such option '" + m.group(1) + "'!")
+					option = options_by_name[m.group(1)]
+					return "-" + switch_name(option)
+
+				# Replace "${ref}"" with "ref" after validating that there still is an option "ref"
+				description = option_reference_re.sub(option_reference_patcher, option.description)
+
+				name_part = " -" + switch_name(option) + " (--" + short_switch_name(option) + ")"
+
+				file.write("\t\tprintf(\"" + "{:<32}".format(name_part) + description + "\\n\");\n")
+
+			continue
+
+		# The tests
+		first = True
+		for option in options:
+			file.write("\t\t")
+			if not first:
+				file.write("} else ")
+			first = False
+
+			file.write("if (strcmp(cmd, \"" + switch_name(option) + "\")==0 || strcmp(cmd, \"-" + short_switch_name(option) + "\")==0) {\n")
+			if option.type == "bool":
+				file.write("\t\t\toptions." + variable_name(option) + " = parse_bool(opt, error);\n")
+			elif option.type == "uint":
+				file.write("\t\t\toptions." + variable_name(option) + " = parse_uint(opt, error);\n")
+			elif option.type == "enum":
+				values = enums[option.name]
+				for v in values:
+					file.write("\t\t\tif (strcmp(opt, \"" + enum_switch_value_name(option, v) + "\")==0) options." + variable_name(option) + " = Options::" + enum_variable_value_name(option, v) + ";\n")
+			elif option.type[-1]=='*':
+				file.write("\t\t\toptions." + variable_name(option) + ".push_back(opt);\n")
+			else:
+				file.write("\t\t\toptions." + variable_name(option) + " = opt;\n")
+
+			if option.name in needs_by_option:
+				for need in sorted(needs_by_option[option.name]):
+					file.write("\t\t\tneed_" + need + " = true;\n")
+
+		file.write("\t\t}\n")
+
+file = open("../docs/_includes/generated-command-line-reference.html", "wt")
 write_documentation(file, "##")
-#file.write("\n<!-- Markdeep: --><style class=\"fallback\">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src=\"markdeep.min.js\"></script><script src=\"https://casual-effects.com/markdeep/latest/markdeep.min.js?\"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility=\"visible\")</script>\n")
 file.close()
 
 file2 = open("../source/options.h", "wt")
-generate_parser(file2)
+generate_parser_header(file2)
 file2.close()
+file3 = open("../source/options.cpp", "wt")
+generate_parser_source(file3)
+file3.close()

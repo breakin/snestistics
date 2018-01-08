@@ -338,14 +338,14 @@ public:
 		// Keep track of bytes written so we can align comment column
 		int nw = 0;
 
-		const bool emitCommentPC = m_options.printProgramCounter || m_options.printHexOpcode || overrideInstructionWithDB;
+		const bool emitCommentPC = m_options.asm_print_pc || m_options.asm_print_bytes || overrideInstructionWithDB;
 
 		nw += fprintf(m_outFile, "    ");
 		if (emitCommentPC) {
 			nw += fprintf(m_outFile, "/*%c", is_predicted ? 'p':' ');
 		}
 
-		if (m_options.printRegisterSizes) {
+		if (m_options.asm_print_register_sizes) {
 			if(!accumulator_wide.has_value) {
 				fputc('?', m_outFile);
 			} else if (accumulator_wide.single_value) {
@@ -372,7 +372,7 @@ public:
 			nw += 3;
 		}
 
-		if (m_options.printDB) {
+		if (m_options.asm_print_db) {
 			assert(data_bank.has_value);
 			if (data_bank.single_value) {
 				nw += fprintf(m_outFile, "%02X ", data_bank.value);
@@ -381,7 +381,7 @@ public:
 			}
 		}
 
-		if (m_options.printDP) {
+		if (m_options.asm_print_dp) {
 			assert(direct_page.has_value);
 			if (direct_page.single_value) {
 				nw += fprintf(m_outFile, "%04X ", direct_page.value);
@@ -390,10 +390,10 @@ public:
 			}
 		}
 
-		if (m_options.printProgramCounter) {
+		if (m_options.asm_print_pc) {
 			nw += fprintf(m_outFile, "%06X ", pc);
 		}
-		if (m_options.printHexOpcode) {
+		if (m_options.asm_print_bytes) {
 			for (int k = 0; k < numBytesUsed; k++) {
 				nw += fprintf(m_outFile, "%02X ", data[k]);
 			}
@@ -407,7 +407,7 @@ public:
 		}
 
 		const char * const op = opCodeInfo[data[0]].mnemonics;
-		if (m_options.lowerCaseOpCode) {
+		if (m_options.asm_lower_case_op) {
 			nw += fprintf(m_outFile, "%c%c%c", tolower(op[0]), tolower(op[1]), tolower(op[2]));
 		} else {
 			nw += fprintf(m_outFile, "%s", op);

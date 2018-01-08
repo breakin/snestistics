@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <memory>
 #include <iterator>
+#include "cputable.h"
 
 namespace {
 
@@ -136,7 +137,7 @@ void create_trace(const Options &options, const int trace_file_index, const RomA
 	FILE *skip_cache = nullptr;
 	const uint32_t nmi_per_skip = 10;
 
-	skip_cache = fopen(options.trace_file_skip_cache(trace_file_index).c_str(), "wb");
+	skip_cache = fopen(trace_file_skip_cache(options,trace_file_index).c_str(), "wb");
 	snestistics::TraceSkipHeader skip_header;
 	skip_header.version = CURRENT_CACHE_VERSION;
 	skip_header.nmi_per_skip = nmi_per_skip;

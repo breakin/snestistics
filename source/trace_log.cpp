@@ -9,6 +9,7 @@
 #include <memory>
 #include "replay.h"
 #include "report_writer.h"
+#include "cputable.h"
 
 // Rewrite trace_log_filter to be more like breakpoints so don't need to invoke script
 bool trace_log_filter(Pointer pc, Pointer function_start, Pointer function_end, const char * const function_name) { return true; }
@@ -75,7 +76,7 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 
 	Replay replay(rom, options.trace_files[0].c_str());
 
-	ReportWriter rw(options.trace_log.c_str());
+	ReportWriter rw(options.trace_log_out_file.c_str());
 
 	scripting_interface::ScriptingHandle scripting_replay = scripting ? scripting_interface::create_replay(scripting, &replay) : nullptr;
 	scripting_interface::ScriptingHandle scripting_report_writer = scripting ? scripting_interface::create_report_writer(scripting, &rw) : nullptr;
@@ -94,11 +95,11 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 
 	std::unordered_set<uint32_t> missing_annotation;
 
-	const uint32_t capture_nmi_first = options.trace_log_nmi_first, capture_nmi_last = options.trace_log_nmi_last;
+	const uint32_t capture_nmi_first = options.nmi_first, capture_nmi_last = options.nmi_last;
 
 	printf("Skipping to nmi %d\n", capture_nmi_first);
 	EmulateRegisters &regs = replay.regs;
-	bool success = replay.skip_until_nmi(options.trace_file_skip_cache(0).c_str(), capture_nmi_first);
+	bool success = replay.skip_until_nmi(trace_file_skip_cache(options, 0).c_str(), capture_nmi_first);
 	assert(success);
 
 	uint32_t current_nmi = capture_nmi_first;

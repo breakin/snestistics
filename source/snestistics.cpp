@@ -250,12 +250,12 @@ void data_report(ReportWriter &writer, const Trace &trace, const AnnotationResol
 	// TODO: Print last range
 }
 
-void predict(Options::PredictMode mode, ReportWriter *writer, const RomAccessor &rom, Trace &trace, const AnnotationResolver &annotations) {
+void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor &rom, Trace &trace, const AnnotationResolver &annotations) {
 
-	if (mode == Options::PREDICT_NOTHING)
+	if (mode == Options::PRD_NEVER)
 		return;
 
-	bool limit_to_functions = mode == Options::PREDICT_FUNCTIONS;
+	bool limit_to_functions = mode == Options::PRD_FUNCTIONS;
 
 	Profile profile("Predict", true);
 
@@ -618,11 +618,11 @@ int main(const int argc, const char * const argv[]) {
 		initLookupTables();
 
 		Options options;
-		parseOptions(argc, argv, options);
+		parse_options(argc, argv, options);
 
 		printf("Loading ROM '%s'\n", options.rom_file.c_str());
 
-		RomAccessor rom_accessor(options.rom_offset, options.calculated_size);
+		RomAccessor rom_accessor(options.rom_header, options.rom_size);
 		{
 			Profile profile("Load ROM data");
 			rom_accessor.load(options.rom_file);
@@ -636,13 +636,13 @@ int main(const int argc, const char * const argv[]) {
 			Trace backing_trace;
 			Trace &local_trace = k==0 ? trace : backing_trace;
 
-			if (!options.regenerate_emulation && load_trace(options.trace_file_op_cache(k).c_str(), local_trace))
+			if (!options.regenerate && load_trace(trace_file_op_cache(options, k).c_str(), local_trace))
 				generate = false;
 
 			if (generate) {
 				Profile profile("Create trace using emulation");
 				create_trace(options, k, rom_accessor, local_trace);
-				save_trace(local_trace, options.trace_file_op_cache(k).c_str());
+				save_trace(local_trace, trace_file_op_cache(options, k).c_str());
 			}
 
 			if (k != 0) {
@@ -650,19 +650,19 @@ int main(const int argc, const char * const argv[]) {
 			}
 		}
 
-		if (!options.auto_label_file.empty()) {
-			FILE *test_file = fopen(options.auto_label_file.c_str(), "rb");
+		if (!options.auto_labels_file.empty()) {
+			FILE *test_file = fopen(options.auto_labels_file.c_str(), "rb");
 			bool auto_file_exists = test_file != NULL;
 			if (test_file != NULL) {
 				fclose(test_file);
 			}
 			
-			if (options.generate_auto_annotations || !auto_file_exists) {
+			if (options.auto_annotate || !auto_file_exists) {
 				Profile profile("Regenerating auto-labels");
 				// We load annotations here since we want to avoid the annotation file
 				AnnotationResolver annotations;
 				annotations.load(options.labels_files);
-				guess_range(trace, rom_accessor, annotations, options.auto_label_file);
+				guess_range(trace, rom_accessor, annotations, options.auto_labels_file);
 			}
 		}
 
@@ -671,12 +671,12 @@ int main(const int argc, const char * const argv[]) {
 			Profile profile("Loading game annotations");
 			annotations.add_mmio_annotations();
 			annotations.add_vector_annotations(rom_accessor);
-			if (options.auto_label_file.empty()) {
+			if (options.auto_labels_file.empty()) {
 				// Don't load the auto-labels file if we are re-generating it
 				annotations.load(options.labels_files);
 			} else {
 				std::vector<std::string> copy(options.labels_files);
-				copy.push_back(options.auto_label_file);
+				copy.push_back(options.auto_labels_file);
 				annotations.load(copy);
 			}
 		}
@@ -687,20 +687,20 @@ int main(const int argc, const char * const argv[]) {
 		}
 
 		// Make sure this happens after create_trace so skip file is fresh
-		if (!options.rewind_file.empty()) {
+		if (!options.rewind_out_file.empty()) {
 			rewind_report(options, rom_accessor, annotations);
 		}
 
 		// Write trace log if requested
-		if (!options.trace_log.empty()) {
+		if (!options.trace_log_out_file.empty()) {
 			Profile profile("Create trace log");
 
-			bool has_scripting = !options.trace_log_script.empty();
+			bool has_scripting = !options.script_file.empty();
 
 			scripting_interface::Scripting *scripting = nullptr;
 			
-			if (!options.trace_log_script.empty())
-				scripting = scripting_interface::create_scripting(options.trace_log_script.c_str());
+			if (!options.script_file.empty())
+				scripting = scripting_interface::create_scripting(options.script_file.c_str());
 			
 			write_trace_log(options, rom_accessor, annotations, scripting);
 
@@ -709,15 +709,15 @@ int main(const int argc, const char * const argv[]) {
 		}
 
 		std::unique_ptr<ReportWriter> report_writer;
-		if (!options.asm_report_file.empty())
-			report_writer.reset(new ReportWriter(options.asm_report_file.c_str()));
+		if (!options.report_out_file.empty())
+			report_writer.reset(new ReportWriter(options.report_out_file.c_str()));
 
 		// TODO: Maybe run once before guess_range as well to find longer ranges
-		predict(options.predict_mode, report_writer.get(), rom_accessor, trace, annotations);
+		predict(options.predict, report_writer.get(), rom_accessor, trace, annotations);
 
-		if (!options.asm_file.empty()) {
+		if (!options.asm_out_file.empty()) {
 			Profile profile("Writing asm");
-			ReportWriter asm_output(options.asm_file.c_str());
+			ReportWriter asm_output(options.asm_out_file.c_str());
 			asm_writer(asm_output, options, trace, annotations, rom_accessor);
 		}
 

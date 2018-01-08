@@ -384,3 +384,13 @@ uint32_t calculateFormattingandSize(const uint8_t *data, const bool acc16, const
 // Jumps, branches but not JSLs
 // If secondary target is set, it is always set to the next op after this op
 bool decode_static_jump(uint8_t opcode, const RomAccessor &rom, const Pointer pc, Pointer *target, Pointer *secondary_target);
+
+// TODO: Move elsewhere
+#include "options.h"
+inline std::string trace_file_skip_cache(const Options &o, const int k) {
+	return o.trace_files[k] + ".skip_cache";
+}
+inline std::string trace_file_op_cache(const Options &o, const int k) {
+	return o.trace_files[k] + ".trace_cache";
+}
+

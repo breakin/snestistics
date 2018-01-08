@@ -2,7 +2,7 @@
 Name | Short | Type | Description
 :----|-------|:-----|:-----------
 *romfile* | r | input file name | ROM file. Currently only LoROM ROMs are allowed.
-*romheader* | rh | enumeration | Specify header type of ROM.<br><br>**none**: No header<br>**copier**: Copiers usually add a 512 byte header before the ROM<br>**auto**: Tries to guess header. Assumes that files are composed of a header and then a multiple of 32KBs (32*1024 bytes) (default)
+*romheader* | rh | enumeration | Specify header type of ROM.<br><br>**none**: No header<br>**copier**: 512 byte header often added by copiers<br>**auto**: Guess header. Assumes that files are composed of a header and then ROM data that is a multiple of 32KBs (32*1024 bytes) (default)
 *romsize* | rs | integer | Size of ROM cartridge (without header). When a 0 if specified this is determined as ROM file size minus ROM header size.
 *rommode* | rm | enumeration | Type of ROM.<br><br>**lorom**: LoROM (default)<br>**hirom**: HiROM
 
@@ -18,9 +18,13 @@ Name | Short | Type | Description
 :----|-------|:-----|:-----------
 *asmoutfile* | a | output file name | Generated assembly listing.
 *asmheaderfile* | ah | input file name | Content of this file will be pasted in the Header section of the generated assembly source listing.
-*asmpc* | ap | boolean | Print program counter in assembly source listing.
-*asmbytes* | ab | boolean | Print opcode bytes in assembly source listing.
+*asmprintpc* | apc | boolean | Print program counter in assembly source listing.
+*asmprintbytes* | ab | boolean | Print opcode bytes in assembly source listing.
+*asmprintregistersizes* | ars | boolean | Print registers sizes in assembly source listing.
+*asmprintdb* | adb | boolean | Print data bank in assembly source listing.
+*asmprintdp* | adp | boolean | Print direct page in assembly source listing.
 *asmlowercaseop* |  | boolean | Print lower-case opcode in assembly source listing.
+*asmcorrectwla* |  | boolean | Make sure generated source compiled in WLA DX.
 
 ## Trace Log
 Name | Short | Type | Description

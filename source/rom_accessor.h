@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include "utils.h"
+#include "options.h"
 
 /*
 	This class is responsible for resolving a pointer/adress to a byte in the ROM.
@@ -16,7 +17,12 @@ private:
 	uint32_t m_romOffset, m_calcSize;
 	std::vector<uint8_t> m_romdata;
 public:
-	RomAccessor(const uint32_t romOffset, const uint32_t calcSize) : m_romOffset(romOffset), m_calcSize(calcSize) {}
+	RomAccessor(const Options::RomHeaderEnum rom_mode, const uint32_t calcSize) : m_romOffset(-1), m_calcSize(calcSize) {
+		if (rom_mode == Options::RH_AUTO) m_romOffset = -1;
+		if (rom_mode == Options::RH_NONE) m_romOffset = 0;
+		if (rom_mode == Options::RH_COPIER) m_romOffset = 512;
+	}
+
 	void load(const std::string &filename) {
 		readFile(filename, m_romdata);
 
@@ -25,10 +31,10 @@ public:
 			uint32_t header_size = m_romdata.size() % (32*1024);
 			m_romOffset = header_size;
 		}
-		if (m_calcSize == -1) {
+		if (m_calcSize == 0) {
 			m_calcSize = (((uint32_t)m_romdata.size() - m_romOffset)/0x2000)*0x2000;
 		}
-		printf("calculated size = %06X, rom_offset = %06X\n", m_calcSize, m_romOffset);
+		printf("calculated size = 0x%06X, rom_offset = 0x%06X\n", m_calcSize, m_romOffset);
 	}
 
 	uint8_t evalByte(const Pointer p) const {
