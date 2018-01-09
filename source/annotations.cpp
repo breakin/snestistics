@@ -360,6 +360,8 @@ void AnnotationResolver::load(std::istream &input, const std::string &error_file
 
 void AnnotationResolver::finalize() {
 
+	Profile profile("finalize annotations", true);
+
 	Pointer largest_adress = 0;
 	for (auto a : _annotations) {
 		largest_adress = std::max(largest_adress, a.endOfRange);
@@ -369,40 +371,90 @@ void AnnotationResolver::finalize() {
 	_annotation_for_adress_size = k;
 	_annotation_for_adress = new int[k];
 	for (uint32_t i = 0; i < k; i++) _annotation_for_adress[i] = -1;
-	
-	std::sort(_annotations.begin(), _annotations.end());
 
-	Pointer p = 0xFFFFFFFF;
+	const auto annotation_sort = [](const Annotation &a, const Annotation &c) {
+		if (a.startOfRange != c.startOfRange) return a.startOfRange < c.startOfRange;
+		return false;
+	};
+
+	// Sort on start address only. For the rest rely on the sort being stable so we get annotations in the order they were given
+	std::stable_sort(_annotations.begin(), _annotations.end(), annotation_sort);
+
+	// First pass. Merge line annotations, possibly into functions/labels. Remove stale annotations.
+	// After this pass startOfRange is unique
+	// TODO: We could do this during parsing IF we build _annotation_for_adress then. Need to make it suffiently big before knowing usage, that's all.
+	Pointer merge_pc = INVALID_POINTER;
+	int last_written = 0;
 	for (int i=0; i<(int)_annotations.size(); ++i) {
 		Annotation &a = _annotations[i];
+		CUSTOM_ASSERT(a.type != ANNOTATION_NONE);
 		Pointer start = a.startOfRange;
-		if (start == p) {
-			if (i != 0) {
-				Annotation &old = _annotations[i-1];
-				if (old.type == ANNOTATION_LINE && old.name.empty() && i != 0) {
-					if (a.comment.empty()) {
-						a.comment = old.comment;
-						a.comment_is_multiline = old.comment_is_multiline;
-					} else {
-						a.comment = old.comment + "\n" + a.comment;
-						a.comment_is_multiline = true;
-					}
-					old = Annotation(); // Make this annotation not count
-					old.startOfRange = old.endOfRange = start;
+		if (start != merge_pc) {
+			_annotations[last_written++] = a;
+			merge_pc = start;
+			continue;
+		}
+		CUSTOM_ASSERT(last_written!=0);
+		Annotation &b = _annotations[last_written-1];
+
+		// Is a mergeable with b (the merge for this startOfRange)?
+		bool a_has_label = a.type == ANNOTATION_FUNCTION || a.type == ANNOTATION_DATA || (a.type == ANNOTATION_LINE && !a.name.empty());
+		bool b_has_label = b.type == ANNOTATION_FUNCTION || b.type == ANNOTATION_DATA || (b.type == ANNOTATION_LINE && !b.name.empty());
+
+		if (!a.useComment.empty() && !b.useComment.empty()) {
+			printf("Annotation collision at %06X! Only one annotation can have a label for one address!\n", start);
+			throw std::runtime_error("Annotation collision!");
+		}
+		if (a_has_label && b_has_label) {
+			printf("Annotation collision at %06X! Only one annotation can have a use comment (# line) for one address!\n", start);
+			throw std::runtime_error("Annotation collision!");
+		}
+		if (!a.comment.empty()) {
+			if (b.comment.empty())
+				b.comment = a.comment;
+			else
+				b.comment = b.comment + "\n" + a.comment;
+		}
+		b.comment_is_multiline = a.comment_is_multiline || b.comment_is_multiline || (!a.comment.empty() && !b.comment.empty());
+		if (a_has_label)
+			b.name = a.name;
+
+		if (!a.useComment.empty())
+			b.useComment = a.useComment;
+
+		// This means to choose the one from the function/data
+		b.endOfRange = std::max(a.endOfRange, b.endOfRange);
+		a.type = ANNOTATION_NONE;
+	}
+
+	// Remove unused annotations at the end
+	_annotations.resize(last_written);
+
+	// TODO: This code was a bit lazy!
+	for (int pass = 0; pass < 3; pass++) {
+		AnnotationType pass_type = ANNOTATION_NONE;
+		if (pass == 0) pass_type = ANNOTATION_LINE;
+		if (pass == 1) pass_type = ANNOTATION_DATA;
+		if (pass == 2) pass_type = ANNOTATION_FUNCTION;
+
+		for (int i=0; i<(int)_annotations.size(); ++i) {
+			Annotation &a = _annotations[i];
+			if (a.type != pass_type)
+				continue;
+
+			Pointer start = a.startOfRange;
+			for (uint32_t k=a.startOfRange; k <= a.endOfRange; ++k) {
+				if (_annotation_for_adress[k] == -1) {
+					// No previous annotation
+					_annotation_for_adress[k] = i;
+				} else if (_annotations[_annotation_for_adress[k]].type != pass_type) {
+					// There was a previous annotation here with lower power so we can overwrite it
+					_annotation_for_adress[k] = i;
 				} else {
-					printf("Annotation collision at %06X! Only one annotation can start at the same adress!\n", start);
+					const Annotation &b = _annotations[_annotation_for_adress[k]];
+					printf("Annotation collision at %06X! Both %s [%06X-%06X] and %s [%06X-%06X]!\n", k, a.name.c_str(), a.startOfRange, a.endOfRange, b.name.c_str(), b.startOfRange, b.endOfRange);
 					throw std::runtime_error("Annotation collision!");
 				}
-			}
-		}
-		p = start;
-		for (uint32_t k=a.startOfRange; k <= a.endOfRange; ++k) {
-			if (a.type == ANNOTATION_LINE || _annotation_for_adress[k] == -1) {
-				_annotation_for_adress[k] = i;
-			} else {
-				const Annotation &b = _annotations[_annotation_for_adress[k]];
-				printf("Annotation collision at %06X! Both %s [%06X-%06X] and %s [%06X-%06X]!\n", k, a.name.c_str(), a.startOfRange, a.endOfRange, b.name.c_str(), b.startOfRange, b.endOfRange);
-				throw std::runtime_error("Annotation collision!");
 			}
 		}
 	}
@@ -532,7 +584,6 @@ const Annotation * AnnotationResolver::resolve_annotation(Pointer resolve_adress
 
 	for (int k = start; k >= 0; --k) {
 		const Annotation &a = _annotations[k];
-		if (a.type == ANNOTATION_NONE) continue;
 		if (a.type == ANNOTATION_FUNCTION && a.endOfRange < resolve_adress)
 			break;
 		if (!found_data && a.type == ANNOTATION_DATA && a.startOfRange >= resolve_adress && a.endOfRange <= resolve_adress) found_data = &a;
@@ -568,3 +619,4 @@ const TraceAnnotation * AnnotationResolver::trace_annotation(const Pointer pc) c
 	if (tai == -1) return nullptr;
 	return &_trace_annotations[tai];
 }
+

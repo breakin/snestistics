@@ -11,8 +11,8 @@ class RomAccessor;
 
 enum AnnotationType {
 	ANNOTATION_NONE=0,
-	ANNOTATION_FUNCTION, // Function must be first
-	ANNOTATION_DATA, // Data must be almost first
+	ANNOTATION_FUNCTION,
+	ANNOTATION_DATA,
 	ANNOTATION_LINE,
 };
 
@@ -40,8 +40,7 @@ struct TraceAnnotation {
 };
 
 struct Annotation {
-	Annotation() : type(ANNOTATION_NONE) {}
-	AnnotationType type;
+	AnnotationType type = ANNOTATION_NONE;
 	std::string name;
 	std::string comment;
 	bool comment_is_multiline = false;
@@ -51,17 +50,6 @@ struct Annotation {
 
 	// label and comment does not have a endOfRange
 	Pointer startOfRange, endOfRange;
-
-	bool operator<(const Annotation &c) const {
-		if (startOfRange != c.startOfRange) return startOfRange < c.startOfRange; // This should match for all, rest are just tie breakers to make sort work when we have duplicates
-		if (type != c.type) return type < c.type; // Dealbreaker
-		if (name != c.name) return name < c.name; // Dealbreaker to avoid removing collisions during sorting
-		if (comment != c.comment) return comment < c.comment;
-		if (comment_is_multiline != c.comment_is_multiline) return comment_is_multiline;
-		if (useComment != c.useComment) return useComment < c.useComment;
-		if (trace_type != c.trace_type) return trace_type < c.trace_type;
-		return false;
-	}
 
 	bool operator<(const Pointer c) const {
 		if (startOfRange != c) return startOfRange < c;

@@ -25,8 +25,6 @@ void symbol_export_fma(const AnnotationResolver & annotations, const std::string
 
 	fprintf(f, "\n[COMMENT]\n");
 	for (const Annotation &a : annotations._annotations) {
-		if (a.type == ANNOTATION_NONE)
-			continue;
 		if (a.startOfRange >= 0x002100 && a.endOfRange <= 0x00437A) // Remove MMIO
 			continue;
 		if (a.comment.empty() && a.useComment.empty())
