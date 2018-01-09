@@ -2,11 +2,13 @@
 
 #include <string>
 
-class RomAccessor;
-class AnnotationResolver;
 struct Options;
 
 namespace snestistics {
+
+class RomAccessor;
+class AnnotationResolver;
+
 namespace tracking {
 
 struct Event {

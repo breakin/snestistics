@@ -5,6 +5,8 @@
 #include "trace.h"
 #include "rom_accessor.h"
 
+namespace snestistics {
+
 bool guess_valid_jump(Pointer pc, Pointer target, int max_distance = 1000) {
 	if ((pc >> 16) != (target >> 16))
 		return false;
@@ -279,4 +281,5 @@ void guess_range(const Trace &trace, const RomAccessor &rom, const AnnotationRes
 	printf("Found %d functions (longest Auto%04d, len=%d, range=%d)\n", num_found, longest, longest_length, longest_range);
 
 	fclose(output);
+}
 }

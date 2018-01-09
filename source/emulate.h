@@ -5,7 +5,9 @@
 #include "trace_format.h"
 #include "rom_accessor.h"
 
+namespace snestistics {
 struct DmaTransfer;
+}
 
 // TODO: Working with this enum is annoying as hell
 enum class ProcessorStatusFlag : uint16_t {
@@ -289,7 +291,7 @@ struct EmulateRegisters {
 		_memory[r] = v;
 	}
 
-	EmulateRegisters(const RomAccessor &rom) {
+	EmulateRegisters(const snestistics::RomAccessor &rom) {
 		// Duplicated bytes for mirrored/shared mem
 		// These are reads to memory other than ROM/SRAM (outside what we emulate)
 		_memory = new uint8_t[1024*64*256];
@@ -314,7 +316,7 @@ struct EmulateRegisters {
 	uint32_t _debug_number = 0;
 	bool _debug = false;
 
-	typedef void(*dmaFunc)(void* context, const DmaTransfer &dma);
+	typedef void(*dmaFunc)(void* context, const snestistics::DmaTransfer &dma);
 	dmaFunc _dma_function = nullptr;
 
 	typedef void(*memoryAccessFunc)(void* context, Pointer location, Pointer remapped_location, uint32_t value, int num_bytes, MemoryAccessType reason);

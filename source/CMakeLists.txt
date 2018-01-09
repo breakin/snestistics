@@ -16,6 +16,7 @@ set(SOURCES
 	trace.cpp
 	trace.h
 	trace_format.h
+	trace_cache.h
 	trace_log.cpp
 	trace_log.h
 	replay.cpp
@@ -29,6 +30,7 @@ set(SOURCES
 	auto_annotate.h
 	symbol_export.cpp
 	symbol_export.h
+	utils.cpp
 	utils.h
 )
 

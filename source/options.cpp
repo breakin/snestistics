@@ -21,8 +21,7 @@ namespace {
 	void syntax() {
 		printf("Snestistics Syntax:\n");
 		printf(" -romfile (--r)                 ROM file. Currently only LoROM ROMs are allowed\n");
-		printf(" -romheader (--rh)              Specify header type of ROM\n");
-		printf(" -romsize (--rs)                Size of ROM cartridge (without header). When a 0 if specified this is determined as ROM file size minus ROM header size\n");
+		printf(" -romsize (--rs)                Size of ROM cartridge (without header). A value of 0 means auto-detect (which reads the size from tracefiles)\n");
 		printf(" -rommode (--rm)                Type of ROM\n");
 		printf(" -tracefile (--t)               Trace file from an emulation session. Multiple allowed for assembly source listing (but not trace log or rewind)\n");
 		printf(" -regenerate (--rg)             Regenerate emulation caches. Needs to be run if trace files has been updated\n");
@@ -68,15 +67,11 @@ void parse_options(const int argc, const char * const argv[], Options &options) 
 		if (strcmp(cmd, "romfile")==0 || strcmp(cmd, "-r")==0) {
 			options.rom_file = opt;
 			k++;
-		} else if (strcmp(cmd, "romheader")==0 || strcmp(cmd, "-rh")==0) {
-			if (strcmp(opt, "none")==0) options.rom_header = Options::RH_NONE;
-			if (strcmp(opt, "copier")==0) options.rom_header = Options::RH_COPIER;
-			if (strcmp(opt, "auto")==0) options.rom_header = Options::RH_AUTO;
-			k++;
 		} else if (strcmp(cmd, "romsize")==0 || strcmp(cmd, "-rs")==0) {
 			options.rom_size = parse_uint(opt, error);
 			k++;
 		} else if (strcmp(cmd, "rommode")==0 || strcmp(cmd, "-rm")==0) {
+			if (strcmp(opt, "detect")==0) options.rom_mode = Options::RM_DETECT;
 			if (strcmp(opt, "lorom")==0) options.rom_mode = Options::RM_LOROM;
 			if (strcmp(opt, "hirom")==0) options.rom_mode = Options::RM_HIROM;
 			k++;

@@ -2,9 +2,8 @@
 Name | Short | Type | Description
 :----|-------|:-----|:-----------
 *romfile* | r | input file name | ROM file. Currently only LoROM ROMs are allowed.
-*romheader* | rh | enumeration | Specify header type of ROM.<br><br>**none**: No header<br>**copier**: 512 byte header often added by copiers<br>**auto**: Guess header. Assumes that files are composed of a header and then ROM data that is a multiple of 32KBs (32*1024 bytes) (default)
-*romsize* | rs | integer | Size of ROM cartridge (without header). When a 0 if specified this is determined as ROM file size minus ROM header size.
-*rommode* | rm | enumeration | Type of ROM.<br><br>**lorom**: LoROM (default)<br>**hirom**: HiROM
+*romsize* | rs | integer | Size of ROM cartridge (without header). A value of 0 means auto-detect (which reads the size from tracefiles).
+*rommode* | rm | enumeration | Type of ROM.<br><br>**detect**: Detect based on information in .trace-file<br>**lorom**: LoROM (default)<br>**hirom**: HiROM
 
 ## Trace
 Name | Short | Type | Description

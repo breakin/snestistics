@@ -7,6 +7,8 @@
 #include "utils.h"
 
 typedef uint32_t Pointer;
+namespace snestistics {
+
 class RomAccessor;
 
 enum AnnotationType {
@@ -134,3 +136,4 @@ private:
 	int* _trace_annotation_for_adress = nullptr;
 	uint32_t _annotation_for_adress_size = 0;
 };
+}

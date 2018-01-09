@@ -99,7 +99,7 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 
 	printf("Skipping to nmi %d\n", capture_nmi_first);
 	EmulateRegisters &regs = replay.regs;
-	bool success = replay.skip_until_nmi(trace_file_skip_cache(options, 0).c_str(), capture_nmi_first);
+	bool success = replay.skip_until_nmi(capture_nmi_first);
 	assert(success);
 
 	uint32_t current_nmi = capture_nmi_first;

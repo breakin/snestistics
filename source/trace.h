@@ -1,15 +1,17 @@
 #pragma once
 
-struct Options;
-class RomAccessor;
-
-static const int CURRENT_CACHE_VERSION = 3;
-
 #include <cstdint>
 #include "utils.h"
 #include <map>
 #include <vector>
 #include <set>
+
+struct Options;
+namespace snestistics {
+
+class RomAccessor;
+
+static const uint32_t TRACE_CACHE_VERSION = 3;
 
 /*
 	The Trace is where information about the entire run is captured from an emulation replay.
@@ -113,5 +115,5 @@ void create_trace(const Options &options, const int trace_file_index, const RomA
 void merge_trace(Trace &dest, const Trace &add);
 
 // Since emulation takes time we can save/load traces (caching)
-void save_trace(const Trace &trace, const std::string &filename);
-bool load_trace(const std::string &filename, Trace &trace);
+bool load_trace_cache(const std::string &trace_file, Trace &trace);
+}

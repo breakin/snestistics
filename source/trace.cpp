@@ -7,6 +7,7 @@
 #include <memory>
 #include <iterator>
 #include "cputable.h"
+#include "trace_cache.h"
 
 namespace {
 
@@ -19,7 +20,7 @@ namespace {
 
 	struct OpRecord {
 		uint32_t PC;
-		OpInfo op_info;
+		snestistics::OpInfo op_info;
 
 		inline bool operator<(const OpRecord &other) const {
 			if (PC != other.PC) return PC < other.PC;
@@ -49,9 +50,9 @@ namespace std {
 			return h;
 		}
 	};
-	template <> struct hash<Trace::MemoryAccess>
+	template <> struct hash<snestistics::Trace::MemoryAccess>
 	{
-		size_t operator()(const Trace::MemoryAccess & x) const
+		size_t operator()(const snestistics::Trace::MemoryAccess & x) const
 		{
 			size_t h = 0;
 			hash_combine(h, x.adress);
@@ -64,15 +65,15 @@ namespace std {
 namespace {
 struct CallbackContext {
 	Pointer current_pc = 0;
-	std::set<Trace::MemoryAccess> accesses;
-	std::set<DmaTransfer> dma_transfers;
+	std::set<snestistics::Trace::MemoryAccess> accesses;
+	std::set<snestistics::DmaTransfer> dma_transfers;
 };
 
 void read_function(void* context, Pointer location, Pointer remapped_location, uint32_t value, int num_bytes, MemoryAccessType reason) {
 	if (reason != MemoryAccessType::RANDOM && reason != MemoryAccessType::FETCH_INDIRECT)
 		return;
 	CallbackContext &m = *(CallbackContext*)context;
-	Trace::MemoryAccess a;
+	snestistics::Trace::MemoryAccess a;
 	for (int k = 0; k < num_bytes; ++k) {
 		a.adress = remapped_location + k;
 		a.pc = m.current_pc;
@@ -84,7 +85,7 @@ void write_function(void* context, Pointer location, Pointer remapped_location, 
 	if (reason != MemoryAccessType::RANDOM && reason != MemoryAccessType::FETCH_INDIRECT)
 		return;
 	CallbackContext &m = *(CallbackContext*)context;
-	Trace::MemoryAccess a;
+	snestistics::Trace::MemoryAccess a;
 	for (int k = 0; k < num_bytes; ++k) {
 		a.adress = remapped_location + k;
 		a.pc = m.current_pc | 0x80000000; // Indicates write
@@ -92,14 +93,14 @@ void write_function(void* context, Pointer location, Pointer remapped_location, 
 	}
 }
 
-void dma_function(void *context, const DmaTransfer &dma) {
+void dma_function(void *context, const snestistics::DmaTransfer &dma) {
 	CallbackContext &m = *(CallbackContext*)context;
 	m.dma_transfers.insert(dma);
 }
 
 // Now count variants for each PC and put them all in a big vector with an index
 // Now we iterate op_trace in order sorted by PC
-void pack_ops(Trace &trace, std::set<OpRecord> &op_trace) {
+void pack_ops(snestistics::Trace &trace, std::set<OpRecord> &op_trace) {
 	trace.ops.clear();
 
 	const uint32_t number_of_variants = (uint32_t)op_trace.size();
@@ -113,7 +114,7 @@ void pack_ops(Trace &trace, std::set<OpRecord> &op_trace) {
 	for (auto it : op_trace) {
 		if (it.PC != current_pc) {
 			// Time to make a record
-			Trace::OpVariantLookup lookup;
+			snestistics::Trace::OpVariantLookup lookup;
 			lookup.count = count;
 			lookup.offset = offset - count;
 			trace.ops[current_pc] = lookup;
@@ -125,29 +126,76 @@ void pack_ops(Trace &trace, std::set<OpRecord> &op_trace) {
 		count++;
 	}
 	{
-		Trace::OpVariantLookup lookup;
+		snestistics::Trace::OpVariantLookup lookup;
 		lookup.count = count;
 		lookup.offset = offset - count;
 		trace.ops[current_pc] = lookup;
 	}
 }
+
+void save_trace(const snestistics::Trace &trace, BigFile &dest) {
+	Profile profile("Saving trace cache", true);
+
+	const uint32_t num_ops = (uint32_t)trace.ops.size();
+	const uint32_t num_variants = (uint32_t)trace.ops_variants.size();
+
+	// Ops lookups (one for each PC)
+	dest.write(num_ops);
+	for (auto k : trace.ops) {
+		dest.write(k.first); // PC
+		dest.write(k.second.offset); // offset
+		dest.write(k.second.count); // count
+	}
+
+	// Ops variants (multiple for each PC)
+	dest.write(num_variants);
+	dest.write(&trace.ops_variants[0], sizeof(snestistics::OpInfo)*num_variants);
+
+	// Write labels
+	trace.labels.write_file(dest);
+
+	// Write memory accesses
+	const uint32_t num_memory_accesses = (uint32_t)trace.memory_accesses.size();
+	dest.write(num_memory_accesses);
+	if (num_memory_accesses!=0) {
+		dest.write(trace.memory_accesses[0]);
+	}
+
+	// Write DMA-transfers
+	const uint32_t num_dma_transfers = (uint32_t)trace.dma_transfers.size();
+	dest.write(num_dma_transfers);
+	if (num_dma_transfers!=0) {
+		dest.write(&trace.dma_transfers[0], sizeof(snestistics::DmaTransfer)*num_dma_transfers);
+	}
+}
 }
 
+namespace snestistics {
+
 void create_trace(const Options &options, const int trace_file_index, const RomAccessor &rom_accessor, Trace &trace) {
-	FILE *skip_cache = nullptr;
+	BigFile emu_cache;
 	const uint32_t nmi_per_skip = 10;
 
-	skip_cache = fopen(trace_file_skip_cache(options,trace_file_index).c_str(), "wb");
-	snestistics::TraceSkipHeader skip_header;
-	skip_header.version = CURRENT_CACHE_VERSION;
-	skip_header.nmi_per_skip = nmi_per_skip;
-	fwrite(&skip_header, sizeof(skip_header), 1, skip_cache);
+	emu_cache._file = fopen((options.trace_files[trace_file_index] + ".emulation_cache").c_str(), "wb");
+	CUSTOM_ASSERT(emu_cache._file);
+	snestistics::TraceCacheHeader cache_header;
+	cache_header.version = TRACE_CACHE_VERSION;
+	cache_header.nmi_per_skip = nmi_per_skip;
+
+	// NOTE: Not all values in cache_header are assigned now, some are assigned later
+	//       And will be written to the file again
+
+	emu_cache.write(cache_header);
+
+	cache_header.replay_cache_seek_offset = emu_cache._offset;
 
 	// Fast structure used during emulation
 	std::set<OpRecord> op_trace;
 	CallbackContext memory_accesses;
 
 	Replay replay(rom_accessor, options.trace_files[trace_file_index].c_str());
+
+	memcpy(cache_header.trace_file_content_guid, replay._trace_content_guid, 8);
 
 	EmulateRegisters &regs = replay.regs;
 	regs._read_function = read_function;
@@ -177,7 +225,7 @@ void create_trace(const Options &options, const int trace_file_index, const RomA
 				last_reported_nmi = nmi; 
 			}
 
-			if (skip_cache && (regs.event == Events::RESET || regs.event == Events::NMI) && (nmi % nmi_per_skip)==0) {
+			if (emu_cache._file && (regs.event == Events::RESET || regs.event == Events::NMI) && (nmi % nmi_per_skip)==0) {
 				snestistics::TraceSkip msg;
 				msg.nmi = nmi;
 				msg.regs.A = regs._A;
@@ -193,9 +241,9 @@ void create_trace(const Options &options, const int trace_file_index, const RomA
 				msg.regs.wram_address = regs._WRAM & 0xFFFF;
 				msg.seek_offset_trace_file = replay._last_after_nmi_offset;
 				msg.current_op = replay._current_op;
-				fwrite(&msg, sizeof(msg), 1, skip_cache);
-				fwrite(&regs._memory[0x7E0000], 64*1024, 1, skip_cache);
-				fwrite(&regs._memory[0x7F0000], 64*1024, 1, skip_cache);
+				emu_cache.write(msg);
+				emu_cache.write(&regs._memory[0x7E0000], 64*1024);
+				emu_cache.write(&regs._memory[0x7F0000], 64*1024);
 			}
 
 			const uint32_t jump_pc = regs._PC;
@@ -245,6 +293,8 @@ void create_trace(const Options &options, const int trace_file_index, const RomA
 				op_trace.insert(o);
 			}
 		}
+
+		cache_header.num_nmis = nmi;
 	}
 
 	pack_ops(trace, op_trace);
@@ -261,83 +311,74 @@ void create_trace(const Options &options, const int trace_file_index, const RomA
 		trace.memory_accesses.push_back(it);
 	}
 
-	if (skip_cache)
-		fclose(skip_cache);
+	cache_header.trace_summary_seek_offset = emu_cache._offset;
+	save_trace(trace, emu_cache);
+
+	emu_cache.set_offset(0);
+
+	emu_cache.write(cache_header); // Write it again now that we know all values
+
+	if (emu_cache._file)
+		fclose(emu_cache._file);
 }
 
-void save_trace(const Trace &trace, const std::string &filename) {
-	Profile profile("Saving trace cache", true);
-
-	FILE *dest = fopen(filename.c_str(), "wb");
-
-	const uint32_t version = CURRENT_CACHE_VERSION;
-	fwrite(&version, sizeof(uint32_t), 1, dest);
-
-	const uint32_t num_ops = (uint32_t)trace.ops.size();
-	const uint32_t num_variants = (uint32_t)trace.ops_variants.size();
-
-	// Ops lookups (one for each PC)
-	fwrite(&num_ops, sizeof(uint32_t), 1, dest);
-	for (auto k : trace.ops) {
-		fwrite(&k.first, sizeof(uint32_t), 1, dest); // PC
-		fwrite(&k.second.offset, sizeof(uint32_t), 1, dest); // offset
-		fwrite(&k.second.count, sizeof(uint32_t), 1, dest); // count
-	}
-
-	// Ops variants (multiple for each PC)
-	fwrite(&num_variants, sizeof(uint32_t), 1, dest);
-	fwrite(&trace.ops_variants[0], sizeof(OpInfo), num_variants, dest);
-
-	// Write labels
-	trace.labels.write_file(dest);
-
-	// Write memory accesses
-	const uint32_t num_memory_accesses = (uint32_t)trace.memory_accesses.size();
-	fwrite(&num_memory_accesses, sizeof(uint32_t), 1, dest);
-	if (num_memory_accesses!=0) {
-		fwrite(&trace.memory_accesses[0], sizeof(Trace::MemoryAccess), num_memory_accesses, dest);
-	}
-
-	// Write DMA-transfers
-	const uint32_t num_dma_transfers = (uint32_t)trace.dma_transfers.size();
-	fwrite(&num_dma_transfers, sizeof(uint32_t), 1, dest);
-	if (num_dma_transfers!=0) {
-		fwrite(&trace.dma_transfers[0], sizeof(DmaTransfer), num_dma_transfers, dest);
-	}
-
-	fclose(dest);
-}
-
-bool load_trace(const std::string &filename, Trace &trace) {
+bool load_trace_cache(const std::string &trace_file_name, Trace &trace) {
 	Profile profile("Loading trace cache", true);
 
-	FILE *source = fopen(filename.c_str(), "rb");
-	if (!source)
+	uint8_t content_guid[8];
+	{
+		BigFile trace_file;
+		trace_file._file = fopen(trace_file_name.c_str(), "rb");
+		snestistics::TraceHeader header;
+		trace_file.read(header);
+		if (header.version != TRACE_VERSION_NUMBER) {
+			printf("Error: Incorrect version %d in trace file '%s' (expected %d).\n", header.version, trace_file_name.c_str(), TRACE_VERSION_NUMBER);
+			exit(1);
+		}
+		memcpy(content_guid, header.content_guid, 8);
+		fclose(trace_file._file);
+	}
+
+	const std::string filename = trace_file_name + ".emulation_cache";
+
+	BigFile source;
+	source._file = fopen(filename.c_str(), "rb");
+	if (!source._file)
 		return false;
-	
-	uint32_t version = 0;
-	fread(&version, sizeof(uint32_t), 1, source);
-	if (version != CURRENT_CACHE_VERSION)
+
+	snestistics::TraceCacheHeader header;
+	source.read(&header, sizeof(header));
+
+	if (header.version != TRACE_CACHE_VERSION)
 		return false;
+
+	if (memcmp(header.trace_file_content_guid, content_guid, 8) != 0) {
+		printf("Info: Cache '%s' for trace '%s' is invalid\n", filename.c_str(), trace_file_name.c_str());
+		return false;
+	}
+
+	printf("Loading trace cache from disk...\n");
+
+	source.set_offset(header.trace_summary_seek_offset);
 
 	// Ops
 	uint32_t num_ops = 0;
-	fread(&num_ops, sizeof(uint32_t), 1, source);
+	source.read(num_ops);
 	for (uint32_t i = 0; i < num_ops; ++i) {
 		uint32_t pc = 0;
-		fread(&pc, sizeof(uint32_t), 1, source);
+		source.read(pc);
 		Trace::OpVariantLookup a;
-		fread(&a.offset, sizeof(uint32_t), 1, source);
-		fread(&a.count, sizeof(uint32_t), 1, source);
+		source.read(a.offset);
+		source.read(a.count);
 		trace.ops[pc] = a;
 	}
 
 	uint32_t num_variants = 0;
-	fread(&num_variants, sizeof(uint32_t), 1, source);
+	source.read(num_variants);
 
 	trace.ops_variants.resize(num_variants);
 	if (num_variants!=0) {
-		fread(&trace.ops_variants[0], sizeof(OpInfo), num_variants, source);
+		source.read(&trace.ops_variants[0], sizeof(OpInfo)*num_variants);
 	}
 
 	// Labels
@@ -345,21 +386,20 @@ bool load_trace(const std::string &filename, Trace &trace) {
 
 	// Read memory accesses
 	uint32_t num_memory_accesses = 0;
-	fread(&num_memory_accesses, sizeof(uint32_t), 1, source);
+	source.read(num_memory_accesses);
 	trace.memory_accesses.resize(num_memory_accesses);
 	if (num_memory_accesses!=0) {
-		fread(&trace.memory_accesses[0], sizeof(Trace::MemoryAccess), num_memory_accesses, source);
+		source.read(&trace.memory_accesses[0], sizeof(Trace::MemoryAccess)*num_memory_accesses);
 	}
 
 	// Read DMA-transfers
 	uint32_t num_dma_transfers = 0;
-	fread(&num_dma_transfers, sizeof(uint32_t), 1, source);
+	source.read(num_dma_transfers);
 	trace.dma_transfers.resize(num_dma_transfers);
 	if (num_dma_transfers!=0) {
-		fread(&trace.dma_transfers[0], sizeof(DmaTransfer), num_dma_transfers, source);
+		source.read(&trace.dma_transfers[0], sizeof(DmaTransfer)*num_dma_transfers);
 	}
-
-	fclose(source);
+	fclose(source._file);
 	return true;
 }
 
@@ -396,4 +436,5 @@ void merge_trace(Trace &dest, const Trace &add) {
 		}
 	}
 	pack_ops(dest, op_trace);
+}
 }

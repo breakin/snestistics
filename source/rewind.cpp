@@ -1237,7 +1237,7 @@ void rewind_report(const Options &options, const RomAccessor &rom, const Annotat
 	int nmi = original_nmi;
 	Replay replay(rom, options.trace_files[0].c_str());
 	EmulateRegisters &regs = replay.regs;
-	replay.skip_until_nmi(trace_file_skip_cache(options,0).c_str(), nmi);
+	replay.skip_until_nmi(nmi);
 
 	std::vector<tracking::Event> out_events;
 	std::vector<tracking::Value> out_values;
@@ -1611,7 +1611,7 @@ void rewind_report(const Options &options, const RomAccessor &rom, const Annotat
 		regs2._read_function = nullptr;
 		regs2._write_function = nullptr;
 		regs2._callback_context = nullptr;
-		replay.skip_until_nmi(trace_file_skip_cache(options,0).c_str(), original_nmi);
+		replay.skip_until_nmi(original_nmi);
 
 		uint32_t next_event = (uint32_t)out_events.size()-1;
 		uint64_t next_op = out_events[next_event].opcount;

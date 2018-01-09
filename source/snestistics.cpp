@@ -622,7 +622,8 @@ int main(const int argc, const char * const argv[]) {
 
 		printf("Loading ROM '%s'\n", options.rom_file.c_str());
 
-		RomAccessor rom_accessor(options.rom_header, options.rom_size);
+		// TODO: TraceHeader has rom_size and rom_mode (lorom/hirom) so lets read them!
+		RomAccessor rom_accessor(options.rom_size);
 		{
 			Profile profile("Load ROM data");
 			rom_accessor.load(options.rom_file);
@@ -636,13 +637,12 @@ int main(const int argc, const char * const argv[]) {
 			Trace backing_trace;
 			Trace &local_trace = k==0 ? trace : backing_trace;
 
-			if (!options.regenerate && load_trace(trace_file_op_cache(options, k).c_str(), local_trace))
+			if (!options.regenerate && load_trace_cache(options.trace_files[k], local_trace))
 				generate = false;
 
 			if (generate) {
 				Profile profile("Create trace using emulation");
-				create_trace(options, k, rom_accessor, local_trace);
-				save_trace(local_trace, trace_file_op_cache(options, k).c_str());
+				create_trace(options, k, rom_accessor, local_trace); // Will automatically save new cache
 			}
 
 			if (k != 0) {
