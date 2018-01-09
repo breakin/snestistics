@@ -404,7 +404,11 @@ def generate_parser_source(file):
 				# Replace "${ref}"" with "ref" after validating that there still is an option "ref"
 				description = option_reference_re.sub(option_reference_patcher, option.description)
 
-				name_part = " -" + switch_name(option) + " (--" + short_switch_name(option) + ")"
+				name_part = " -" + switch_name(option)
+				ssn = short_switch_name(option)
+
+				if len(ssn)!=0:
+					 name_part = name_part + " (--" + ssn + ")"
 
 				file.write("\t\tprintf(\"" + "{:<32}".format(name_part) + description + "\\n\");\n")
 

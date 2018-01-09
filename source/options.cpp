@@ -44,8 +44,8 @@ namespace {
 		printf(" -asmprintregistersizes (--ars) Print registers sizes in assembly source listing\n");
 		printf(" -asmprintdb (--adb)            Print data bank in assembly source listing\n");
 		printf(" -asmprintdp (--adp)            Print direct page in assembly source listing\n");
-		printf(" -asmlowercaseop (--)           Print lower-case opcode in assembly source listing\n");
-		printf(" -asmcorrectwla (--)            Make sure generated source compiled in WLA DX\n");
+		printf(" -asmlowercaseop                Print lower-case opcode in assembly source listing\n");
+		printf(" -asmcorrectwla                 Make sure generated source compiled in WLA DX\n");
 	}
 }
 
