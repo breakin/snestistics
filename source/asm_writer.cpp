@@ -545,14 +545,14 @@ void asm_writer(ReportWriter &report, const Options &options, Trace &trace, cons
 
 	for (const Annotation &a : annotations._annotations) {
 		if (a.type == ANNOTATION_FUNCTION || (a.type == ANNOTATION_LINE && !a.name.empty()))
-			trace.labels.setBit(a.startOfRange);
+			trace.labels.set_bit(a.startOfRange);
 	}
 
 	writer.writeSeperator("Header");
 
 	if (!options.asm_header_file.empty()) {
 		std::vector<unsigned char> header;
-		readFile(options.asm_header_file, header);
+		read_file(options.asm_header_file, header);
 		fwrite(&header[0], header.size(), 1, report.report);
 		char newline = '\n';
 		fwrite(&newline, 1, 1, report.report);

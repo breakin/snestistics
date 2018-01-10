@@ -58,7 +58,7 @@ public:
 		bool result = (_state[bucket] & mask) != 0;
 		return result;
 	}
-	void setBit(const uint32_t p, const bool newStat = true) {
+	void set_bit(const uint32_t p, const bool newStat = true) {
 		uint32_t bucket = p / 32;
 		uint32_t mask = 1 << (p & 31);
 		uint32_t current = _state[bucket] & ~mask;
@@ -83,7 +83,7 @@ public:
 	}
 };
 
-inline void readFile(const std::string &filename, std::vector<uint8_t> &result) {
+inline void read_file(const std::string &filename, std::vector<uint8_t> &result) {
 	assert(!filename.empty());
 	if (filename.empty()) {
 		std::stringstream ss;

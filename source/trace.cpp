@@ -260,7 +260,7 @@ void create_trace(const Options &options, const int trace_file_index, const RomA
 			case Events::NMI:
 			case Events::IRQ:
 				// Do not register this as a jump; nobody cares where we jumped from to an nmi/irq/reset
-				trace.labels.setBit(jump_pc);
+				trace.labels.set_bit(jump_pc);
 				break;
 			case Events::RTI:
 			case Events::RTS_OR_RTL:
@@ -271,7 +271,7 @@ void create_trace(const Options &options, const int trace_file_index, const RomA
 			case Events::JSR_OR_JSL:
 			case Events::BRANCH:
 				// This means that the op _took_ a jump, not that it was a jump instruction
-				trace.labels.setBit(jump_pc);
+				trace.labels.set_bit(jump_pc);
 				is_jump = true;
 			case Events::NONE:
 				op = true;

@@ -23,7 +23,7 @@ public:
 	RomAccessor(const uint32_t calculated_size) : _rom_offset(-1), _calculated_size(calculated_size) {}
 
 	void load(const std::string &filename) {
-		readFile(filename, m_romdata);
+		read_file(filename, m_romdata);
 		// Auto-detect assumes nothing is appended at end of ROM
 		_rom_offset = m_romdata.size() % (32 * 1024);
 		printf("  Header Size:    0x%06X\n", _rom_offset);

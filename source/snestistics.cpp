@@ -271,7 +271,7 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 
 	for (auto opsit : trace.ops) {
 		const Pointer pc = opsit.first;
-		has_op.setBit(pc);
+		has_op.set_bit(pc);
 
 		const Trace::OpVariantLookup &vl = opsit.second;
 		const uint8_t* data = rom.evalPtr(pc);
@@ -286,7 +286,7 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 		if (!branch_or_jump || target_jump == INVALID_POINTER)
 			continue;
 
-		trace.labels.setBit(target_jump);
+		trace.labels.set_bit(target_jump);
 
 		const Annotation *source_annotation = nullptr, *target_annotation = nullptr;
 		annotations.resolve_annotation(pc,          &source_annotation);
@@ -421,8 +421,8 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 				// Note that DB and DP here represent a lie :)
 			}
 
-			trace.is_predicted.setBit(pc);
-			has_op.setBit(pc);
+			trace.is_predicted.set_bit(pc);
+			has_op.set_bit(pc);
 			int op_size = calculateFormattingandSize(rom.evalPtr(pc), is_memory_accumulator_wide(P), is_index_wide(P), nullptr, nullptr, nullptr);
 
 			uint8_t operand = rom.evalByte(pc+1);
@@ -442,7 +442,7 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 				const Annotation *function = nullptr;
 				if (target_jump != INVALID_POINTER) {
 					annotations.resolve_annotation(target_jump, &function);
-					trace.labels.setBit(target_jump);
+					trace.labels.set_bit(target_jump);
 				}
 
 				if (limit_to_functions && writer && (!function || function != pb.annotation)) {

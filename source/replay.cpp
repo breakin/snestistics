@@ -336,7 +336,7 @@ void Replay::read_next_event() {
 
 void replay_set_breakpoint(Replay* replay, uint32_t pc) {
 	if (pc < 1024*64*256)
-		replay->breakpoints.setBit(pc);
+		replay->breakpoints.set_bit(pc);
 }
 void replay_set_breakpoint_range(Replay* replay, uint32_t p0, uint32_t p1) {
 	if (p1 < p0)
@@ -346,7 +346,7 @@ void replay_set_breakpoint_range(Replay* replay, uint32_t p0, uint32_t p1) {
 
 	// TODO: Add a function in breakpoints to set a range, could be much faster
 	for (uint32_t p = p0; p <= p1; p++) {
-		replay->breakpoints.setBit(p);
+		replay->breakpoints.set_bit(p);
 	}	
 }
 
