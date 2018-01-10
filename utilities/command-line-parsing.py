@@ -18,7 +18,7 @@ options=[
 	Option("rom",        "Rom",              "r",  "input",   "",      "ROM file. Currently only LoROM ROMs are allowed"),
 	#Option("rom",        "RomHeader",        "rh", "enum",    "auto",      "Specify header type of ROM"),
 	Option("rom",        "RomSize",          "rs", "uint",    "0",     "Size of ROM cartridge (without header). A value of 0 means auto-detect (which reads the size from tracefiles)"),
-	Option("rom",        "RomMode",          "rm", "enum",    "lorom",      "Type of ROM"),
+	Option("rom",        "RomMode",          "rm", "enum",    "trace", "Type of ROM"),
 	Option("trace",      "Trace",            "t",  "input*",  "",      "Trace file from an emulation session. Multiple allowed for assembly source listing (but not trace log or rewind)"),
 	Option("trace",      "Regenerate",       "rg", "bool",    "false", "Regenerate emulation caches. Needs to be run if trace files has been updated"),
 	Option("trace",      "Predict",          "p",  "enum",    "functions",      "Predict can add instructions that was not part of the trace by guessing. This setting specify where snestistics is allowed to guess"),
@@ -53,7 +53,7 @@ enums={
 	#	EnumOption("auto", "Guess header. Currently assumes that files are composed of a header and then ROM data that is a multiple of 32KBs (32*1024 bytes)"),
 	#],
 	"RomMode" : [
-		EnumOption("detect", "Detect based on information in .trace-file"),
+		EnumOption("trace", "Read correct mode from .trace-file"),
 		EnumOption("lorom", "LoROM"),
 		EnumOption("hirom", "HiROM"),
 	],

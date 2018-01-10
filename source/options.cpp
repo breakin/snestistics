@@ -71,7 +71,7 @@ void parse_options(const int argc, const char * const argv[], Options &options) 
 			options.rom_size = parse_uint(opt, error);
 			k++;
 		} else if (strcmp(cmd, "rommode")==0 || strcmp(cmd, "-rm")==0) {
-			if (strcmp(opt, "detect")==0) options.rom_mode = Options::RM_DETECT;
+			if (strcmp(opt, "trace")==0) options.rom_mode = Options::RM_TRACE;
 			if (strcmp(opt, "lorom")==0) options.rom_mode = Options::RM_LOROM;
 			if (strcmp(opt, "hirom")==0) options.rom_mode = Options::RM_HIROM;
 			k++;

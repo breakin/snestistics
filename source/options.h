@@ -8,7 +8,7 @@
 
 struct Options {
 	enum RomModeEnum {
-		RM_DETECT,       // Detect based on information in .trace-file
+		RM_TRACE,        // Read correct mode from .trace-file
 		RM_LOROM,        // LoROM
 		RM_HIROM,        // HiROM
 	};
@@ -21,7 +21,7 @@ struct Options {
 
 	std::string                  rom_file;
 	uint32_t                     rom_size = 0;
-	RomModeEnum                  rom_mode = RM_LOROM;
+	RomModeEnum                  rom_mode = RM_TRACE;
 	std::vector<std::string>     trace_files;
 	bool                         regenerate = false;
 	PredictEnum                  predict = PRD_FUNCTIONS;
