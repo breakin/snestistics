@@ -2,6 +2,8 @@
 #include <cstdio>
 #include "annotations.h"
 
+namespace snestistics {
+
 void symbol_export_fma(const AnnotationResolver & annotations, const std::string & filename, const bool allow_multiline_comments) {
 
 	// https://github.com/BenjaminSchulte/fma-snes65816/blob/master/docs/symbols.adoc
@@ -56,4 +58,5 @@ void symbol_export_fma(const AnnotationResolver & annotations, const std::string
 	}
 	fclose(f);
 
+}
 }

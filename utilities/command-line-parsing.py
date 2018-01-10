@@ -16,8 +16,8 @@ option_reference_re = re.compile("\${([^}]*)}") # Match ${word} with word ending
 
 options=[
 	Option("rom",        "Rom",              "r",  "input",   "",      "ROM file. Currently only LoROM ROMs are allowed"),
-	Option("rom",        "RomHeader",        "rh", "enum",    "auto",      "Specify header type of ROM"),
-	Option("rom",        "RomSize",          "rs", "uint",    "0",     "Size of ROM cartridge (without header). When a 0 if specified this is determined as ROM file size minus ROM header size"),
+	#Option("rom",        "RomHeader",        "rh", "enum",    "auto",      "Specify header type of ROM"),
+	Option("rom",        "RomSize",          "rs", "uint",    "0",     "Size of ROM cartridge (without header). A value of 0 means auto-detect (which reads the size from tracefiles)"),
 	Option("rom",        "RomMode",          "rm", "enum",    "lorom",      "Type of ROM"),
 	Option("trace",      "Trace",            "t",  "input*",  "",      "Trace file from an emulation session. Multiple allowed for assembly source listing (but not trace log or rewind)"),
 	Option("trace",      "Regenerate",       "rg", "bool",    "false", "Regenerate emulation caches. Needs to be run if trace files has been updated"),
@@ -47,12 +47,13 @@ options=[
 ]
 
 enums={
-	"RomHeader" : [
-		EnumOption("none", "No header"),
-		EnumOption("copier", "512 byte header often added by copiers"),
-		EnumOption("auto", "Guess header. Assumes that files are composed of a header and then ROM data that is a multiple of 32KBs (32*1024 bytes)"),
-	],
+	#"RomHeader" : [
+	#	EnumOption("none", "No header"),
+	#	EnumOption("copier", "512 byte header often added by copiers"),
+	#	EnumOption("auto", "Guess header. Currently assumes that files are composed of a header and then ROM data that is a multiple of 32KBs (32*1024 bytes)"),
+	#],
 	"RomMode" : [
+		EnumOption("detect", "Detect based on information in .trace-file"),
 		EnumOption("lorom", "LoROM"),
 		EnumOption("hirom", "HiROM"),
 	],

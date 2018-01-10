@@ -15,6 +15,7 @@
 //#define CUSTOM_ASSERT(COND)
 
 typedef uint32_t Pointer;
+struct BigFile;
 
 static const Pointer INVALID_POINTER(-1);
 
@@ -64,23 +65,11 @@ public:
 		assert(this->operator[](p) == newStat);
 	}
 
-	void write_file(FILE *f) const {
-		fwrite(&_num_elements, sizeof(uint32_t), 1, f);
-		fwrite(_state, sizeof(uint32_t), _num_elements, f);
-	}
+	void write_file(FILE *f) const;
+	void write_file(BigFile &file) const;
+	void read_file(BigFile &file);
+	void read_file(FILE *f);
 
-	void read_file(FILE *f) {
-		uint32_t new_size = 0;
-		fread(&new_size, sizeof(uint32_t), 1, f);
-
-		if (new_size != _num_elements) {
-			delete[] _state;
-			_state = new uint32_t[new_size];
-			_num_elements = new_size;
-		}
-
-		fread(_state, sizeof(uint32_t), new_size, f);
-	}
 	void set_union(const LargeBitfield &other) {
 		CUSTOM_ASSERT(_num_elements == other._num_elements);
 		int N = _num_elements;
@@ -250,11 +239,14 @@ private:
 	See: https://stackoverflow.com/questions/8875304/accessing-large-files-in-c
 	I opted for this stupid solution since it fit my need perfectly.
 	In most cases I will never need to do more than one seek.
+
+	Note that set_offset during writing is not thought through
 */
 struct BigFile {
 	uint64_t _offset = 0;
 	FILE *_file = nullptr;
 	void set_offset(uint64_t offset) {
+		validate();
 		if (offset == _offset)
 			return;
 		if (offset < _offset) {
@@ -262,6 +254,7 @@ struct BigFile {
 			rewind(_file);
 			_offset = 0;
 		}
+		// TODO: To catch us from doing a too large jump because of broken file content we should check for EOF
 		uint64_t delta = offset - _offset;
 		while (delta>0) {
 			uint64_t step = delta <= 0x80000000ULL ? delta : 0x80000000ULL;
@@ -269,10 +262,34 @@ struct BigFile {
 			delta -= step;
 		}
 		_offset = offset;
+		validate();
 	}
 	inline uint64_t read(void *buffer, uint64_t len) {
-		uint64_t r = fread(buffer, len, 1, _file);
-		_offset += len;
+		uint64_t r = fread(buffer, 1, len, _file);
+		_offset += r;
+		validate();
 		return r;
 	}
+	inline uint64_t write(const void * const buffer, uint64_t len) {
+		uint64_t written = fwrite(buffer, 1, len, _file);
+		_offset += written;
+		validate();
+		return written;
+	}
+	template<typename T>
+	inline uint64_t write(const T &t) {
+		return write(&t, sizeof(T));
+	}
+	template<typename T>
+	inline uint64_t read(T &t) {
+		return read(&t, sizeof(T));
+	}
+private:
+	void validate() {
+		CUSTOM_ASSERT((_offset > (1<<30)) || _offset == ftell(_file));
+	}
 };
+
+namespace snestistics {
+	uint32_t hash_insecure(const uint8_t* key, size_t len, uint32_t seed);
+}

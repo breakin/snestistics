@@ -120,7 +120,7 @@ uint32_t calculateFormattingandSize(const uint8_t * data, const bool acc16, cons
 
 // Jumps, branches but not JSLs
 // If secondary target is set, it is always set to the next op after this op
-bool decode_static_jump(uint8_t opcode, const RomAccessor & rom, const Pointer pc, Pointer * target, Pointer * secondary_target) {
+bool decode_static_jump(uint8_t opcode, const snestistics::RomAccessor & rom, const Pointer pc, Pointer * target, Pointer * secondary_target) {
 	*target = INVALID_POINTER;
 	*secondary_target = INVALID_POINTER;
 	if (opcode == 0x82) { // BRL

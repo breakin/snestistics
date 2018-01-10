@@ -5,6 +5,8 @@
 #include "utils.h"
 #include "options.h"
 
+namespace snestistics {
+
 /*
 	This class is responsible for resolving a pointer/adress to a byte in the ROM.
 	It obviously can't resolve RAM.
@@ -14,36 +16,27 @@
 
 class RomAccessor {
 private:
-	uint32_t m_romOffset, m_calcSize;
+	uint32_t _rom_offset;
+	const uint32_t _calculated_size;
 	std::vector<uint8_t> m_romdata;
 public:
-	RomAccessor(const Options::RomHeaderEnum rom_mode, const uint32_t calcSize) : m_romOffset(-1), m_calcSize(calcSize) {
-		if (rom_mode == Options::RH_AUTO) m_romOffset = -1;
-		if (rom_mode == Options::RH_NONE) m_romOffset = 0;
-		if (rom_mode == Options::RH_COPIER) m_romOffset = 512;
-	}
+	RomAccessor(const uint32_t calculated_size) : _rom_offset(-1), _calculated_size(calculated_size) {}
 
 	void load(const std::string &filename) {
 		readFile(filename, m_romdata);
-
-		if (m_romOffset == -1) {
-			// Auto-detect assumes nothing is appended at end of ROM
-			uint32_t header_size = m_romdata.size() % (32*1024);
-			m_romOffset = header_size;
-		}
-		if (m_calcSize == 0) {
-			m_calcSize = (((uint32_t)m_romdata.size() - m_romOffset)/0x2000)*0x2000;
-		}
-		printf("calculated size = 0x%06X, rom_offset = 0x%06X\n", m_calcSize, m_romOffset);
+		// Auto-detect assumes nothing is appended at end of ROM
+		_rom_offset = m_romdata.size() % (32 * 1024);
+		printf("  Header Size:    0x%06X\n", _rom_offset);
+		printf("  Calculated Size 0x%06X (%d kb)\n", _calculated_size, (uint32_t)(_calculated_size/1024));
 	}
 
 	uint8_t evalByte(const Pointer p) const {
-		return m_romdata[m_romOffset + getRomOffset(p, m_calcSize)];
+		return m_romdata[_rom_offset + getRomOffset(p, _calculated_size)];
 	}
 
 	// NOTE: Assumes it stays within bank etc
 	const uint8_t* evalPtr(const Pointer p) const {
-		return &m_romdata[m_romOffset + getRomOffset(p, m_calcSize)];
+		return &m_romdata[_rom_offset + getRomOffset(p, _calculated_size)];
 	}
 
 	static bool is_rom(const Pointer p) {
@@ -121,4 +114,4 @@ private:
 		return true;
 	}
 };
-
+}

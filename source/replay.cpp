@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "options.h"
 #include "trace.h"
+#include "trace_cache.h"
 
 using namespace snestistics;
 
@@ -68,9 +69,44 @@ namespace  {
 	TODO: Skipping should either live 100% in trace.cpp or 100% here. Figure out which!
 */
 
+Replay::Replay(const RomAccessor &rom, const char *const trace_file) : regs(rom), breakpoints(1024 * 64 * 256), _trace_file_name(trace_file) {
+	_trace_file._file = fopen(trace_file, "rb");
+
+	CUSTOM_ASSERT(_trace_file._file);
+
+	snestistics::TraceHeader header;
+	_trace_file.read(header);
+	memcpy(_trace_content_guid, header.content_guid, 8);
+
+	if (header.version != TRACE_VERSION_NUMBER) {
+		printf("Expected trace file with version %d, got %d in '%s\n", TRACE_VERSION_NUMBER, header.version, trace_file);
+		exit(1);
+	}
+
+#ifdef VERIFY_OPS
+	{
+		StringBuilder sb;
+		sb.add(trace_file);
+		sb.add("_helper");
+		_trace_helper._file = fopen(sb.c_str(), "rb"); // NOTE: If this fails that is OK
+	}
+#endif
+	read_next_event();
+}
+
+Replay::~Replay() {
+	fclose(_trace_file._file);
+#ifdef VERIFY_OPS
+	if (_trace_helper._file) {
+		fclose(_trace_helper._file);
+		_trace_helper._file = nullptr;
+	}
+#endif
+}
+
 // Given a "recording" of a emulation session, iterate op for op
 
-bool Replay::skip_until_nmi(const char * const skip_cache, const uint32_t target_skip_nmi) {
+bool Replay::skip_until_nmi(const uint32_t target_skip_nmi) {
 
 	EmulateRegisters &regs = this->regs;
 
@@ -81,26 +117,36 @@ bool Replay::skip_until_nmi(const char * const skip_cache, const uint32_t target
 	// Using do/while here is a bit bananas but helps with indentation :)
 	do {
 		BigFile f;
-		f._file = fopen(skip_cache, "rb"); // The 0 here must be wrong if we do many
+		{
+			std::string filename = _trace_file_name + ".emulation_cache";
+			f._file = fopen(filename.c_str(), "rb"); // The 0 here must be wrong if we do many
+		}
 		if (!f._file)
 			break;
 
-		snestistics::TraceSkipHeader header;
+		snestistics::TraceCacheHeader header;
 		f.read(&header, sizeof(header));
 
-		if (header.version != CURRENT_CACHE_VERSION) {
-			printf("Skip cache has wrong version, not using\n");
+		// TODO: Test again trace hash as well for sanity?
+
+		if (header.version != TRACE_CACHE_VERSION) {
+			printf("Emulation cache has wrong version, not using\n");
+			fclose(f._file);
+			break;
+		}
+
+		if(target_skip_nmi < header.num_nmis) {
+			printf("Emulation cache does not have enough NMIs, not using\n");
 			fclose(f._file);
 			break;
 		}
 
 		const uint32_t nmi_per_skip = header.nmi_per_skip;
-		const uint32_t size_per_skip = sizeof(snestistics::TraceSkip)+128*1024;
 
 		// Since skip information is to get AFTER an nmi just happened, we skip to the frame before
 		// We use emulation to get to the before NMI case
 		uint64_t skip = (target_skip_nmi) / nmi_per_skip;
-		f.set_offset(skip * size_per_skip + sizeof(snestistics::TraceSkipHeader));
+		f.set_offset(skip * snestistics::trace_skip_total_size + header.replay_cache_seek_offset);
 
 		snestistics::TraceSkip msg;
 		f.read(&msg, sizeof(msg));
@@ -171,25 +217,25 @@ bool Replay::next() {
 		if (_next_event.type == TraceEventType::EVENT_READ_BYTE) {
 			TraceEventReadByte rb;
 			size_t num_read = _trace_file.read(&rb, sizeof(rb));
-			CUSTOM_ASSERT(num_read == 1);
+			CUSTOM_ASSERT(num_read == sizeof(rb));
 			uint32_t r = regs.remap(rb.adress);
 			if (regs._debug)
 				printf("External write %06X %02X op %d\n", r, rb.value, (int32_t)_current_op);
 			regs._memory[r] = rb.value; // Use function to this become traceable from regs
 			read_next_event();
 		} else if (_next_event.type == TraceEventType::EVENT_READ_WORD) {
-			TraceEventReadWord rb;
-			size_t num_read = _trace_file.read(&rb, sizeof(rb));
-			CUSTOM_ASSERT(num_read == 1);
-			uint32_t shifted_bank = rb.adress & 0x00FF0000;
-			uint16_t l0 = rb.adress&0xFFFF;
+			TraceEventReadWord rw;
+			size_t num_read = _trace_file.read(&rw, sizeof(rw));
+			CUSTOM_ASSERT(num_read == sizeof(rw));
+			uint32_t shifted_bank = rw.adress & 0x00FF0000;
+			uint16_t l0 = rw.adress&0xFFFF;
 			uint16_t l1 = l0+1;
 			uint32_t r0 = regs.remap(shifted_bank|l0);
 			uint32_t r1 = regs.remap(shifted_bank|l1);
 			if (regs._debug)
-				printf("External write %06X,%06X=%04X op %d\n", r0, r1, rb.value, (int32_t)_current_op);
-			regs._memory[r0] = rb.value&0xFF; // Use function to this become traceable from regs
-			regs._memory[r1] = rb.value>>8; // Use function to this become traceable from regs
+				printf("External write %06X,%06X=%04X op %d\n", r0, r1, rw.value, (int32_t)_current_op);
+			regs._memory[r0] = rw.value&0xFF; // Use function to this become traceable from regs
+			regs._memory[r1] = rw.value>>8; // Use function to this become traceable from regs
 			read_next_event();
 		} else if (_next_event.type == TraceEventType::EVENT_RESET) {
 			do_event = Events::RESET;
@@ -281,35 +327,11 @@ bool Replay::next() {
 
 void Replay::read_next_event() {
 	// NOTE: We only read header here, actual event is delayed until consumed
-	size_t num_read = _trace_file.read(&_next_event, sizeof(_next_event));
-	CUSTOM_ASSERT(num_read == 1);
+	uint64_t num_read = _trace_file.read(&_next_event, sizeof(_next_event));
+	CUSTOM_ASSERT(num_read == sizeof(_next_event));
 
 	_accumulated_op_counter += _next_event.op_counter_delta;
 	_next_event_op = _accumulated_op_counter;
-}
-
-Replay::Replay(const RomAccessor &rom, const char *const capture_file) : regs(rom), breakpoints(1024*64*256) {
-	_trace_file._file = fopen(capture_file, "rb");
-	CUSTOM_ASSERT(_trace_file._file);
-	#ifdef VERIFY_OPS
-	{
-		StringBuilder sb;
-		sb.add(capture_file);
-		sb.add("_helper");
-		_trace_helper._file = fopen(sb.c_str(), "rb"); // NOTE: If this fails that is OK
-	}
-	#endif
-	read_next_event();
-}
-
-Replay::~Replay() {
-	fclose(_trace_file._file);
-	#ifdef VERIFY_OPS
-		if (_trace_helper._file) {
-			fclose(_trace_helper._file);
-			_trace_helper._file = nullptr;
-		}
-	#endif
 }
 
 void replay_set_breakpoint(Replay* replay, uint32_t pc) {

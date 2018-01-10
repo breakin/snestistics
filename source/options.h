@@ -7,13 +7,8 @@
 #include <stdint.h>
 
 struct Options {
-	enum RomHeaderEnum {
-		RH_NONE,         // No header
-		RH_COPIER,       // 512 byte header often added by copiers
-		RH_AUTO,         // Guess header. Assumes that files are composed of a header and then ROM data that is a multiple of 32KBs (32*1024 bytes)
-	};
-
 	enum RomModeEnum {
+		RM_DETECT,       // Detect based on information in .trace-file
 		RM_LOROM,        // LoROM
 		RM_HIROM,        // HiROM
 	};
@@ -25,7 +20,6 @@ struct Options {
 	};
 
 	std::string                  rom_file;
-	RomHeaderEnum                rom_header = RH_AUTO;
 	uint32_t                     rom_size = 0;
 	RomModeEnum                  rom_mode = RM_LOROM;
 	std::vector<std::string>     trace_files;

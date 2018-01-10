@@ -6,6 +6,8 @@
 #include <fstream>
 #include "rom_accessor.h"
 
+namespace {
+
 struct DataMMIO {
 	uint32_t address;
 	const char * const name;
@@ -208,6 +210,10 @@ static DataMMIO mmio_annotations[] = {
 	{ 0x004379, "REG_A2A7H", "HDMA Mid Frame Table Address Registers 7" },
 	{ 0x00437A, "REG_NTLR7", "HDMA Line Counter Register 7" }
 };
+
+}
+
+namespace snestistics {
 
 void AnnotationResolver::add_mmio_annotations() {
 	uint32_t num_mmio_annotations = sizeof(mmio_annotations)/sizeof(DataMMIO);
@@ -619,4 +625,4 @@ const TraceAnnotation * AnnotationResolver::trace_annotation(const Pointer pc) c
 	if (tai == -1) return nullptr;
 	return &_trace_annotations[tai];
 }
-
+}

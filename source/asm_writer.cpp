@@ -88,7 +88,7 @@ enum ResultType {
 	SA_NOT_IMPLEMENTED
 };
 
-ResultType evaluateOp(const RomAccessor &rom_accessor, const uint8_t * ops, const CPURegisters & reg, MagicByte * result_bank, MagicWord * result_addr, bool *depend_DB, bool *depend_DP, bool *depend_X, bool *depend_Y) {
+ResultType evaluateOp(const snestistics::RomAccessor &rom_accessor, const uint8_t * ops, const CPURegisters & reg, MagicByte * result_bank, MagicWord * result_addr, bool *depend_DB, bool *depend_DP, bool *depend_X, bool *depend_Y) {
 
 	assert(!depend_DB || !(*depend_DB));
 	assert(!depend_DP || !(*depend_DP));
@@ -224,7 +224,7 @@ typedef CombinationT<uint16_t> Combination16;
 class AsmWriteWLADX {
 private:
 	const Options &m_options;
-	const RomAccessor &m_romData;
+	const snestistics::RomAccessor &m_romData;
 	Pointer m_nextPC;
 	bool m_bankOpen = false;
 	int m_sectionCounter = 0;
@@ -251,7 +251,7 @@ private:
 	ReportWriter &m_report;
 
 public:
-	AsmWriteWLADX(ReportWriter &report, const Options &options, const RomAccessor &romData) : m_options(options), m_report(report), m_romData(romData), m_nextPC(INVALID_POINTER), m_outFile(report.report) {
+	AsmWriteWLADX(ReportWriter &report, const Options &options, const snestistics::RomAccessor &romData) : m_options(options), m_report(report), m_romData(romData), m_nextPC(INVALID_POINTER), m_outFile(report.report) {
 	}
 	~AsmWriteWLADX() {
 		// TODO: Write footer I guess
@@ -447,7 +447,7 @@ public:
 		m_nextPC = pc + numBytesUsed;
 	}
 
-	void write_vectors(const AnnotationResolver &annotations, const LargeBitfield &trace) {
+	void write_vectors(const snestistics::AnnotationResolver &annotations, const LargeBitfield &trace) {
 		fprintf(m_outFile, ".SNESNATIVEVECTOR      ; Define Native Mode interrupt vector table\n");
 		write_vector_single("COP",   annotations, trace, 0xFFE4);
 		write_vector_single("BRK",   annotations, trace, 0xFFE6);
@@ -467,7 +467,7 @@ public:
 
 private:
 
-	inline void write_vector_single(const char * const name, const AnnotationResolver &annotations, const LargeBitfield &labels, const uint16_t target_at) {
+	inline void write_vector_single(const char * const name, const snestistics::AnnotationResolver &annotations, const LargeBitfield &labels, const uint16_t target_at) {
 		uint16_t target = *(uint16_t*)m_romData.evalPtr(target_at);
 		// NOTE: We don't require an annotation for the label, but it must have be part of trace such that
 		//       a label is emitted in the source. Otherwise revert to hex
@@ -535,6 +535,8 @@ private:
 	}
 };
 }
+
+namespace snestistics {
 
 void asm_writer(ReportWriter &report, const Options &options, Trace &trace, const AnnotationResolver &annotations, const RomAccessor &rom_accessor) {
 	AsmWriteWLADX writer(report, options, rom_accessor);
@@ -941,4 +943,5 @@ void asm_writer(ReportWriter &report, const Options &options, Trace &trace, cons
 			}
 		}
 	}
+}
 }
