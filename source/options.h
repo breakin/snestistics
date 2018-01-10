@@ -24,7 +24,6 @@ struct Options {
 	RomModeEnum                  rom_mode = RM_TRACE;
 	std::vector<std::string>     trace_files;
 	bool                         regenerate = false;
-	PredictEnum                  predict = PRD_FUNCTIONS;
 	uint32_t                     nmi_first = 0;
 	uint32_t                     nmi_last = 0;
 	std::string                  trace_log_out_file;
@@ -36,6 +35,7 @@ struct Options {
 	std::string                  rewind_out_file;
 	std::string                  report_out_file;
 	std::string                  asm_out_file;
+	PredictEnum                  predict = PRD_FUNCTIONS;
 	std::string                  asm_header_file;
 	bool                         asm_print_pc = true;
 	bool                         asm_print_bytes = true;

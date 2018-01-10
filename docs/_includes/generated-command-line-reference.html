@@ -2,43 +2,43 @@
 Name | Short | Type | Description
 :----|-------|:-----|:-----------
 *romfile* | r | input file name | ROM file. Currently only LoROM ROMs are allowed.
-*romsize* | rs | integer<br>default: 0 | Size of ROM cartridge (without header). A value of 0 means auto-detect (which reads the size from tracefiles).
-*rommode* | rm | enumeration<br>default: trace | Type of ROM.<br><br>**trace**: Read correct mode from .trace-file (default)<br>**lorom**: LoROM<br>**hirom**: HiROM
+*romsize* | rs | integer | Size of ROM cartridge (without header). 0 means auto-detect.<br>default: 0
+*rommode* | rm | enumeration | Type of ROM.<br><br>**trace**: Read correct mode from .trace-file (default)<br>**lorom**: LoROM<br>**hirom**: HiROM
 
 ## Trace
 Name | Short | Type | Description
 :----|-------|:-----|:-----------
-*tracefile* | t | input file name | Trace file from an emulation session. Multiple allowed for assembly source listing (but not trace log or rewind).
-*regenerate* | rg | boolean<br>default: false | Regenerate emulation caches. Needs to be run if trace files has been updated.
-*predict* | p | enumeration<br>default: functions | Predict can add instructions that was not part of the trace by guessing. This setting specify where snestistics is allowed to guess.<br><br>**never**: No prediction<br>**functions**: Only predict within annotated functions (default)<br>**everywhere**: Predict as much as possible
+*tracefile* | t | input file name | Trace file from an emulation session. Multiple allowed for assembly source listing.
+*regenerate* | rg | boolean | Regenerate emulation caches. Should happen automatically.<br>default: false
 
 ## Assembly Listing
 Name | Short | Type | Description
 :----|-------|:-----|:-----------
 *asmoutfile* | a | output file name | Generated assembly listing.
-*asmheaderfile* | ah | input file name | Content of this file will be pasted in the Header section of the generated assembly source listing.
-*asmprintpc* | apc | boolean<br>default: true | Print program counter in assembly source listing.
-*asmprintbytes* | ab | boolean<br>default: true | Print opcode bytes in assembly source listing.
-*asmprintregistersizes* | ars | boolean<br>default: true | Print registers sizes in assembly source listing.
-*asmprintdb* | adb | boolean<br>default: true | Print data bank in assembly source listing.
-*asmprintdp* | adp | boolean<br>default: true | Print direct page in assembly source listing.
-*asmlowercaseop* |  | boolean<br>default: true | Print lower-case opcode in assembly source listing.
-*asmcorrectwla* |  | boolean<br>default: false | Make sure generated source compiled in WLA DX.
+*predict* | p | enumeration | This setting specify where snestistics is allowed to predict code. This is currently only used for assembly listing.<br><br>**never**: No prediction<br>**functions**: Only predict within annotated functions (default)<br>**everywhere**: Predict as much as possible
+*asmheaderfile* | ah | input file name | File content will be included in assembly listing.
+*asmprintpc* | apc | boolean | Print program counter in assembly source listing.<br>default: true
+*asmprintbytes* | ab | boolean | Print opcode bytes in assembly source listing.<br>default: true
+*asmprintregistersizes* | ars | boolean | Print registers sizes in assembly source listing.<br>default: true
+*asmprintdb* | adb | boolean | Print data bank in assembly source listing.<br>default: true
+*asmprintdp* | adp | boolean | Print direct page in assembly source listing.<br>default: true
+*asmlowercaseop* |  | boolean | Print lower-case opcode in assembly source listing.<br>default: true
+*asmcorrectwla* |  | boolean | Make sure generated source compiled in WLA DX.<br>default: false
 
 ## Trace Log
 Name | Short | Type | Description
 :----|-------|:-----|:-----------
-*nmifirst* | n0 | integer<br>default: 0 | First NMI to consider for things that are nmi range based. Currently only affects the trace log.
-*nmilast* | n1 | integer<br>default: 0 | Last NMI to consider for things that are nmi range based. Currently only affects the trace log.
+*nmifirst* | n0 | integer | First NMI to consider for trace log.<br>default: 0
+*nmilast* | n1 | integer | Last NMI to consider for trace log.<br>default: 0
 *tracelogoutfile* | tl | output file name | Generated trace log. Nmi range can be controlled using *nmifirst* and *nmilast*. Custom printing can be done using scripting.
-*scriptfile* | s | input file name | A squirrel script. See scripting reference in the user guide for entry point functions as well as API specification.
+*scriptfile* | s | input file name | A squirrel script. See user guide for scripting reference.
 
 ## Annotations
 Name | Short | Type | Description
 :----|-------|:-----|:-----------
 *labelsfile* | l | input file name | A file containing annotations. Custom file format.
-*autolabelsfile* | al | input/output file name | A file containing annotations. These are special as it will be regenerated if deleted or if *autoannotate* is specified.
-*autoannotate* | aa | boolean<br>default: false | Auto annotate labels. Automatically generate labels in free space (not used by symbols from regular *labelsfile*-files) space and save to *autolabelsfile*. This will also happen if the file specified by *autolabelsfile* is missing.
+*autolabelsfile* | al | input/output file name | A file containing annotations. It will be regenerated if missing or if *autoannotate* is specified.
+*autoannotate* | aa | boolean | A file where automatically generated annotations are stored. Automatically generate labels in free space (not used by symbols from regular *labelsfile*-files) space and save to *autolabelsfile*. This will also happen if the file specified by *autolabelsfile* is missing.<br>default: false
 *symbolfmaoutfile* | sf | output file name | Generated symbols file in FMA format compatible with bsnes-plus.
 
 ## Reports
@@ -49,5 +49,5 @@ Name | Short | Type | Description
 ## Rewind
 Name | Short | Type | Description
 :----|-------|:-----|:-----------
-*rewindoutfile* | rw | output file name | Generated rewind report in .DOT file format. Use graphviz to generate PDF/PNG report.
+*rewindoutfile* | rw | output file name | Generated rewind report in dot file format. Use graphviz to generate PDF/PNG report.
 

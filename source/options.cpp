@@ -20,31 +20,50 @@ namespace {
 
 	void syntax() {
 		printf("Snestistics Syntax:\n");
-		printf(" -romfile (--r)                 ROM file. Currently only LoROM ROMs are allowed\n");
-		printf(" -romsize (--rs)                Size of ROM cartridge (without header). A value of 0 means auto-detect (which reads the size from tracefiles)\n");
-		printf(" -rommode (--rm)                Type of ROM\n");
-		printf(" -tracefile (--t)               Trace file from an emulation session. Multiple allowed for assembly source listing (but not trace log or rewind)\n");
-		printf(" -regenerate (--rg)             Regenerate emulation caches. Needs to be run if trace files has been updated\n");
-		printf(" -predict (--p)                 Predict can add instructions that was not part of the trace by guessing. This setting specify where snestistics is allowed to guess\n");
-		printf(" -nmifirst (--n0)               First NMI to consider for things that are nmi range based. Currently only affects the trace log\n");
-		printf(" -nmilast (--n1)                Last NMI to consider for things that are nmi range based. Currently only affects the trace log\n");
-		printf(" -tracelogoutfile (--tl)        Generated trace log. Nmi range can be controlled using -nmifirst and -nmilast. Custom printing can be done using scripting\n");
-		printf(" -scriptfile (--s)              A squirrel script. See scripting reference in the user guide for entry point functions as well as API specification\n");
-		printf(" -labelsfile (--l)              A file containing annotations. Custom file format\n");
-		printf(" -autolabelsfile (--al)         A file containing annotations. These are special as it will be regenerated if deleted or if -autoannotate is specified\n");
-		printf(" -autoannotate (--aa)           Auto annotate labels. Automatically generate labels in free space (not used by symbols from regular -labelsfile-files) space and save to -autolabelsfile. This will also happen if the file specified by -autolabelsfile is missing\n");
-		printf(" -symbolfmaoutfile (--sf)       Generated symbols file in FMA format compatible with bsnes-plus\n");
-		printf(" -rewindoutfile (--rw)          Generated rewind report in .DOT file format. Use graphviz to generate PDF/PNG report\n");
-		printf(" -reportoutfile (--rp)          Generated assembly report. Companion file to -asmoutfile\n");
-		printf(" -asmoutfile (--a)              Generated assembly listing\n");
-		printf(" -asmheaderfile (--ah)          Content of this file will be pasted in the Header section of the generated assembly source listing\n");
-		printf(" -asmprintpc (--apc)            Print program counter in assembly source listing\n");
-		printf(" -asmprintbytes (--ab)          Print opcode bytes in assembly source listing\n");
-		printf(" -asmprintregistersizes (--ars) Print registers sizes in assembly source listing\n");
-		printf(" -asmprintdb (--adb)            Print data bank in assembly source listing\n");
-		printf(" -asmprintdp (--adp)            Print direct page in assembly source listing\n");
-		printf(" -asmlowercaseop                Print lower-case opcode in assembly source listing\n");
-		printf(" -asmcorrectwla                 Make sure generated source compiled in WLA DX\n");
+		printf("  snestistics --option1 value --option2 value\n");
+		printf("\n");
+		printf("Options:\n");
+		printf("\n");
+		printf(" -romfile (--r) <filename>                      ROM file.\n");
+		printf("                                                Currently only LoROM ROMs are allowed.\n");
+		printf(" -romsize (--rs) <number>                       Size of ROM cartridge (without header).\n");
+		printf("                                                0 means auto-detect.\n");
+		printf("                                                Default: 0.\n");
+		printf(" -rommode (--rm) <*trace*|lorom|hirom>          Type of ROM.\n");
+		printf(" -tracefile (--t) <filename>                    Trace file from an emulation session.\n");
+		printf("                                                Multiple allowed for assembly source listing.\n");
+		printf(" -regenerate (--rg) <true|false>                Regenerate emulation caches.\n");
+		printf("                                                Should happen automatically.\n");
+		printf(" -nmifirst (--n0) <number>                      First NMI to consider for trace log.\n");
+		printf("                                                Default: 0.\n");
+		printf(" -nmilast (--n1) <number>                       Last NMI to consider for trace log.\n");
+		printf("                                                Default: 0.\n");
+		printf(" -tracelogoutfile (--tl) <filename>             Generated trace log.\n");
+		printf("                                                Nmi range can be controlled using -nmifirst and -nmilast.\n");
+		printf("                                                Custom printing can be done using scripting.\n");
+		printf(" -scriptfile (--s) <filename>                   A squirrel script.\n");
+		printf("                                                See user guide for scripting reference.\n");
+		printf(" -labelsfile (--l) <filename>                   A file containing annotations.\n");
+		printf("                                                Custom file format.\n");
+		printf(" -autolabelsfile (--al) <filename>              A file containing annotations.\n");
+		printf("                                                It will be regenerated if missing or if -autoannotate is specified.\n");
+		printf(" -autoannotate (--aa) <true|false>              A file where automatically generated annotations are stored.\n");
+		printf(" -symbolfmaoutfile (--sf) <filename>            Generated symbols file in FMA format compatible with bsnes-plus.\n");
+		printf(" -rewindoutfile (--rw) <filename>               Generated rewind report in dot file format.\n");
+		printf("                                                Use graphviz to generate PDF/PNG report.\n");
+		printf(" -reportoutfile (--rp) <filename>               Generated assembly report.\n");
+		printf("                                                Companion file to -asmoutfile.\n");
+		printf(" -asmoutfile (--a) <filename>                   Generated assembly listing.\n");
+		printf(" -predict (--p) <never|*functions*|everywhere>  This setting specify where snestistics is allowed to predict code.\n");
+		printf("                                                This is currently only used for assembly listing.\n");
+		printf(" -asmheaderfile (--ah) <filename>               File content will be included in assembly listing.\n");
+		printf(" -asmprintpc (--apc) <true|false>               Print program counter in assembly source listing.\n");
+		printf(" -asmprintbytes (--ab) <true|false>             Print opcode bytes in assembly source listing.\n");
+		printf(" -asmprintregistersizes (--ars) <true|false>    Print registers sizes in assembly source listing.\n");
+		printf(" -asmprintdb (--adb) <true|false>               Print data bank in assembly source listing.\n");
+		printf(" -asmprintdp (--adp) <true|false>               Print direct page in assembly source listing.\n");
+		printf(" -asmlowercaseop <true|false>                   Print lower-case opcode in assembly source listing.\n");
+		printf(" -asmcorrectwla <true|false>                    Make sure generated source compiled in WLA DX.\n");
 	}
 }
 
@@ -83,12 +102,6 @@ void parse_options(const int argc, const char * const argv[], Options &options) 
 			options.regenerate = parse_bool(opt, error);
 			need_trace = true;
 			k++;
-		} else if (strcmp(cmd, "predict")==0 || strcmp(cmd, "-p")==0) {
-			if (strcmp(opt, "never")==0) options.predict = Options::PRD_NEVER;
-			if (strcmp(opt, "functions")==0) options.predict = Options::PRD_FUNCTIONS;
-			if (strcmp(opt, "everywhere")==0) options.predict = Options::PRD_EVERYWHERE;
-			need_trace = true;
-			k++;
 		} else if (strcmp(cmd, "nmifirst")==0 || strcmp(cmd, "-n0")==0) {
 			options.nmi_first = parse_uint(opt, error);
 			k++;
@@ -125,6 +138,12 @@ void parse_options(const int argc, const char * const argv[], Options &options) 
 			k++;
 		} else if (strcmp(cmd, "asmoutfile")==0 || strcmp(cmd, "-a")==0) {
 			options.asm_out_file = opt;
+			need_trace = true;
+			k++;
+		} else if (strcmp(cmd, "predict")==0 || strcmp(cmd, "-p")==0) {
+			if (strcmp(opt, "never")==0) options.predict = Options::PRD_NEVER;
+			if (strcmp(opt, "functions")==0) options.predict = Options::PRD_FUNCTIONS;
+			if (strcmp(opt, "everywhere")==0) options.predict = Options::PRD_EVERYWHERE;
 			need_trace = true;
 			k++;
 		} else if (strcmp(cmd, "asmheaderfile")==0 || strcmp(cmd, "-ah")==0) {

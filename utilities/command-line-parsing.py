@@ -16,24 +16,23 @@ option_reference_re = re.compile("\${([^}]*)}") # Match ${word} with word ending
 
 options=[
 	Option("rom",        "Rom",              "r",  "input",   "",      "ROM file. Currently only LoROM ROMs are allowed"),
-	#Option("rom",        "RomHeader",        "rh", "enum",    "auto",      "Specify header type of ROM"),
-	Option("rom",        "RomSize",          "rs", "uint",    "0",     "Size of ROM cartridge (without header). A value of 0 means auto-detect (which reads the size from tracefiles)"),
+	Option("rom",        "RomSize",          "rs", "uint",    "0",     "Size of ROM cartridge (without header). 0 means auto-detect"),
 	Option("rom",        "RomMode",          "rm", "enum",    "trace", "Type of ROM"),
-	Option("trace",      "Trace",            "t",  "input*",  "",      "Trace file from an emulation session. Multiple allowed for assembly source listing (but not trace log or rewind)"),
-	Option("trace",      "Regenerate",       "rg", "bool",    "false", "Regenerate emulation caches. Needs to be run if trace files has been updated"),
-	Option("trace",      "Predict",          "p",  "enum",    "functions",      "Predict can add instructions that was not part of the trace by guessing. This setting specify where snestistics is allowed to guess"),
-	Option("tracelog",   "NmiFirst",         "n0", "uint",    "0",     "First NMI to consider for things that are nmi range based. Currently only affects the trace log"),
-	Option("tracelog",   "NmiLast",          "n1", "uint",    "0",     "Last NMI to consider for things that are nmi range based. Currently only affects the trace log"),
+	Option("trace",      "Trace",            "t",  "input*",  "",      "Trace file from an emulation session. Multiple allowed for assembly source listing"),
+	Option("trace",      "Regenerate",       "rg", "bool",    "false", "Regenerate emulation caches. Should happen automatically"),
+	Option("tracelog",   "NmiFirst",         "n0", "uint",    "0",     "First NMI to consider for trace log"),
+	Option("tracelog",   "NmiLast",          "n1", "uint",    "0",     "Last NMI to consider for trace log"),
 	Option("tracelog",   "TraceLog",         "tl", "output",  "",      "Generated trace log. Nmi range can be controlled using ${NmiFirst} and ${NmiLast}. Custom printing can be done using scripting"),
-	Option("tracelog",   "Script",           "s",  "input",   "",      "A squirrel script. See scripting reference in the user guide for entry point functions as well as API specification"),
+	Option("tracelog",   "Script",           "s",  "input",   "",      "A squirrel script. See user guide for scripting reference"),
 	Option("annotation", "Labels",           "l",  "input*",  "",      "A file containing annotations. Custom file format"),
-	Option("annotation", "AutoLabels",       "al", "inout",   "",      "A file containing annotations. These are special as it will be regenerated if deleted or if ${AutoAnnotate} is specified"),
-	Option("annotation", "AutoAnnotate"    , "aa", "bool",    "false", "Auto annotate labels. Automatically generate labels in free space (not used by symbols from regular ${Labels}-files) space and save to ${AutoLabels}. This will also happen if the file specified by ${AutoLabels} is missing"),
+	Option("annotation", "AutoLabels",       "al", "inout",   "",      "A file containing annotations. It will be regenerated if missing or if ${AutoAnnotate} is specified"),
+	Option("annotation", "AutoAnnotate"    , "aa", "bool",    "false", "A file where automatically generated annotations are stored"),
 	Option("annotation", "SymbolFma",        "sf", "output",  "",      "Generated symbols file in FMA format compatible with bsnes-plus"),
-	Option("rewind",     "Rewind",           "rw", "output",  "",      "Generated rewind report in .DOT file format. Use graphviz to generate PDF/PNG report"),
+	Option("rewind",     "Rewind",           "rw", "output",  "",      "Generated rewind report in dot file format. Use graphviz to generate PDF/PNG report"),
 	Option("report",     "Report",           "rp", "output",  "",      "Generated assembly report. Companion file to ${Asm}"),
 	Option("asm",        "Asm",              "a",  "output",  "",      "Generated assembly listing"),
-	Option("asm",        "AsmHeader",        "ah", "input",   "",      "Content of this file will be pasted in the Header section of the generated assembly source listing"),
+	Option("asm",        "Predict",          "p",  "enum",    "functions",      "This setting specify where snestistics is allowed to predict code. This is currently only used for assembly listing"),
+	Option("asm",        "AsmHeader",        "ah", "input",   "",      "File content will be included in assembly listing"),
 	Option("asm",        "AsmPrintPc",            "apc", "bool",    "true",  "Print program counter in assembly source listing"),
 	Option("asm",        "AsmPrintBytes",         "ab", "bool",    "true",  "Print opcode bytes in assembly source listing"),
 	#Option("asm",        "AsmPrintTraceComments",   "atc",   "bool", "true",  "Print data and jump targets based on trace in comments"),
@@ -46,12 +45,12 @@ options=[
 	# We could add an option to specify the format of the symbol file, but being able to export multiple in one go might be nice too
 ]
 
+# These are only used for the user guide
+long_descriptions = {
+	"AutoAnnotate" : "Automatically generate labels in free space (not used by symbols from regular ${Labels}-files) space and save to ${AutoLabels}. This will also happen if the file specified by ${AutoLabels} is missing",
+}
+
 enums={
-	#"RomHeader" : [
-	#	EnumOption("none", "No header"),
-	#	EnumOption("copier", "512 byte header often added by copiers"),
-	#	EnumOption("auto", "Guess header. Currently assumes that files are composed of a header and then ROM data that is a multiple of 32KBs (32*1024 bytes)"),
-	#],
 	"RomMode" : [
 		EnumOption("trace", "Read correct mode from .trace-file"),
 		EnumOption("lorom", "LoROM"),
@@ -95,12 +94,12 @@ def validate_names():
 		sn = o.short_name.lower()
 
 		if n in long_names:
-			print("Error, name " + n + " already used!")
+			print("Error, name '" + n + "'' already used!")
 		else:
 			long_names.add(n)
 		if sn != "":
 			if sn in short_names:
-				print("Error, short name " + sn + " already used by " + short_names[sn])
+				print("Error, short name '" + sn + "'' already used by " + short_names[sn])
 			else:
 				short_names[sn] = n
 
@@ -110,11 +109,16 @@ def validate_names():
 				if v.name == o.default:
 					found = True
 			if not found:
-				print("Error, option " + o.name + " used unknown default value " + o.default)
+				print("Error, option '" + o.name + "'' used unknown default value " + o.default)
+
 	for need in needs:
 		for d in needs[need]:
 			if not d.lower() in long_names:
-				print("Option " + d + " in needs is not an option")
+				print("Option '" + d + "'' in needs is not an option")
+
+	for ld in long_descriptions:
+		if not ld.lower() in long_names:
+			print("Long description for '" + ld + "'' does not have corresponding option")
 
 validate_names()
 
@@ -217,13 +221,18 @@ def write_documentation(file, section_prefix = "##"):
 				(name, type, multiple) = stripped_name_type(option)
 				return "*" +name.lower()+"*"
 
-			if option.default != "":
-				nice_type = nice_type + "<br>default: " + option.default;
+			desc = option.description
+
+			if option.name in long_descriptions:
+				desc = desc + ". " + long_descriptions[option.name]
 
 			# Replace "${ref}"" with "ref" after validating that there still is an option "ref"
-			description = option_reference_re.sub(option_reference_patcher, option.description)
+			desc = option_reference_re.sub(option_reference_patcher, desc) + "."
 
-			file.write("*" + name + "* | " + option.short_name + " | " + nice_type + " | " + description + ".")
+			if option.default != "" and type != "enum":
+				desc = desc + "<br>default: " + option.default;
+
+			file.write("*" + name + "* | " + option.short_name + " | " + nice_type + " | " + desc)
 
 			if type == "enum":
 				file.write("<br>")
@@ -347,6 +356,10 @@ def generate_parser_source(file):
 		"",
 		"	void syntax() {",
 		"		printf(\"Snestistics Syntax:\\n\");",
+		"		printf(\"  snestistics --option1 value --option2 value\\n\");",
+		"		printf(\"\\n\");",
+		"		printf(\"Options:\\n\");",
+		"		printf(\"\\n\");",
 		"		<<SYNTAX>>",
 		"	}",
 		"}",
@@ -408,13 +421,46 @@ def generate_parser_source(file):
 				# Replace "${ref}"" with "ref" after validating that there still is an option "ref"
 				description = option_reference_re.sub(option_reference_patcher, option.description)
 
+				if option.type == "uint" and option.default != "":
+					description = description + ". Default: " + option.default
+
+				description_array = description.split(".") # A bit crude, wants to detect new line
+
+
+
 				name_part = " -" + switch_name(option)
 				ssn = short_switch_name(option)
 
 				if len(ssn)!=0:
 					 name_part = name_part + " (--" + ssn + ")"
 
-				file.write("\t\tprintf(\"" + "{:<32}".format(name_part) + description + "\\n\");\n")
+				type_part = ""
+				if option.type == "enum":
+					for v in enums[option.name]:
+						add = v.name
+						if add == option.default:
+							add = "*" + add + "*"
+						if len(type_part)!=0:
+							type_part = type_part + "|" + add
+						else:
+							type_part = add
+				else:
+					nice_types = {
+						"input"  : "filename",
+						"input*" : "filename",
+						"output" : "filename",
+						"inout"  : "filename",
+						"uint"   : "number",
+						"bool"   : "true|false",
+					}
+					type_part = nice_types[option.type]
+
+				name_part = name_part + " <" + type_part + ">"
+
+				file.write("\t\tprintf(\"" + "{:<48}".format(name_part) + description_array[0] + ".\\n\");\n")
+
+				for d_line in description_array[1:]:
+					file.write("\t\tprintf(\"                                               " + d_line + ".\\n\");\n")
 
 			continue
 
