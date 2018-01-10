@@ -17,26 +17,30 @@ namespace snestistics {
 class RomAccessor {
 private:
 	uint32_t _rom_offset;
-	const uint32_t _calculated_size;
-	Array<uint8_t> m_romdata;
+	uint32_t _calculated_size;
+	Array<uint8_t> _rom_data;
 public:
 	RomAccessor(const uint32_t calculated_size) : _rom_offset(-1), _calculated_size(calculated_size) {}
 
 	void load(const std::string &filename) {
-		read_file(filename, m_romdata);
-		// Auto-detect assumes nothing is appended at end of ROM
-		_rom_offset = m_romdata.size() % (32 * 1024);
+		read_file(filename, _rom_data);
+		_rom_offset = _rom_data.size() % (32 * 1024); // Auto-detect assumes nothing is appended at end of ROM
+
+		if (_calculated_size == 0) {
+			_calculated_size = _rom_data.size() - _rom_offset;
+		}
+
 		printf("  Header Size:    0x%06X\n", _rom_offset);
 		printf("  Calculated Size 0x%06X (%d kb)\n", _calculated_size, (uint32_t)(_calculated_size/1024));
 	}
 
 	uint8_t evalByte(const Pointer p) const {
-		return m_romdata[_rom_offset + getRomOffset(p, _calculated_size)];
+		return _rom_data[_rom_offset + getRomOffset(p, _calculated_size)];
 	}
 
 	// NOTE: Assumes it stays within bank etc
 	const uint8_t* evalPtr(const Pointer p) const {
-		return &m_romdata[_rom_offset + getRomOffset(p, _calculated_size)];
+		return &_rom_data[_rom_offset + getRomOffset(p, _calculated_size)];
 	}
 
 	static bool is_rom(const Pointer p) {
