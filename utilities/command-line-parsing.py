@@ -217,6 +217,9 @@ def write_documentation(file, section_prefix = "##"):
 				(name, type, multiple) = stripped_name_type(option)
 				return "*" +name.lower()+"*"
 
+			if option.default != "":
+				nice_type = nice_type + "<br>default: " + option.default;
+
 			# Replace "${ref}"" with "ref" after validating that there still is an option "ref"
 			description = option_reference_re.sub(option_reference_patcher, option.description)
 
@@ -227,7 +230,7 @@ def write_documentation(file, section_prefix = "##"):
 				e = enums[option.name]
 				for m in e:
 					if option.default == m.name:
-						# TODO: Can we make sure m.name won't break if it has hyphens?
+						# TODO: Can we make sure m.name won't break lines if it has hyphens?
 						file.write("<br>**" + m.name +"**: " + m.description + " (default)")
 					else:
 						file.write("<br>**" + m.name +"**: " + m.description)
