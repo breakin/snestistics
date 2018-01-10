@@ -11,7 +11,7 @@ namespace snestistics {
 
 class RomAccessor;
 
-static const uint32_t TRACE_CACHE_VERSION = 3;
+static const uint32_t TRACE_CACHE_VERSION = 4;
 
 /*
 	The Trace is where information about the entire run is captured from an emulation replay.

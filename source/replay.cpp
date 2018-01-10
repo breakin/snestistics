@@ -56,6 +56,8 @@ namespace  {
 			printf("DP   %04X %04X %04X\n", b.DP, a.DP, regs._DP);
 			printf("PC   %02X%04X %02X%04X %06X\n", b.pc_bank, b.pc_address, a.pc_bank, a.pc_address, regs._PC);
 			printf("WRAM %02X%04X %02X%04X %06X\n", b.wram_bank, b.wram_address, a.wram_bank, a.wram_address, regs._WRAM);
+			printf("This means that the snestistics emulator can't emulate this game yet.\n");
+			printf("This diff is done against .trace_helper which codifies some state that is tested against\n");
 			exit(1);
 		}
 	}

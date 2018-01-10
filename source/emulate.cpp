@@ -504,12 +504,16 @@ void execute_op(EmulateRegisters &regs) {
 	} else if (info.mode == Operand::STACK_RELATIVE_INDIRECT_INDEXED_Y) {
 		uint32_t indirection_pointer_at = regs.read_byte_PC() + regs.S(); 
 		uint16_t index_mask = index16(regs) ? 0xFFFF : 0xFF;
-		pointer = regs.read_long(indirection_pointer_at, MemoryAccessType::FETCH_INDIRECT) + regs.Y(index_mask);
+		pointer = (regs.read_word(indirection_pointer_at, MemoryAccessType::FETCH_INDIRECT) + regs.Y(index_mask) + (regs.DB()<<16))&0xFFFFFF;
 		regs.indirection_pointer = indirection_pointer_at;
 		memory_mode = MemoryAccessType::STACK_RELATIVE;
 	} else {
 		printf("** Adressing mode not implemented! %d\n", (int)info.mode);
 		exit(1);
+	}
+
+	if (regs._debug && regs.indirection_pointer != INVALID_POINTER) {
+		printf("  Indirection pointer %06X\n", regs.indirection_pointer);
 	}
 
 	if (!value_resolved && info.load_operand) {
