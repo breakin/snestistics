@@ -18,7 +18,7 @@ class RomAccessor {
 private:
 	uint32_t _rom_offset;
 	const uint32_t _calculated_size;
-	std::vector<uint8_t> m_romdata;
+	Array<uint8_t> m_romdata;
 public:
 	RomAccessor(const uint32_t calculated_size) : _rom_offset(-1), _calculated_size(calculated_size) {}
 

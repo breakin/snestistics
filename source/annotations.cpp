@@ -374,9 +374,8 @@ void AnnotationResolver::finalize() {
 	}
 
 	uint32_t k = largest_adress + 1;
-	_annotation_for_adress_size = k;
-	_annotation_for_adress = new int[k];
-	for (uint32_t i = 0; i < k; i++) _annotation_for_adress[i] = -1;
+	_annotation_for_adress.init(k);
+	_annotation_for_adress.fill(-1);
 
 	const auto annotation_sort = [](const Annotation &a, const Annotation &c) {
 		if (a.startOfRange != c.startOfRange) return a.startOfRange < c.startOfRange;
@@ -465,8 +464,8 @@ void AnnotationResolver::finalize() {
 		}
 	}
 	
-	_trace_annotation_for_adress = new int[k];
-	for (uint32_t i = 0; i < k; i++) _trace_annotation_for_adress[i] = -1;
+	_trace_annotation_for_adress.init(k);
+	_trace_annotation_for_adress.fill(-1);
 
 	std::sort(_trace_annotations.begin(), _trace_annotations.end());
 	for (uint32_t i = 0; i < _trace_annotations.size(); ++i) {
@@ -565,7 +564,7 @@ const Annotation * AnnotationResolver::resolve_annotation(Pointer resolve_adress
 	if (data_scope) *data_scope = nullptr;
 
 	int start = -1;
-	if (resolve_adress < _annotation_for_adress_size) {
+	if (resolve_adress < _annotation_for_adress.size()) {
 		start = _annotation_for_adress[resolve_adress];
 	}
 	// This is based on init of function and data filling all addresses as belonging to them when there is no line info. So -1 means nothing, no scope...
@@ -619,7 +618,7 @@ void AnnotationResolver::load(const std::vector<std::string> & filenames) {
 }
 
 const TraceAnnotation * AnnotationResolver::trace_annotation(const Pointer pc) const {
-	if (pc >= _annotation_for_adress_size)
+	if (pc >= _annotation_for_adress.size())
 		return nullptr;
 	int tai = _trace_annotation_for_adress[pc];
 	if (tai == -1) return nullptr;

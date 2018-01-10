@@ -83,28 +83,6 @@ public:
 	}
 };
 
-inline void read_file(const std::string &filename, std::vector<uint8_t> &result) {
-	assert(!filename.empty());
-	if (filename.empty()) {
-		std::stringstream ss;
-		ss << "Internal error: Filename not specifed!";
-		throw std::runtime_error(ss.str());
-	}
-
-	FILE *f = fopen(filename.c_str(), "rb");
-	if (f == 0) {
-		std::stringstream ss;
-		ss << "Could not open file " << filename << " for reading";
-		throw std::runtime_error(ss.str());
-	}
-	fseek(f, 0, SEEK_END);
-	const int fileSize = ftell(f);
-	fseek(f, 0, SEEK_SET);
-	result.resize(fileSize);
-	fread(&result[0], 1, fileSize, f);
-	fclose(f);
-}
-
 struct StringBuilder {
 private:
 	char _backing[4096] = "";
@@ -292,5 +270,44 @@ private:
 		CUSTOM_ASSERT((_offset > (1<<30)) || _offset == ftell(_file));
 	}
 };
+
+template<typename T>
+class Array {
+public:
+	Array(uint32_t size = 0, bool zero = false) : _data(nullptr), _size(0) {
+		static_assert(std::is_pod<T>(), "Array only support POD-types");
+		if (size != 0) {
+			init(size, zero);
+		}
+	}
+	~Array() {
+		delete[] _data;
+	}
+	// Not: init forgets old data
+	void init(uint32_t size, bool zero = false) {
+		delete [] _data,
+		_data = new T[size];
+		_size = size;
+		if (zero) {
+			clear_data();
+			memset(_data, 0, sizeof(T)*size);
+		}
+	}
+	uint32_t size() const { return _size; }
+	T &operator[](const uint64_t index) { assert(index<_size); return _data[index]; }
+	const T &operator[](const uint64_t index) const { assert(index<_size); return _data[index]; }
+	void clear_data() {	memset(_data, 0, sizeof(T)*_size); }
+	void fill(const T fill_value) {
+		uint32_t size = _size;
+		for (uint32_t i = 0; i < size; ++i) {
+			_data[i] = fill_value;
+		}
+	}
+private:
+	T* _data;
+	int _size = 0;
+};
+
+void read_file(const std::string &filename, Array<uint8_t> &result);
 
 }

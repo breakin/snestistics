@@ -63,10 +63,7 @@ class AnnotationResolver {
 public:
 
 	AnnotationResolver() {}
-	~AnnotationResolver() {
-		delete[] _annotation_for_adress;
-		delete[] _trace_annotation_for_adress;
-	}
+	~AnnotationResolver() {}
 
 	void add_mmio_annotations();
 	void add_vector_annotations(const RomAccessor &rom);
@@ -88,7 +85,7 @@ public:
 
 		// Assume in same bank
 		for (int i = p; i >= (int32_t)stop; i--) {
-			if ((uint32_t)i >= _annotation_for_adress_size)
+			if ((uint32_t)i >= _annotation_for_adress.size())
 				continue;
 			int ai = _annotation_for_adress[i];
 			if (ai == -1)
@@ -107,7 +104,7 @@ public:
 
 		// Assume in same bank
 		for (uint32_t i = p; i <= stop; i++) {
-			if (i >= _annotation_for_adress_size)
+			if (i >= _annotation_for_adress.size())
 				continue;
 			int ai = _annotation_for_adress[i];
 			if (ai == -1)
@@ -130,10 +127,6 @@ private:
 	void load(std::istream &input, const std::string &error_file); // Can be called many times, end with finalize
 	void finalize();
 
-	// TODO: Make some sort of abstraction around these that bounds check
-	// We don't use std::vector due to debug performance when we resize it and set it to zero
-	int* _annotation_for_adress = nullptr;
-	int* _trace_annotation_for_adress = nullptr;
-	uint32_t _annotation_for_adress_size = 0;
+	Array<int> _annotation_for_adress, _trace_annotation_for_adress;
 };
 }

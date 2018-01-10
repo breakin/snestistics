@@ -551,7 +551,7 @@ void asm_writer(ReportWriter &report, const Options &options, Trace &trace, cons
 	writer.writeSeperator("Header");
 
 	if (!options.asm_header_file.empty()) {
-		std::vector<unsigned char> header;
+		Array<unsigned char> header;
 		read_file(options.asm_header_file, header);
 		fwrite(&header[0], header.size(), 1, report.report);
 		char newline = '\n';
