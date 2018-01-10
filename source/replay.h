@@ -16,17 +16,17 @@ namespace snestistics {
 struct Replay {
 	Replay(const snestistics::RomAccessor &rom, const char *const trace_file);
 	~Replay();
-	LargeBitfield breakpoints;
-	EmulateRegisters regs; // TODO: Make replay use temp_registers instead of regs...
+	snestistics::LargeBitfield breakpoints;
+	snestistics::EmulateRegisters regs; // TODO: Make replay use temp_registers instead of regs...
 	Registers temp_registers;
 	bool skip_until_nmi(const uint32_t target_skip_nmi);
 	bool next();
 private:
 	std::string _trace_file_name;
 	snestistics::TraceEvent _next_event;
-	BigFile _trace_file;
+	snestistics::BigFile _trace_file;
 	#ifdef VERIFY_OPS
-		BigFile _trace_helper;
+	snestistics::BigFile _trace_helper;
 	#endif
 	uint64_t _accumulated_op_counter = 0;
 	uint64_t _next_event_op = 0;

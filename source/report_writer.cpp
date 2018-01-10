@@ -1,6 +1,8 @@
 #include "report_writer.h"
 #include "utils.h"
 
+using namespace snestistics;
+
 void report_writer_print(ReportWriter *report_writer, const char * const str, uint32_t len) {
 	int indent = report_writer->indentation;
 	FILE *f = report_writer->report;

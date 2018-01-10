@@ -380,6 +380,8 @@ inline bool push_pull(EmulateRegisters &regs, const Operation op) {
 }
 }
 
+namespace snestistics {
+
 void execute_op(EmulateRegisters &regs) {
 
 	const uint32_t pc_before = regs._PC;
@@ -1098,4 +1100,5 @@ void execute_dma(EmulateRegisters & regs, uint8_t channels) {
 		}
 		regs._WRAM = wram;
 	}
+}
 }

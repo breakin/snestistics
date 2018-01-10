@@ -7,7 +7,9 @@
 	One such report is the assembler output and the trace log.
 */
 
-struct StringBuilder;
+namespace snestistics {
+	struct StringBuilder;
+}
 
 struct ReportWriter {
 	ReportWriter(const char * const filename);
@@ -17,6 +19,6 @@ struct ReportWriter {
 	int indentation=0;
 
 	void writeComment(const char * const str);
-	void writeComment(StringBuilder &sb);
+	void writeComment(snestistics::StringBuilder &sb);
 	void writeSeperator(const char * const text);
 };

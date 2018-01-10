@@ -1,5 +1,7 @@
 #include "utils.h"
 
+namespace snestistics {
+
 void LargeBitfield::write_file(FILE * f) const {
 	fwrite(&_num_elements, sizeof(uint32_t), 1, f);
 	fwrite(_state, sizeof(uint32_t), _num_elements, f);
@@ -34,4 +36,5 @@ void LargeBitfield::read_file(BigFile &f) {
 	}
 
 	f.read(_state, sizeof(uint32_t)*new_size);
+}
 }

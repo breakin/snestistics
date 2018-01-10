@@ -17,6 +17,8 @@
 
 namespace {
 
+	using namespace snestistics;
+
 	// Flags are "sticky"... true=bit unknown
 template<typename T>
 struct MagicT {

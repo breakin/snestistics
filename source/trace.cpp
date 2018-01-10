@@ -63,6 +63,9 @@ namespace std {
 }
 
 namespace {
+
+using namespace snestistics;
+
 struct CallbackContext {
 	Pointer current_pc = 0;
 	std::set<snestistics::Trace::MemoryAccess> accesses;

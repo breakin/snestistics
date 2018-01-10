@@ -15,6 +15,9 @@
 //#define CUSTOM_ASSERT(COND)
 
 typedef uint32_t Pointer;
+
+namespace snestistics {
+
 struct BigFile;
 
 static const Pointer INVALID_POINTER(-1);
@@ -290,6 +293,4 @@ private:
 	}
 };
 
-namespace snestistics {
-	uint32_t hash_insecure(const uint8_t* key, size_t len, uint32_t seed);
 }

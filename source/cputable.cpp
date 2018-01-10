@@ -1,6 +1,8 @@
 #include "cputable.h"
 #include "rom_accessor.h"
 
+namespace snestistics {
+
 bool branches[256];
 bool jumps[256];
 bool pushpops[256];
@@ -157,4 +159,5 @@ bool decode_static_jump(uint8_t opcode, const snestistics::RomAccessor & rom, co
 		return false;
 	}
 	return true;
+}
 }

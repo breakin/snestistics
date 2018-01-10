@@ -7,7 +7,6 @@
 
 namespace snestistics {
 struct DmaTransfer;
-}
 
 // TODO: Working with this enum is annoying as hell
 enum class ProcessorStatusFlag : uint16_t {
@@ -345,3 +344,4 @@ void execute_nmi(EmulateRegisters &regs);
 void execute_irq(EmulateRegisters &regs);
 void execute_dma(EmulateRegisters &regs, uint8_t channels);
 
+}

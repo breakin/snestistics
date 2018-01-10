@@ -14,7 +14,6 @@
 
 namespace snestistics {
 	class RomAccessor;
-}
 
 extern bool branches[256];
 extern bool jumps[256];
@@ -386,3 +385,5 @@ uint32_t calculateFormattingandSize(const uint8_t *data, const bool acc16, const
 // Jumps, branches but not JSLs
 // If secondary target is set, it is always set to the next op after this op
 bool decode_static_jump(uint8_t opcode, const snestistics::RomAccessor &rom, const Pointer pc, Pointer *target, Pointer *secondary_target);
+
+}
