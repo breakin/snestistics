@@ -6,6 +6,62 @@ title: Snestistics User Guide
 
 **Snestistics User Guide**
 
+Annotations
+===========
+Snestistics uses annotation-files (or label-files) to let the user add information about instructions. This has multiple purposes. The first is to let the user annotate and beautify the assembly listing to make it more comprehensible. The second is to guide the predict logic, the auto annotate logic as well guiding the trace log to perform better.
+
+## Functions
+~~~~~~~~~~~~~~
+# Important function
+; This function seems very important
+; It does many things
+function 801000 802000 MyFunction
+~~~~~~~~~~~~~~
+
+## Data
+Currently data ranges acts almost like a function. They are, however, allowed to be inside a function range.
+~~~~~~~~~~~~~~
+# Big table of data
+; Data seems to be compressed
+; TODO: needs more investigation!
+data 803000 804000 Table4
+~~~~~~~~~~~~~~
+
+## Labels
+Labels are similar to functions but they do not specify a range. They can be used if there is no logical range to assign to a function. They provide all the features of functions apart from that:
+~~~~~~~~~~~~~~
+# Important function
+; This function seems very important
+; It does many things
+label 801000 MyFunction
+~~~~~~~~~~~~~~
+
+## Comments
+~~~~~~~~~~~~~~
+comment 801000 "Wow this really is an interesting function"
+comment 801000 "I should write a book about this line!"
+~~~~~~~~~~~~~~
+
+If you want to create multi-line comments the*line* keyword is also useful:
+~~~~~~~~~~~~~~
+; Comment 1
+; Comment 2
+line 807000
+~~~~~~~~~~~~~~
+
+## Hidden lines
+Lines starting with @ are ignored. They are handy when writing notes to yourself that should not be part of the assembly listing, or if you want to put some text at the top of the labels file for people who download it:
+~~~~~~~~~~~~~~
+@ TODO: Re-organize the labels file
+~~~~~~~~~~~~~~
+
+## Hints
+WIP.
+
+Assembly listing
+================
+WIP.
+
 Command Line Reference
 ======================
 {% include generated-command-line-reference.html %}
@@ -32,10 +88,6 @@ trace_log_parameter_printer(replay, report)
     returns: nothing
 ~~~~~~
 This function is called whenever the trace log hits a program counter that it has a breakpoint set for. The trace log system itself will print the name of the function and determine indentation, but this is a chance to do additional printing on some functions that are under investigation.
-
-Rewind
-------
-TODO.
 
 Scripting API
 =============
