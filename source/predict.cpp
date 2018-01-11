@@ -109,9 +109,11 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 		while (!has_op[pc] && pc >= r0 && pc <= r1) {
 
 			// Make sure we don't run into a data scope
-			const Annotation *data_scope = nullptr;
-			annotations.resolve_annotation(pc, nullptr, &data_scope);
+			const Annotation *data_scope = nullptr, *function_scope = nullptr;
+			annotations.resolve_annotation(pc, &function_scope, &data_scope);
 			if (data_scope)
+				continue;
+			if (function_scope && function_scope != pb.annotation)
 				continue;
 
 			uint8_t opcode = rom.evalByte(pc);
@@ -181,6 +183,11 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 				break;
 			}
 
+			uint8_t operand = rom.evalByte(pc + 1);
+
+			Pointer target_jump, target_no_jump;
+			bool is_jump_or_branch = decode_static_jump(opcode, rom, pc, &target_jump, &target_no_jump);
+
 			{
 				Trace::OpVariantLookup l;
 				l.count = 1;
@@ -191,28 +198,22 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 				info.DB = DB;
 				info.DP = DP;
 				info.X = info.Y = 0;
-				info.jump_target = INVALID_POINTER;
-				info.indirect_base_pointer = INVALID_POINTER;
+				info.jump_target = target_jump;
+				info.indirect_base_pointer = INVALID_POINTER; // TODO: We should be able to set this one sometimes
 				trace.ops_variants.push_back(info);
 
 				// Note that DB and DP here represent a lie :)
 			}
 
-			trace.is_predicted.set_bit(pc);
-
-			int op_size = calculateFormattingandSize(rom.evalPtr(pc), is_memory_accumulator_wide(P), is_index_wide(P), nullptr, nullptr, nullptr);
+			const int op_size = instruction_size(rom.evalByte(pc), is_memory_accumulator_wide(P), is_index_wide(P));
 
 			for (int i=0; i<op_size; ++i) {
 				// TODO: We should do overlap test for entire range we are "using" now
 				//       Also first might not always be best!
+				trace.is_predicted.set_bit(bank_add(pc, i));
 				has_op.set_bit(bank_add(pc, i));
 				if (i != 0) inside_op.set_bit(bank_add(pc, i));
 			}
-
-			uint8_t operand = rom.evalByte(pc+1);
-
-			Pointer target_jump, target_no_jump;
-			bool is_jump_or_branch = decode_static_jump(opcode, rom, pc, &target_jump, &target_no_jump);
 
 			bool is_jsr = opcode == 0x20||opcode==0x22||opcode==0xFC;
 
@@ -243,6 +244,7 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 				
 				if (target_jump != INVALID_POINTER) {
 					PredictBranch npb = pb;
+					npb.from_pc = pc;
 					npb.pc = target_jump;
 					predict_brances.push_back(npb);
 				}
