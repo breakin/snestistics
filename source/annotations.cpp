@@ -439,28 +439,19 @@ void AnnotationResolver::finalize() {
 	// TODO: This code was a bit lazy!
 	for (int pass = 0; pass < 3; pass++) {
 		AnnotationType pass_type = ANNOTATION_NONE;
-		if (pass == 0) pass_type = ANNOTATION_LINE;
+		if (pass == 2) pass_type = ANNOTATION_LINE;
 		if (pass == 1) pass_type = ANNOTATION_DATA;
-		if (pass == 2) pass_type = ANNOTATION_FUNCTION;
+		if (pass == 0) pass_type = ANNOTATION_FUNCTION;
 
 		for (int i=0; i<(int)_annotations.size(); ++i) {
 			Annotation &a = _annotations[i];
+
 			if (a.type != pass_type)
 				continue;
 
 			Pointer start = a.startOfRange;
 			for (uint32_t k=a.startOfRange; k <= a.endOfRange; ++k) {
-				if (_annotation_for_adress[k] == -1) {
-					// No previous annotation
-					_annotation_for_adress[k] = i;
-				} else if (_annotations[_annotation_for_adress[k]].type != pass_type) {
-					// There was a previous annotation here with lower power so we can overwrite it
-					_annotation_for_adress[k] = i;
-				} else {
-					const Annotation &b = _annotations[_annotation_for_adress[k]];
-					printf("Annotation collision at %06X! Both %s [%06X-%06X] and %s [%06X-%06X]!\n", k, a.name.c_str(), a.startOfRange, a.endOfRange, b.name.c_str(), b.startOfRange, b.endOfRange);
-					throw std::runtime_error("Annotation collision!");
-				}
+				_annotation_for_adress[k] = i;
 			}
 		}
 	}
@@ -472,6 +463,10 @@ void AnnotationResolver::finalize() {
 	for (uint32_t i = 0; i < _trace_annotations.size(); ++i) {
 		const TraceAnnotation &ta = _trace_annotations[i];
 		_trace_annotation_for_adress[ta.location] = i;
+	}
+
+	if (resolve_annotation(0x808406, nullptr, nullptr) == 0) {
+		int A=9;
 	}
 }
 
