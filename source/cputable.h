@@ -371,12 +371,21 @@ namespace cputable {
 }
 
 // Unpacked relative offset for branch operations
-inline int unpackSigned(const uint8_t packed) {
-	if ((packed >= 0x80) != 0) {
-		return packed - 256;
+inline int branch8(Pointer pc, const uint8_t operand) {
+	pc += operand + 2;
+	if (operand >= 0x80) {
+		return pc - 0x100;
+	} else {
+		return pc;
 	}
-	else {
-		return packed;
+}
+
+inline int branch16(Pointer pc, const uint16_t operand) {
+	pc += operand + 3;
+	if (operand >= 0x8000) {
+		return pc - 0x10000;
+	} else {
+		return pc;
 	}
 }
 

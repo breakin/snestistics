@@ -110,15 +110,14 @@ ResultType evaluateOp(const snestistics::RomAccessor &rom_accessor, const uint8_
 		return SA_IMMEDIATE;
 	}
 	else if (am == 4) {
-		const int signed_offset = unpackSigned(ops[1]);
 		*result_bank = reg.pb;
-		*result_addr = reg.pc + (signed_offset + 2);
+		*result_addr = branch8(reg.pc.value, ops[1]);
 		return SA_ADRESS;
 	}
 	else if (am == 5) {
-		const Pointer relative(ops[2] * 256 + ops[1]);
+		// BRL, PER
 		*result_bank = reg.pb;
-		*result_addr = reg.pc + relative + 3;
+		*result_addr = branch16(reg.pc.value, ops[1] * 256 + ops[2]);
 		return SA_ADRESS;
 	}
 	else if (am == 6) {
@@ -679,8 +678,13 @@ void asm_writer(ReportWriter &report, const Options &options, Trace &trace, cons
 			}
 		}
 
-		if (branches[opcode]) {
-			const Pointer branch_target = pc + (unpackSigned(data[1]) + 2);
+		if (opcode == 0x82) {
+			// BRL
+			uint16_t operand16 = data[1]|(data[2]<<8);
+			const Pointer branch_target = branch16(pc, operand16);
+			proposals[branch_target] = "";
+		} else if (branches[opcode]) {
+			const Pointer branch_target = branch8(pc, data[1]);
 			proposals[branch_target] = "";
 		} else {
 			// Sort and make variants unique

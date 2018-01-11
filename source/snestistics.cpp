@@ -268,7 +268,7 @@ void branch_report(ReportWriter &writer, const RomAccessor &rom, const Trace &op
 			continue;
 
 		for (int myloop = 0; myloop < 2; myloop++) {
-			Pointer target = myloop == 0 ? pc + (unpackSigned(rom.evalByte(pc+1)) + 2) : pc + 2;
+			Pointer target = myloop == 0 ? branch8(pc, rom.evalByte(pc+1)) : pc + 2;
 			if (myloop == 1 && opcode == 0x80)
 				break;
 

@@ -42,6 +42,9 @@ public:
 	const uint8_t* evalPtr(const Pointer p) const {
 		return &_rom_data[_rom_offset + getRomOffset(p, _calculated_size)];
 	}
+	const uint16_t eval16(const Pointer p) const {
+		return *(uint16_t*)&_rom_data[_rom_offset + getRomOffset(p, _calculated_size)];
+	}
 
 	static bool is_rom(const Pointer p) {
 		uint8_t b = bank(p);

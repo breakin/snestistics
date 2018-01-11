@@ -109,7 +109,9 @@ uint32_t calculateFormattingandSize(const uint8_t * data, const bool acc16, cons
 		return 2;
 	}
 	else if (am == 4 && branches[opcode]) {
-		const int signed_offset = unpackSigned(data[1]);
+		int signed_offset = data[1];
+		if (signed_offset >= 0x80)
+			signed_offset -= 0x100;
 		if (signed_offset >= 0) {
 			if (target) sprintf(target, "$%02X", abs(signed_offset));
 		}
@@ -144,16 +146,10 @@ bool decode_static_jump(uint8_t opcode, const snestistics::RomAccessor & rom, co
 	*target = INVALID_POINTER;
 	*secondary_target = INVALID_POINTER;
 	if (opcode == 0x82) { // BRL
-		uint16_t v = *(uint16_t*)rom.evalPtr(pc + 1);
-		Pointer t = pc+3; // One byte opcode, two bytes operand
-		t += v;
-		if (v >= 0x8000)
-			t -= 0x10000;
-		*target = t;
+		*target = branch16(pc, rom.eval16(pc+1));
 	}
 	else if (branches[opcode]) {
-		const Pointer target1 = pc + (unpackSigned(rom.evalByte(pc + 1)) + 2);
-		*target = pc + (unpackSigned(rom.evalByte(pc + 1)) + 2);
+		*target = branch8(pc, rom.evalByte(pc + 1));
 		if (opcode != 0x80) {
 			*secondary_target = pc + 2;
 		}
