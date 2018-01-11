@@ -7,8 +7,6 @@ set(SOURCES
 	cputable.h
 	emulate.cpp
 	emulate.h
-	options.cpp
-	options.h
 	rom_accessor.h
 	snestistics.cpp
 	scripting.cpp
@@ -42,6 +40,9 @@ SET(GENERATED_SOURCE
 	instruction_tables_generate.py
 	instruction_tables.h
 	instruction_tables.cpp
+	options.cpp
+	options.h
+	../utilities/command-line-parsing.py
 )
 
 SET(DATA
