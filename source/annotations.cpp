@@ -242,6 +242,7 @@ void AnnotationResolver::add_vector_comment(const RomAccessor &rom, const char *
 }
 
 void AnnotationResolver::add_vector_annotations(const RomAccessor &rom) {
+	// "Programming the 65816", page 55
 	add_vector_comment(rom, "Vector: Native COP",       0xFFE4);
 	add_vector_comment(rom, "Vector: Native BRK",       0xFFE6);
 	add_vector_comment(rom, "Vector: Native ABORT",     0xFFE8);

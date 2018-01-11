@@ -450,6 +450,7 @@ public:
 	}
 
 	void write_vectors(const snestistics::AnnotationResolver &annotations, const LargeBitfield &trace) {
+		// "Programming the 65816", page 55
 		fprintf(m_outFile, ".SNESNATIVEVECTOR      ; Define Native Mode interrupt vector table\n");
 		write_vector_single("COP",   annotations, trace, 0xFFE4);
 		write_vector_single("BRK",   annotations, trace, 0xFFE6);
