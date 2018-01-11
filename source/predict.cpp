@@ -25,6 +25,7 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 
 	struct PredictBranch {
 		const Annotation *annotation;
+		Pointer from_pc;
 		Pointer pc;
 		uint16_t DP, P;
 		uint8_t DB;
@@ -32,6 +33,7 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 
 	std::vector<PredictBranch> predict_brances;
 	LargeBitfield has_op(256*64*1024);
+	LargeBitfield inside_op(256 * 64 * 1024);
 
 	for (auto opsit : trace.ops) {
 		const Pointer pc = opsit.first;
@@ -46,6 +48,7 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 
 		for (uint32_t i = 0; i < op_size; ++i) {
 			has_op.set_bit(bank_add(pc, i));
+			if (i!=0) inside_op.set_bit(bank_add(pc, i));
 		}
 
 		StringBuilder sb;
@@ -65,6 +68,7 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 		if (source_annotation || !limit_to_functions) {
 			PredictBranch p;
 			p.annotation = source_annotation;
+			p.from_pc = pc;
 			p.DB = example.DB;
 			p.DP = example.DP;
 			p.P  = example.P;
@@ -97,6 +101,10 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 		uint8_t DB = pb.DB;
 
 		bool P_unknown = false;
+
+		if (inside_op[pc]) {
+			printf("Warning; predicted jump went inside instruction at %06X (from %06X)\n", pc, pb.from_pc);
+		}
 
 		while (!has_op[pc] && pc >= r0 && pc <= r1) {
 
@@ -198,6 +206,7 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 				// TODO: We should do overlap test for entire range we are "using" now
 				//       Also first might not always be best!
 				has_op.set_bit(bank_add(pc, i));
+				if (i != 0) inside_op.set_bit(bank_add(pc, i));
 			}
 
 			uint8_t operand = rom.evalByte(pc+1);

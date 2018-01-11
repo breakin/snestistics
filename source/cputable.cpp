@@ -145,7 +145,7 @@ bool decode_static_jump(uint8_t opcode, const snestistics::RomAccessor & rom, co
 	*secondary_target = INVALID_POINTER;
 	if (opcode == 0x82) { // BRL
 		uint16_t v = *(uint16_t*)rom.evalPtr(pc + 1);
-		Pointer t = pc;
+		Pointer t = pc+3; // One byte opcode, two bytes operand
 		t += v;
 		if (v >= 0x8000)
 			t -= 0x10000;
