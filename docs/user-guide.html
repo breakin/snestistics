@@ -6,11 +6,20 @@ title: Snestistics User Guide
 
 **Snestistics User Guide**
 
+Introduction
+============
+In general snestistics wants a ROM-file and a trace-file to do something useful. See command line option on how to give these two snestistics. The in the [first entry](tutorial-1) in the [tutorial series](tutorial) shows how to create a trace file.
+
+Assembly listing
+================
+If you supply a ROM-file and a trace-file (written by snes9x-snestistics) you can generate an assembly listing of the program. See the command line reference for relevant switches. Then annotations can be be added to beautify the assembly listing.
+
 Annotations
 ===========
-Snestistics uses annotation-files (or label-files) to let the user add information about instructions. This has multiple purposes. The first is to let the user annotate and beautify the assembly listing to make it more comprehensible. The second is to guide the predict logic, the auto annotate logic as well guiding the trace log to perform better.
+Snestistics uses labels-files to let the user add information about instructions. This has multiple purposes. The first is to let the user annotate and beautify the assembly listing to make it more comprehensible. The second is to guide the predict logic, the auto annotate logic as well guiding the trace log to perform better. In this section we will show some examples. It is allowed to have multiple labels-files. This can help organization of your reverse engineering effort.
 
 ## Functions
+A function is composed of a range with a starting address and an end address. These are easy to find from the assembly listing. Comments can be added with ; on lines before the function keyword. The line starting with # specifies a *use comment* that is special. It is used as a summary that is written whenever someone references this function (say a jump). That way you get a summary at the site of the jump.
 ~~~~~~~~~~~~~~
 # Important function
 ; This function seems very important
@@ -18,8 +27,10 @@ Snestistics uses annotation-files (or label-files) to let the user add informati
 function 801000 802000 MyFunction
 ~~~~~~~~~~~~~~
 
+Functions are not allowed to overlap.
+
 ## Data
-Currently data ranges acts almost like a function. They are, however, allowed to be inside a function range.
+Currently data ranges acts almost like a function. They are, however, allowed to be inside a function range (but not overlap function start/end).
 ~~~~~~~~~~~~~~
 # Big table of data
 ; Data seems to be compressed
@@ -36,13 +47,15 @@ Labels are similar to functions but they do not specify a range. They can be use
 label 801000 MyFunction
 ~~~~~~~~~~~~~~
 
+Labels can exist within functions and inside data blocks but they can't start at the same line as a function/data block starts/ends.
+
 ## Comments
 ~~~~~~~~~~~~~~
 comment 801000 "Wow this really is an interesting function"
 comment 801000 "I should write a book about this line!"
 ~~~~~~~~~~~~~~
 
-If you want to create multi-line comments the*line* keyword is also useful:
+If you want to create multi-line comments the *line* keyword is also useful:
 ~~~~~~~~~~~~~~
 ; Comment 1
 ; Comment 2
@@ -56,10 +69,6 @@ Lines starting with @ are ignored. They are handy when writing notes to yourself
 ~~~~~~~~~~~~~~
 
 ## Hints
-WIP.
-
-Assembly listing
-================
 WIP.
 
 Command Line Reference
@@ -89,8 +98,8 @@ trace_log_parameter_printer(replay, report)
 ~~~~~~
 This function is called whenever the trace log hits a program counter that it has a breakpoint set for. The trace log system itself will print the name of the function and determine indentation, but this is a chance to do additional printing on some functions that are under investigation.
 
-Scripting API
-=============
+Scripting API Reference
+=======================
 
 Replay
 ------
@@ -203,7 +212,7 @@ These are the operations that can be performed on an instance of the ReportWrite
 
 ~~~~~~
 report_writer.print(str)
-    str: string to print
+    str: string to write in the report
     returns: nothing
 ~~~~~~
 
