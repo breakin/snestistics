@@ -16,7 +16,6 @@ struct Options {
 	std::string                  rom_file;
 	uint32_t                     rom_size = 0;
 	std::vector<std::string>     trace_files;
-	bool                         regenerate = false;
 	uint32_t                     nmi_first = 0;
 	uint32_t                     nmi_last = 0;
 	std::string                  trace_log_out_file;

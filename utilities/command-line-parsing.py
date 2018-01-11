@@ -19,7 +19,7 @@ options=[
 	Option("rom",        "RomSize",          "rs", "uint",    "0",     "Size of ROM cartridge (without header). 0 means auto-detect"),
 	#Option("rom",        "RomMode",          "rm", "enum",    "trace", "Type of ROM"),
 	Option("trace",      "Trace",            "t",  "input*",  "",      "Trace file from an emulation session. Multiple allowed for assembly source listing"),
-	Option("trace",      "Regenerate",       "rg", "bool",    "false", "Regenerate emulation caches. Should happen automatically"),
+	#Option("trace",      "Regenerate",       "rg", "bool",    "false", "Regenerate emulation caches. Should happen automatically"),
 	Option("tracelog",   "NmiFirst",         "n0", "uint",    "0",     "First NMI to consider for trace log"),
 	Option("tracelog",   "NmiLast",          "n1", "uint",    "0",     "Last NMI to consider for trace log"),
 	Option("tracelog",   "TraceLog",         "tl", "output",  "",      "Generated trace log. Nmi range can be controlled using ${NmiFirst} and ${NmiLast}. Custom printing can be done using scripting"),

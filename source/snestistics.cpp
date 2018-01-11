@@ -389,7 +389,7 @@ int main(const int argc, const char * const argv[]) {
 			Trace backing_trace;
 			Trace &local_trace = k==0 ? trace : backing_trace;
 
-			if (!options.regenerate && load_trace_cache(options.trace_files[k], local_trace))
+			if (load_trace_cache(options.trace_files[k], local_trace))
 				generate = false;
 
 			if (generate) {

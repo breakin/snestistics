@@ -31,8 +31,6 @@ namespace {
 		printf("                                                Default: 0.\n");
 		printf(" -tracefile (--t) <filename>                    Trace file from an emulation session.\n");
 		printf("                                                Multiple allowed for assembly source listing.\n");
-		printf(" -regenerate (--rg) <true|false>                Regenerate emulation caches.\n");
-		printf("                                                Should happen automatically.\n");
 		printf(" -nmifirst (--n0) <number>                      First NMI to consider for trace log.\n");
 		printf("                                                Default: 0.\n");
 		printf(" -nmilast (--n1) <number>                       Last NMI to consider for trace log.\n");
@@ -91,10 +89,6 @@ void parse_options(const int argc, const char * const argv[], Options &options) 
 		} else if (strcmp(cmd, "tracefile")==0 || strcmp(cmd, "-t")==0) {
 			options.trace_files.push_back(opt);
 			need_rom = true;
-			k++;
-		} else if (strcmp(cmd, "regenerate")==0 || strcmp(cmd, "-rg")==0) {
-			options.regenerate = parse_bool(opt, error);
-			need_trace = true;
 			k++;
 		} else if (strcmp(cmd, "nmifirst")==0 || strcmp(cmd, "-n0")==0) {
 			options.nmi_first = parse_uint(opt, error);

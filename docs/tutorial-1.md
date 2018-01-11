@@ -62,14 +62,14 @@ Once you have your trace file you are ready to generate the assembler source. We
 snestistics
   -romfile battle_pinball.sfc
   -tracefile trace0.trace
-  -asmfile pinball.asm
-  -reportfile pinball_report.txt
+  -asmoutfile pinball.asm
+  -reportoutfile pinball_report.txt
 ~~~~~~~~~~~~~~~~
 This assumes that your working directory is where you've placed _battle_pinball.sfc_ and _trace0.trace_. The outputs will be _pinball.asm_ and _pinball_report.txt_. There might be other output files (depending on settings for our snes9x variant) but they can be ignored. There are many more options available. See the command line reference in the [user guide](user-guide). But let's concentrate on these for today!
 
 It is very important to note here that some games will work flawlessly out of the box while some will simply cause an error here (or even a crash). If you want to work on a game and you encounter issues here, don't hesitate to contact us and we will fix the issue. There are some known limitations discussed in the [snestistics readme](https://github.com/breakin/snestistics/).
 
-Since we re-emulate the CPU portion of the game session and our emulator is not very fast this can take quite some time, but the result is cached so all future runs will be fast. It should be noted that there will be some files created next to the trace file that contains this cached data. If they are deleted they will be regenerated. They have a version so if a new version of snestistics is downloaded they will also be regenerated.
+Since we re-emulate the CPU portion of the game session and our emulator is not very fast this can take quite some time, but the result is cached so all future runs will be fast. It should be noted that there will a .emulation_cache-file created next to the trace file that contains this cached data. If it is deleted (or deemed invalid due to updated .trace-file or updated .emulation_cache-version) it will automatically regenerated.
 
 The assembler source
 ====================
@@ -116,7 +116,7 @@ First we have a label called _label_8083DF_. The number after the word _label_ s
 
 Then if we look at a line in the code we have:
 ~~~~~~~~~~~~~~~~
-/* mi 80 0000 8083EC C2 20       */ rep.B #$20
+/* mi 80      8083EC C2 20       */ rep.b #$20
 ~~~~~~~~~~~~~~~~
 
 What does each piece mean?
@@ -158,18 +158,10 @@ label_80E412:
           ; label_80E43C [X=0000]
           ; label_80E460 [X=0002]
           ; label_80E461 [X=0004]
-          ; label_80E485 [X=0006]
-          ; label_80E486 [X=0008]
-          ; label_80E4AA [X=000A]
-          ; label_80E4AB [X=000C]
-          ; label_80E4CF [X=000E]
-          ; label_80E4D0 [X=0010]
-          ; label_80E54E [X=0012]
-          ; label_80E56E [X=0014]
-          ; label_80E5A8 [X=0016]
+          ; label_80E63E [X=0018]
 ~~~~~~~~~~~~~~~~
 
-We can see that in this unknown code starting at _label_80E744_ there is a jump to the indirect address located in ROM location `$80E750` plus the X register. Instead of needing to look up those pointers in a hex editor, snestistics outputs a list of all addresses jumped to in our emulated session.
+We can see that in this unknown code starting at _label_80E744_ there is a jump to the indirect address located in ROM location `$80E750` plus the X register. Instead of needing to look up those pointers in a hex editor, snestistics outputs a list of all addresses jumped to in our emulated session. We can also not that there are data after this functions which does seem to be the jump table that is being used.
 
 Where does the program "start"?
 -------------------------------
@@ -208,7 +200,7 @@ and
 label_0081B8:
     /* **         0081B8 5C BC 81 80 */ jmp.l label_8081BC
 ~~~~~~~~~~~~~~
-These two comments are automatically added. They signal that these labels is special somehow.
+These two comments are automatically added. They signal that these labels is special somehow. We see that both jump to bank 80 to enable the fast ROM mode.
 
 Bonus
 ------------------------
