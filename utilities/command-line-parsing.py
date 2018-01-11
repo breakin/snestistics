@@ -15,9 +15,9 @@ EnumOption = collections.namedtuple('EnumOption', 'name description')
 option_reference_re = re.compile("\${([^}]*)}") # Match ${word} with word ending up in first group
 
 options=[
-	Option("rom",        "Rom",              "r",  "input",   "",      "ROM file. Currently only LoROM ROMs are allowed"),
+	Option("rom",        "Rom",              "r",  "input",   "",      "ROM file. Currently only LoROM ROMs are supported"),
 	Option("rom",        "RomSize",          "rs", "uint",    "0",     "Size of ROM cartridge (without header). 0 means auto-detect"),
-	Option("rom",        "RomMode",          "rm", "enum",    "trace", "Type of ROM"),
+	#Option("rom",        "RomMode",          "rm", "enum",    "trace", "Type of ROM"),
 	Option("trace",      "Trace",            "t",  "input*",  "",      "Trace file from an emulation session. Multiple allowed for assembly source listing"),
 	Option("trace",      "Regenerate",       "rg", "bool",    "false", "Regenerate emulation caches. Should happen automatically"),
 	Option("tracelog",   "NmiFirst",         "n0", "uint",    "0",     "First NMI to consider for trace log"),
@@ -51,11 +51,11 @@ long_descriptions = {
 }
 
 enums={
-	"RomMode" : [
-		EnumOption("trace", "Read correct mode from .trace-file"),
-		EnumOption("lorom", "LoROM"),
-		EnumOption("hirom", "HiROM"),
-	],
+	#"RomMode" : [
+	#	EnumOption("trace", "Read correct mode from .trace-file"),
+	#	EnumOption("lorom", "LoROM"),
+	#	EnumOption("hirom", "HiROM"),
+	#],
 	"Predict": [
 		EnumOption("never", "No prediction"),
 		EnumOption("functions", "Only predict within annotated functions"),
@@ -293,33 +293,11 @@ def generate_parser_header(file):
 			"enum":   "enum",
 		}
 
-		first_value = True
-
 		# Now all actual value
 		for option in options:
 			tt = type_translation[option.type]
 			if tt == "enum":
 				tt = option.name + "Enum"
-
-			# Expand references in description
-			def option_reference_patcher(m):
-				if not m.group(1) in options_by_name:
-					print("Oops, no such option '" + m.group(1) + "'!")
-				option = options_by_name[m.group(1)]
-				return variable_name(option)
-
-			# Replace "${ref}"" with "ref" after validating that there still is an option "ref"
-			description = option_reference_re.sub(option_reference_patcher, option.description)
-
-			# TODO: We need to do a pretty multi line printer using /**/ here
-
-			print_description = False
-
-			if print_description:
-				if not first_value:
-					file.write("\n")
-				first_value = False
-				file.write("\t// " + description + ".\n")
 
 			name = variable_name(option)
 

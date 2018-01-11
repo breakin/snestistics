@@ -25,11 +25,10 @@ namespace {
 		printf("Options:\n");
 		printf("\n");
 		printf(" -romfile (--r) <filename>                      ROM file.\n");
-		printf("                                                Currently only LoROM ROMs are allowed.\n");
+		printf("                                                Currently only LoROM ROMs are supported.\n");
 		printf(" -romsize (--rs) <number>                       Size of ROM cartridge (without header).\n");
 		printf("                                                0 means auto-detect.\n");
 		printf("                                                Default: 0.\n");
-		printf(" -rommode (--rm) <*trace*|lorom|hirom>          Type of ROM.\n");
 		printf(" -tracefile (--t) <filename>                    Trace file from an emulation session.\n");
 		printf("                                                Multiple allowed for assembly source listing.\n");
 		printf(" -regenerate (--rg) <true|false>                Regenerate emulation caches.\n");
@@ -88,11 +87,6 @@ void parse_options(const int argc, const char * const argv[], Options &options) 
 			k++;
 		} else if (strcmp(cmd, "romsize")==0 || strcmp(cmd, "-rs")==0) {
 			options.rom_size = parse_uint(opt, error);
-			k++;
-		} else if (strcmp(cmd, "rommode")==0 || strcmp(cmd, "-rm")==0) {
-			if (strcmp(opt, "trace")==0) options.rom_mode = Options::RM_TRACE;
-			if (strcmp(opt, "lorom")==0) options.rom_mode = Options::RM_LOROM;
-			if (strcmp(opt, "hirom")==0) options.rom_mode = Options::RM_HIROM;
 			k++;
 		} else if (strcmp(cmd, "tracefile")==0 || strcmp(cmd, "-t")==0) {
 			options.trace_files.push_back(opt);
