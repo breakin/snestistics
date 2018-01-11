@@ -5,6 +5,8 @@
 
 	TODO: What prefixes do we want for types and functions?
 	TODO: What about strings? UTF8?
+	QUESTION:
+		What about namespaces? Currently Replay and ReportWriter is in global namespace but most other symbols in snestistics ns
 
 	DESIGN:
 		I would love If Registers was actually part of Replay.

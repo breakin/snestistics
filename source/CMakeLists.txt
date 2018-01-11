@@ -19,6 +19,8 @@ set(SOURCES
 	trace_cache.h
 	trace_log.cpp
 	trace_log.h
+	predict.cpp
+	predict.h
 	replay.cpp
 	replay.h
 	api.h
