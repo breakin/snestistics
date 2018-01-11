@@ -7,7 +7,7 @@
 
 namespace snestistics {
 
-bool guess_valid_jump(Pointer pc, Pointer target, int max_distance = 1000) {
+bool guess_valid_jump(Pointer pc, Pointer target, int max_distance = 300) {
 	if ((pc >> 16) != (target >> 16))
 		return false;
 	return true;
@@ -40,12 +40,6 @@ void guess_range(const Trace &trace, const RomAccessor &rom, const AnnotationRes
 		FoundRange found;
 		while (it != trace.ops.end()) {
 			Pointer pc = it->first;
-
-			//if (pc < 0x80801C || pc > 0x80E582)
-			//	break;
-
-			//if (pc > 0x00A0F6) // TODO: Remove
-			//	break;
 
 			const Annotation *function = nullptr;
 			annotations.resolve_annotation(pc, &function);
