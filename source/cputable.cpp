@@ -70,6 +70,24 @@ static const AdressModeInfo g_oplut[] = {
 	{ 29, 3, 16, "$%02X%02X,x", "" }, // same as 15 but for jumps (pb instead of db)
 };
 
+uint32_t instruction_size(const uint8_t opcode, const bool acc16, const bool ind16) {
+	const int am = opCodeInfo[opcode].adressMode;
+	const AdressModeInfo &ami = g_oplut[am];
+
+	// We have a few special cases that doesn't work with our simple table
+	if (am == 1 && !acc16) {
+		return 2;
+	} else if (am == 2 && !ind16) {
+		return 2;
+	} else if (am == 3 && (opcode == 0 || opcode == 2)) {
+		return 2;
+	} else if (am == 4 && branches[opcode]) { // NOTE: BRL has am == 5
+		return 2;
+	} else {
+		return ami.numBytes;
+	}
+}
+
 uint32_t calculateFormattingandSize(const uint8_t * data, const bool acc16, const bool ind16, char * target, char * targetLabel, int * bitmodeNeeded) {
 	const uint8_t opcode = data[0];
 	const int am = opCodeInfo[opcode].adressMode;

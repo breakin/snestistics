@@ -382,6 +382,8 @@ inline int unpackSigned(const uint8_t packed) {
 
 uint32_t calculateFormattingandSize(const uint8_t *data, const bool acc16, const bool ind16, char *target, char *targetLabel, int *bitmodeNeeded);
 
+uint32_t instruction_size(const uint8_t opcode, const bool acc16, const bool ind16);
+
 // Jumps, branches but not JSLs
 // If secondary target is set, it is always set to the next op after this op
 bool decode_static_jump(uint8_t opcode, const snestistics::RomAccessor &rom, const Pointer pc, Pointer *target, Pointer *secondary_target);

@@ -5,6 +5,13 @@
 #include "report_writer.h"
 #include "cputable.h" // decode_static_jump
 
+namespace {
+	inline uint32_t bank_add(Pointer p, uint16_t delta) {
+		uint16_t a = p & 0xFFFF;
+		a += delta;
+		return (p&0xFF0000)|a;
+	}
+}
 namespace snestistics {
 
 void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor &rom, Trace &trace, const AnnotationResolver &annotations) {
@@ -28,12 +35,18 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 
 	for (auto opsit : trace.ops) {
 		const Pointer pc = opsit.first;
-		has_op.set_bit(pc);
 
 		const Trace::OpVariantLookup &vl = opsit.second;
-		const uint8_t* data = rom.evalPtr(pc);
+		const OpInfo &example = trace.variant(vl, 0);
 
+		const uint8_t* data = rom.evalPtr(pc);
 		const uint8_t opcode = data[0];
+
+		uint32_t op_size = instruction_size(opcode, is_memory_accumulator_wide(example.P), is_index_wide(example.P));
+
+		for (uint32_t i = 0; i < op_size; ++i) {
+			has_op.set_bit(bank_add(pc, i));
+		}
 
 		StringBuilder sb;
 
@@ -50,12 +63,11 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 		annotations.resolve_annotation(target_jump, &target_annotation);
 
 		if (source_annotation || !limit_to_functions) {
-			// We only predict branches going within an annotated function
 			PredictBranch p;
 			p.annotation = source_annotation;
-			p.DB = trace.variant(vl, 0).DB;
-			p.DP = trace.variant(vl, 0).DP;
-			p.P  = trace.variant(vl, 0).P;
+			p.DB = example.DB;
+			p.DP = example.DP;
+			p.P  = example.P;
 			if (target_annotation == source_annotation || !limit_to_functions) {
 				p.pc = target_jump;
 				CUSTOM_ASSERT(target_jump != INVALID_POINTER);
@@ -179,8 +191,14 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 			}
 
 			trace.is_predicted.set_bit(pc);
-			has_op.set_bit(pc);
+
 			int op_size = calculateFormattingandSize(rom.evalPtr(pc), is_memory_accumulator_wide(P), is_index_wide(P), nullptr, nullptr, nullptr);
+
+			for (int i=0; i<op_size; ++i) {
+				// TODO: We should do overlap test for entire range we are "using" now
+				//       Also first might not always be best!
+				has_op.set_bit(bank_add(pc, i));
+			}
 
 			uint8_t operand = rom.evalByte(pc+1);
 
