@@ -152,31 +152,32 @@ uint32_t calculateFormattingandSize(const uint8_t * data, const bool acc16, cons
 // Jumps, branches but not JSLs
 // If secondary target is set, it is always set to the next op after this op
 bool decode_static_jump(uint8_t opcode, const snestistics::RomAccessor & rom, const Pointer pc, Pointer * target, Pointer * secondary_target) {
+	uint8_t opcode = data[0];
 	*target = INVALID_POINTER;
 	*secondary_target = INVALID_POINTER;
 	if (opcode == 0x82) { // BRL
 		*target = branch16(pc, rom.eval16(pc+1));
-	}
-	else if (branches[opcode]) {
+	} else if (branches[opcode]) {
 		*target = branch8(pc, rom.evalByte(pc + 1));
 		if (opcode != 0x80) {
 			*secondary_target = pc + 2;
 		}
-	}
-	else if (opcode == 0x4C) { // Absolute jump
+	} else if (opcode == 0x4C) { // Absolute jump
 		Pointer p = *(uint16_t*)rom.evalPtr(pc + 1);
 		p |= pc & 0xFF0000;
 		*target = p;
-	}
-	else if (opcode == 0x5C) { // Absolute long jump
+	} else if (opcode == 0x5C) { // Absolute long jump
 		Pointer p = 0;
 		p |= rom.evalByte(pc + 1);
 		p |= rom.evalByte(pc + 2) << 8;
 		p |= rom.evalByte(pc + 3) << 16;
 		*target = p;
-	}
-	else if (opcode == 0x6C || opcode == 0x7C || opcode == 0xDC) {
-		// All of these are indeterminate, leave as INVALID_POINTER
+	} else if (opcode == 0x6C || opcode == 0xDC) {
+		// TODO: In this case the indirection pointer is located in bank 0 (with 16-bit address from operand)
+		// Most often it will come from 7E but I guess sometimes it might actually be in bank 0... Then we could use it...
+		// leave as INVALID_POINTER
+	} else if (opcode == 0x7C) {
+		// Indeterminate due to unknown value of X, leave as INVALID_POINTER
 	}
 	else {
 		return false;
