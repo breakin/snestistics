@@ -14,8 +14,13 @@ Assembly listing
 ================
 If you supply a ROM-file and a trace-file (written by snes9x-snestistics) you can generate an assembly listing of the program. See the command line reference for relevant switches. Then annotations can be be added to beautify the assembly listing. The idea is to work with the assembler listing and the annotations in an iterative way, progressively building up an understand of the inner workings of the game.
 
-Code Prediction
-===============
+Code Prediction (Predict)
+=========================
+Not all code is executed during a typical game session. It is very typical to see that there is a branch that jumps a few instructions forward but then just after it there is some code for a cases that wasn't triggered by the emulation session. To help fill in these gaps there is the *predict* feature. It goes on a bit and see what happens if the branch hadn't been taken etc. It sometimes become confused and need some help using hints, but in general it is very useful to get a cleaner source code; it makes it very easy to spot data inside a function.
+
+Currently this affects the assembly listing and the auto-annotation feature. The latter is because when more code is available more and larger functions can be identified.
+
+NOTE: By default prediction only works within annotated functions.
 
 Annotations
 ===========
@@ -136,8 +141,9 @@ This function is called whenever the trace log hits a program counter that it ha
 
 Rewind
 ======
-This feature allow generation of a visual report depicting the flow of data through the processor. This can sometimes be very helpful to track where values to a function is coming from. This feature **requires** in order to do something.
-WIP.
+This feature allow generation of a visual report depicting the flow of data through the processor. This can sometimes be very helpful to track where values to a function is coming from. This feature **requires scripting** in order to run.
+
+NOTE: This feature is currently in re-development since it does not understand DMA (or writing to) $2180. It also needs scripting support to be controllable on the command line.
 
 Command Line Reference
 ======================
