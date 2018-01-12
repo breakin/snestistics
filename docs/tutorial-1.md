@@ -228,4 +228,4 @@ The short story is that the source code is almost WLA-DX compatible and provided
 
 Closing words
 =============
-That was all for today. In the next post we will look at how you can start annotating the source code once you start to discover what things do.
+That was all for today. In the [next post](tutorial-2) we will look at how you can start annotating the source code once you start to discover what things do.
