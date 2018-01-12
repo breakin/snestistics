@@ -332,6 +332,10 @@ bool load_trace_cache(const std::string &trace_file_name, Trace &trace) {
 	{
 		BigFile trace_file;
 		trace_file._file = fopen(trace_file_name.c_str(), "rb");
+		if (!trace_file._file) {
+			printf("Error: Could not open trace file '%s'\n", trace_file_name.c_str());
+			exit(1);
+		}
 		snestistics::TraceHeader header;
 		trace_file.read(header);
 		if (header.version != TRACE_VERSION_NUMBER) {

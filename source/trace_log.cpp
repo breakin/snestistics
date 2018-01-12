@@ -183,9 +183,9 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 
 		if (pc_change) {
 			// Avoid updating depth if we are ignoring the function
-			if (!current_function || current_function->trace_type != Annotation::TRACETYPE_IGNORE) {
+			if (!current_function) {
 				const Hint *ta = annotations.hint(pc);
-				const bool jump_has_faked_return = ta && ta->type == Hint::JUMP_IS_JSR;
+				const bool jump_has_faked_return = ta && ta->has_hint(Hint::JUMP_IS_JSR);
 
 				if (is_jump_with_return || jump_has_faked_return) {
 					ts.current_depths.top()++;
@@ -207,9 +207,6 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 
 			if (do_logging_for_current_function && current_function != target_function) {
 				if (target_function) {
-					if (target_function->trace_type == Annotation::TRACETYPE_IGNORE) {
-						trace_indent_line(ts); fprintf(rw.report, "Ignoring %s\n", target_function->name.c_str());
-					}
 					spacing += trace_indent_line(ts);
 					spacing += fprintf(rw.report, "%s", target_function->name.c_str());
 				} else {

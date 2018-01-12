@@ -258,7 +258,6 @@ void AnnotationResolver::add_vector_annotations(const RomAccessor &rom) {
 void AnnotationResolver::load(std::istream &input, const std::string &error_file) {
 	std::string comment;
 	std::string useComment;
-	Annotation::TraceType trace_type = Annotation::TRACETYPE_DEFAULT;
 	bool comment_is_multiline = false;
 
 	char name[1024]="";
@@ -306,25 +305,23 @@ void AnnotationResolver::load(std::istream &input, const std::string &error_file
 
 			Hint ta;
 			if (strcmp(name, "jump_is_jsr")==0) {
-				ta.type = Hint::JUMP_IS_JSR;
+				ta.hints = Hint::JUMP_IS_JSR;
 			} else if (strcmp(name, "jump_is_jsr_ish")==0) {
-				ta.type = Hint::JUMP_IS_JSR_ISH;
+				ta.hints = Hint::JUMP_IS_JSR_ISH;
 			} else if (strcmp(name, "jsr_is_jmp")==0) {
-				ta.type = Hint::JSR_IS_JMP;
+				ta.hints = Hint::JSR_IS_JMP;
 			} else if (strcmp(name, "branch_always") == 0) {
-				ta.type = Hint::BRANCH_ALWAYS;
+				ta.hints = Hint::BRANCH_ALWAYS;
 			} else if (strcmp(name, "branch_never") == 0) {
-				ta.type = Hint::BRANCH_NEVER;
-			} else if (strcmp(name, "predict_merge") == 0) {
-				ta.type = Hint::PREDICT_MERGE;
+				ta.hints = Hint::BRANCH_NEVER;
+			} else if (strcmp(name, "annotate_merge") == 0) {
+				ta.hints = Hint::ANNOTATE_MERGE;
 			} else {
 				printf("Unknown hint '%s'\n", name);
 			}
 			ta.location = start;
-			_trace_annotations.push_back(ta);
+			_hints.push_back(ta);
 			continue;
-		} else if (sscanf(buf, "trace %s", (char*)&name) > 0) {
-			if (strcmp(name, "ignore")==0) trace_type = Annotation::TRACETYPE_IGNORE;
 		} else {
 
 			Annotation a;
@@ -359,7 +356,6 @@ void AnnotationResolver::load(std::istream &input, const std::string &error_file
 			a.useComment = useComment;
 			a.comment = comment;
 			a.comment_is_multiline = comment_is_multiline;
-			a.trace_type = trace_type;
 			a.name = name;
 			_annotations.push_back(a);
 
@@ -368,7 +364,6 @@ void AnnotationResolver::load(std::istream &input, const std::string &error_file
 			useComment.clear();
 			comment_is_multiline = false;
 			name[0]='\0';
-			trace_type = Annotation::TRACETYPE_DEFAULT;
 		}
 	}
 }
@@ -463,13 +458,15 @@ void AnnotationResolver::finalize() {
 			}
 		}
 	}
+
+	// TODO: Merge multiple hints for same address
 	
 	_hint_for_adress.init(k);
 	_hint_for_adress.fill(-1);
 
-	std::sort(_trace_annotations.begin(), _trace_annotations.end());
-	for (uint32_t i = 0; i < _trace_annotations.size(); ++i) {
-		const Hint &ta = _trace_annotations[i];
+	std::sort(_hints.begin(), _hints.end());
+	for (uint32_t i = 0; i < _hints.size(); ++i) {
+		const Hint &ta = _hints[i];
 		_hint_for_adress[ta.location] = i;
 	}
 
@@ -626,6 +623,6 @@ const Hint * AnnotationResolver::hint(const Pointer pc) const {
 		return nullptr;
 	int tai = _hint_for_adress[pc];
 	if (tai == -1) return nullptr;
-	return &_trace_annotations[tai];
+	return &_hints[tai];
 }
 }

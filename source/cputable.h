@@ -15,7 +15,9 @@
 namespace snestistics {
 	class RomAccessor;
 
+extern bool jump_or_branch[256];
 extern bool branches[256];
+extern bool branches8[256];
 extern bool jumps[256];
 extern bool pushpops[256];
 

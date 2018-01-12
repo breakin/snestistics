@@ -7,12 +7,8 @@
 
 namespace snestistics {
 
-bool guess_valid_jump(Pointer pc, Pointer target, int max_distance = 300) {
-	if ((pc >> 16) != (target >> 16))
-		return false;
-	return true;
-	int distance = abs((int32_t)(target & 0xFFFF) - (int32_t)(pc & 0xFFFF));
-	return distance < max_distance;
+inline bool same_bank(Pointer pc, Pointer target) {
+	return ((pc >> 16) == (target >> 16));
 }
 
 void guess_range(const Trace &trace, const RomAccessor &rom, const AnnotationResolver &annotations, std::string &output_file) {
@@ -23,7 +19,6 @@ void guess_range(const Trace &trace, const RomAccessor &rom, const AnnotationRes
 
 	struct FoundRange {
 		Pointer start = INVALID_POINTER, stop = INVALID_POINTER;
-		bool ends_with_rti = false;
 		bool valid = true;
 
 		bool inside(Pointer p) const { return p >= start && p <= stop; }
@@ -50,52 +45,38 @@ void guess_range(const Trace &trace, const RomAccessor &rom, const AnnotationRes
 
 			uint8_t opcode = rom.evalByte(pc);
 
-			Pointer jump_target, jump_secondary_target;
-			bool op_is_jump_or_branch = decode_static_jump(opcode, rom, pc, &jump_target, &jump_secondary_target);
-
-			const Hint *ta = annotations.hint(pc);
-			bool jump_is_jsr = false;
-			if (ta && ta->type == Hint::JUMP_IS_JSR)
-				jump_is_jsr = true;
-
-			if (op_is_jump_or_branch && jump_target != INVALID_POINTER && guess_valid_jump(pc, jump_target)) {
-				found.branches_out.insert(jump_target);
-			}
-
-			// If this was a jump, deterministic or not, loop over all variants
-			if (op_is_jump_or_branch && !jump_is_jsr) {
-				auto lit = trace.ops.find(pc);
-				if (lit != trace.ops.end()) {
-					const Trace::OpVariantLookup &lut = lit->second;
-					for (uint32_t i = 0; i<lut.count; i++) {
-						const OpInfo &o = trace.variant(lut, i);
-						if (o.jump_target != INVALID_POINTER && guess_valid_jump(pc, o.jump_target)) {
-							found.branches_out.insert(o.jump_target);
-						}
-					}
-				}
-			}
-
 			if (found.start == INVALID_POINTER)
 				found.start = pc;
 
-			// Stop if we find a branch or a jump
-			if (op_is_jump_or_branch && jump_secondary_target == INVALID_POINTER) {
-				// If there is a secondary jump target (as in a branch) we don't need to stop
+			if (jump_or_branch[opcode]) {
+				const Hint *hint = annotations.hint(pc);
+				bool merge_long_jumps = hint && hint->has_hint(Hint::ANNOTATE_MERGE);
+				bool relevant_jump = merge_long_jumps || branches8[opcode];
+
+				Pointer jump_target, jump_secondary_target;
+				bool op_is_jump_or_branch = decode_static_jump(opcode, rom, pc, &jump_target, &jump_secondary_target);
+
+				bool jump_is_jsr = false;
+				if (hint && hint->has_hint(Hint::JUMP_IS_JSR))
+					jump_is_jsr = true;
+
+				if (relevant_jump && op_is_jump_or_branch && jump_target != INVALID_POINTER && same_bank(pc, jump_target)) {
+					found.branches_out.insert(jump_target);
+				}
+
+				// Stop if we find a branch or a jump
+				if (op_is_jump_or_branch && jump_secondary_target == INVALID_POINTER) {
+					// If there is a secondary jump target (as in a branch) we don't need to stop
+					found.stop = pc;
+					found_ranges.push_back(found);
+					break;
+				}
+			} else if (opcode == 0x40 || opcode == 0x6B || opcode == 0x60) {
+				// Some sort of return (RTS, RTI, RTL)
 				found.stop = pc;
 				found_ranges.push_back(found);
 				break;
 			}
-
-			bool is_return = opcode == 0x40 || opcode == 0x6B || opcode == 0x60;
-
-			if (is_return) {
-				found.stop = pc;
-				found.ends_with_rti = true;
-				found_ranges.push_back(found);
-				break;
-			}
-
 			it++;
 		}
 	}
@@ -205,8 +186,7 @@ void guess_range(const Trace &trace, const RomAccessor &rom, const AnnotationRes
 
 				found_ranges[lowest_merge].stop = fj.stop;
 
-			}
-			else if (target > fj.stop) {
+			} else if (target > fj.stop) {
 
 				target = annotations.find_last_free_after_or_at(fj.stop, target);
 				if (target != t1) {
@@ -223,7 +203,8 @@ void guess_range(const Trace &trace, const RomAccessor &rom, const AnnotationRes
 						break;
 					if (merger.valid) {
 						// Merge t into j (the easy case)
-						fj.stop = merger.stop;
+						if (merger.stop > found_ranges[merge_target].stop)
+							found_ranges[merge_target].stop = merger.stop;
 						merger.valid = false; // Since we make it invalid it can only be merged once...
 						merged_with[t] = merge_target;
 					}

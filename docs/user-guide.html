@@ -108,9 +108,9 @@ This hint says that while the instruction is a branch (such as *BNE*) it will al
 
 While this instruction is a *JSR* the called function will consume the return address and never return to it. The most common case here is that following the JSR there is a data table. By using *JSR* the pointer to the data table will be pushed to the stack, ready to be consumed by the function we are jumping to.
 
-## predict_merge
+## annotate_merge
 
-When predicting code, the jump at this address should be used to merge the function we are jumping from with the function we are jumping to into one function. By default BLR and JMPs are not used to merge ranges together but this can change the default.
+When annotating code, the jump at this address should be used to merge the function we are jumping from with the function we are jumping to into one function. By default BLR and JMPs are not used to merge ranges together but this can change the default.
 
 Scripting
 =========

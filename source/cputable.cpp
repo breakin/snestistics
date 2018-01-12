@@ -4,23 +4,32 @@
 namespace snestistics {
 
 bool branches[256];
+bool branches8[256];
 bool jumps[256];
 bool pushpops[256];
+bool jump_or_branch[256];
 
 void initLookupTables() {
 	for (int ih = 0; ih<256; ih++) {
 		jumps[ih] = false;
 		branches[ih] = false;
+		branches8[ih] = false;
+		jump_or_branch[ih]=false;
 		pushpops[ih] = false;
 		const char * const i = snestistics::mnemonic_names[ih];
 		if (i[0] == 'J') {
 			jumps[ih] = true;
+			if (strcmp(i, "JMP")==0)
+				jump_or_branch[ih] = true;
 		}
 		else if (i[0] == 'B') {
+			jump_or_branch[ih] = true;
 			if (strcmp(i, "BRK") == 0) continue;
 			if (strcmp(i, "BIT") == 0) continue;
 			jumps[ih] = true;
 			branches[ih] = true;
+			if (strcmp(i, "BRL") == 0) continue;
+			branches8[ih] = true;
 		} else if (i[0]=='P' && i[1]=='H') {
 			pushpops[ih] = true;
 		} else if (i[0]=='P' && i[1]=='L') {

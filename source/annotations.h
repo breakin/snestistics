@@ -26,30 +26,31 @@ struct AnnotationPos {
 // Annotations to help the trace log
 struct Hint {
 	enum Type {
-		JUMP_IS_JSR,
-		JUMP_IS_JSR_ISH,
-		JSR_IS_JMP,
-		BRANCH_ALWAYS,
-		BRANCH_NEVER,
-		PREDICT_MERGE,
-	} type;
+		JUMP_IS_JSR=1,
+		JUMP_IS_JSR_ISH=2,
+		JSR_IS_JMP=4,
+		BRANCH_ALWAYS=8,
+		BRANCH_NEVER=16,
+		ANNOTATE_MERGE=32,
+	};
+	uint8_t hints;
 	Pointer location;
+
+	bool has_hint(Type t) const { return hints & t; }
 
 	bool operator<(const Hint &o) const {
 		if (location != o.location) return location < o.location;
-		if (type != o.type) return type < o.type;
+		if (hints != o.hints) return hints < o.hints;
 		return false;
 	}
 };
-
+   
 struct Annotation {
 	AnnotationType type = ANNOTATION_NONE;
 	std::string name;
 	std::string comment;
 	bool comment_is_multiline = false;
 	std::string useComment;
-
-	enum TraceType { TRACETYPE_DEFAULT, TRACETYPE_IGNORE } trace_type = TRACETYPE_DEFAULT;
 
 	// label and comment does not have a endOfRange
 	Pointer startOfRange, endOfRange;
@@ -77,7 +78,7 @@ public:
 	
 	void load(const std::vector<std::string> & filenames);
 	std::vector<Annotation> _annotations;
-	std::vector<Hint> _trace_annotations;
+	std::vector<Hint> _hints;
 
 	const Hint* hint(const Pointer pc) const;
 
