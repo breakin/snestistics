@@ -6,11 +6,16 @@ layout: markdeep_api
 
 Introduction
 ============
-In general snestistics wants a ROM-file and a trace-file to do something useful. See command line option on how to give these two snestistics. The [first entry](tutorial-1) in the [tutorial series](tutorial) shows how to create a trace file.
+Snestistics is a tool that helps the user reverse engineer games for the Super Nintendo. In general snestistics wants a ROM-file (in .SMC/.SFC-format) and a trace-file. The [first entry](tutorial-1) in the [tutorial series](tutorial) shows how to create a trace file and how to make snestistics generate assembly listing.
+
+Snestistics is an "emulator-guided" disassembler. This helps it beat other disassemblers doing only static analysis. Because of this one (or multiple) sessions must first be "recorded" in an emulator. Each such session yields a .trace-file that represent a particular run of the game.
 
 Assembly listing
 ================
-If you supply a ROM-file and a trace-file (written by snes9x-snestistics) you can generate an assembly listing of the program. See the command line reference for relevant switches. Then annotations can be be added to beautify the assembly listing.
+If you supply a ROM-file and a trace-file (written by snes9x-snestistics) you can generate an assembly listing of the program. See the command line reference for relevant switches. Then annotations can be be added to beautify the assembly listing. The idea is to work with the assembler listing and the annotations in an iterative way, progressively building up an understand of the inner workings of the game.
+
+Code Prediction
+===============
 
 Annotations
 ===========
@@ -66,7 +71,7 @@ Lines starting with @ are ignored. They are handy when writing notes to yourself
 
 ## Hints
 
-**NOTE: This feature is currently in development.**
+**NOTE: This feature is currently WIP.**
 
 Hints is very similar to comments but they are structured. By having structured comments snestistics can read and understand them and use the information to make better choices during prediction of instruction that was not part of a trace, of relationships between functions during trace log as well as guiding auto-annotation of labels.
 ~~~~~~~~~~~~
@@ -81,7 +86,7 @@ hint 081234 branch_never
 
 While the instruction is a jump (or a branch) in reality the code being called will return using RTS/RTL. The return address is prepared by the calling function in some non-standard way.
 
-### jump_is_jsr_isg
+### jump_is_jsr_ish
 
 Same as *jump_is_jsr* but the return address does not have to be the instruction after the jump instruction. This is quite comment; the calling function wants to call a subroutine using *JSR* and then it want to call another part of itself. Which parts depends on some state. Instead of remembering that state (on the stack or in a register) it figures out where to go next after the *JSR* and then it can forget the state that dictate where to go next.
 
@@ -97,15 +102,15 @@ This hint says that while the instruction is a branch (such as *BNE*) it will al
 
 While this instruction is a *JSR* the called function will consume the return address and never return to it. The most common case here is that following the JSR there is a data table. By using *JSR* the pointer to the data table will be pushed to the stack, ready to be consumed by the function we are jumping to.
 
-Command Line Reference
-======================
-{% include generated-command-line-reference.html %}
-
 Scripting
 =========
-Some features of snestistics can only be reached from scripts. Currently snestistics only supports scripts written in the scripting language squirrel. Here you can find all functions you can use when scripting.
+Some features of snestistics can only be reached from scripts. Currently snestistics only supports scripts written in the scripting language squirrel.  See *Trace log* and *Rewind* for how to enable scripts there. See the *Scripting Reference* to find out what functions the different objects supports.
 
 Trace Log
+=========
+The trace log shows what functions are being called. A NMI (basically a frame) range can be supplied to limit the log. This feature support adding in a script to enhance the log.
+
+Scripting
 ---------
 When the trace log feature is enabled on the command line and a script is given snestistics expects the script to be a squirrel script with the following functions:
 
@@ -124,9 +129,17 @@ trace_log_parameter_printer(replay, report)
 ~~~~~~
 This function is called whenever the trace log hits a program counter that it has a breakpoint set for. The trace log system itself will print the name of the function and determine indentation, but this is a chance to do additional printing on some functions that are under investigation.
 
-Scripting API Reference
-=======================
+Rewind
+======
+This feature allow generation of a visual report depicting the flow of data through the processor. This can sometimes be very helpful to track where values to a function is coming from. This feature **requires** in order to do something.
+WIP.
 
+Command Line Reference
+======================
+{% include generated-command-line-reference.html %}
+
+Scripting Reference
+===================
 Replay
 ------
 These are the operations that can be performed on an instance of the Replay class.

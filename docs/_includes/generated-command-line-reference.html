@@ -12,7 +12,8 @@ Name | Short | Type | Description
 ## Assembly Listing
 Name | Short | Type | Description
 :----|-------|:-----|:-----------
-*asmoutfile* | a | output file name | Generated assembly listing.
+*reportoutfile* | rp | output file name | Generate assembly report. Companion file to *asmoutfile*.
+*asmoutfile* | a | output file name | Generate assembly listing.
 *predict* | p | enumeration | This setting specify where snestistics is allowed to predict code. This is currently only used for assembly listing.<br><br>**never**: No prediction<br>**functions**: Only predict within annotated functions (default)<br>**everywhere**: Predict as much as possible
 *asmheaderfile* | ah | input file name | File content will be included in assembly listing.
 *asmprintpc* | apc | boolean | Print program counter in assembly source listing.<br>default: true
@@ -28,7 +29,7 @@ Name | Short | Type | Description
 :----|-------|:-----|:-----------
 *nmifirst* | n0 | integer | First NMI to consider for trace log.<br>default: 0
 *nmilast* | n1 | integer | Last NMI to consider for trace log.<br>default: 0
-*tracelogoutfile* | tl | output file name | Generated trace log. Nmi range can be controlled using *nmifirst* and *nmilast*. Custom printing can be done using scripting.
+*tracelogoutfile* | tl | output file name | Generate trace log. Nmi range can be controlled using *nmifirst* and *nmilast*. Custom printing can be done using scripting.
 *scriptfile* | s | input file name | A squirrel script. See user guide for scripting reference.
 
 ## Annotations
@@ -37,15 +38,14 @@ Name | Short | Type | Description
 *labelsfile* | l | input file name | A file containing annotations. Custom file format.
 *autolabelsfile* | al | input/output file name | A file containing annotations. It will be regenerated if missing or if *autoannotate* is specified.
 *autoannotate* | aa | boolean | A file where automatically generated annotations are stored. Automatically generate labels in free space (not used by symbols from regular *labelsfile*-files) space and save to *autolabelsfile*. This will also happen if the file specified by *autolabelsfile* is missing.<br>default: false
-*symbolfmaoutfile* | sf | output file name | Generated symbols file in FMA format compatible with bsnes-plus.
+*symbolfmaoutfile* | sf | output file name | Generate symbols file in FMA format compatible with bsnes-plus.
 
 ## Reports
 Name | Short | Type | Description
 :----|-------|:-----|:-----------
-*reportoutfile* | rp | output file name | Generated assembly report. Companion file to *asmoutfile*.
 
 ## Rewind
 Name | Short | Type | Description
 :----|-------|:-----|:-----------
-*rewindoutfile* | rw | output file name | Generated rewind report in dot file format. Use graphviz to generate PDF/PNG report.
+*rewindoutfile* | rw | output file name | Generate rewind report in dot file format. Use graphviz to generate PDF/PNG report.
 

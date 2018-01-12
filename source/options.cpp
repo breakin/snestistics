@@ -35,7 +35,7 @@ namespace {
 		printf("                                                Default: 0.\n");
 		printf(" -nmilast (--n1) <number>                       Last NMI to consider for trace log.\n");
 		printf("                                                Default: 0.\n");
-		printf(" -tracelogoutfile (--tl) <filename>             Generated trace log.\n");
+		printf(" -tracelogoutfile (--tl) <filename>             Generate trace log.\n");
 		printf("                                                Nmi range can be controlled using -nmifirst and -nmilast.\n");
 		printf("                                                Custom printing can be done using scripting.\n");
 		printf(" -scriptfile (--s) <filename>                   A squirrel script.\n");
@@ -45,12 +45,12 @@ namespace {
 		printf(" -autolabelsfile (--al) <filename>              A file containing annotations.\n");
 		printf("                                                It will be regenerated if missing or if -autoannotate is specified.\n");
 		printf(" -autoannotate (--aa) <true|false>              A file where automatically generated annotations are stored.\n");
-		printf(" -symbolfmaoutfile (--sf) <filename>            Generated symbols file in FMA format compatible with bsnes-plus.\n");
-		printf(" -rewindoutfile (--rw) <filename>               Generated rewind report in dot file format.\n");
+		printf(" -symbolfmaoutfile (--sf) <filename>            Generate symbols file in FMA format compatible with bsnes-plus.\n");
+		printf(" -rewindoutfile (--rw) <filename>               Generate rewind report in dot file format.\n");
 		printf("                                                Use graphviz to generate PDF/PNG report.\n");
-		printf(" -reportoutfile (--rp) <filename>               Generated assembly report.\n");
+		printf(" -reportoutfile (--rp) <filename>               Generate assembly report.\n");
 		printf("                                                Companion file to -asmoutfile.\n");
-		printf(" -asmoutfile (--a) <filename>                   Generated assembly listing.\n");
+		printf(" -asmoutfile (--a) <filename>                   Generate assembly listing.\n");
 		printf(" -predict (--p) <never|*functions*|everywhere>  This setting specify where snestistics is allowed to predict code.\n");
 		printf("                                                This is currently only used for assembly listing.\n");
 		printf(" -asmheaderfile (--ah) <filename>               File content will be included in assembly listing.\n");
