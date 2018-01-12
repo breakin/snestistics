@@ -184,8 +184,8 @@ void write_trace_log(const Options &options, const RomAccessor &rom, const Annot
 		if (pc_change) {
 			// Avoid updating depth if we are ignoring the function
 			if (!current_function || current_function->trace_type != Annotation::TRACETYPE_IGNORE) {
-				const TraceAnnotation *ta = annotations.trace_annotation(pc);
-				const bool jump_has_faked_return = ta && ta->type == TraceAnnotation::JMP_IS_JSR;
+				const Hint *ta = annotations.hint(pc);
+				const bool jump_has_faked_return = ta && ta->type == Hint::JUMP_IS_JSR;
 
 				if (is_jump_with_return || jump_has_faked_return) {
 					ts.current_depths.top()++;

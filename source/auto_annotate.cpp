@@ -53,9 +53,9 @@ void guess_range(const Trace &trace, const RomAccessor &rom, const AnnotationRes
 			Pointer jump_target, jump_secondary_target;
 			bool op_is_jump_or_branch = decode_static_jump(opcode, rom, pc, &jump_target, &jump_secondary_target);
 
-			const TraceAnnotation *ta = annotations.trace_annotation(pc);
+			const Hint *ta = annotations.hint(pc);
 			bool jump_is_jsr = false;
-			if (ta && ta->type == TraceAnnotation::JMP_IS_JSR)
+			if (ta && ta->type == Hint::JUMP_IS_JSR)
 				jump_is_jsr = true;
 
 			if (op_is_jump_or_branch && jump_target != INVALID_POINTER && guess_valid_jump(pc, jump_target)) {

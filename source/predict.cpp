@@ -217,8 +217,8 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 
 			bool is_jsr = opcode == 0x20||opcode==0x22||opcode==0xFC;
 
-			const TraceAnnotation *ta = annotations.trace_annotation(pc);
-			if (ta && ta->type == TraceAnnotation::JMP_IS_JSR) {
+			const Hint *ta = annotations.hint(pc);
+			if (ta && ta->type == Hint::JUMP_IS_JSR) {
 				 is_jump_or_branch = false;
 				 is_jsr = true;
 			}

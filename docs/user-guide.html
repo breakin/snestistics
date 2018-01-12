@@ -80,6 +80,7 @@ hint 081234 jump_is_jsr_ish
 hint 081234 jsr_is_jmp
 hint 081234 branch_always
 hint 081234 branch_never
+hint 081234 predict_jump_merge
 ~~~~~~~~~~~~
 
 ### jump_is_jsr
@@ -102,9 +103,13 @@ This hint says that while the instruction is a branch (such as *BNE*) it will al
 
 While this instruction is a *JSR* the called function will consume the return address and never return to it. The most common case here is that following the JSR there is a data table. By using *JSR* the pointer to the data table will be pushed to the stack, ready to be consumed by the function we are jumping to.
 
+## predict_merge
+
+When predicting code, the jump at this address should be used to merge the function we are jumping from with the function we are jumping to into one function. By default BLR and JMPs are not used to merge ranges together but this can change the default.
+
 Scripting
 =========
-Some features of snestistics can only be reached from scripts. Currently snestistics only supports scripts written in the scripting language squirrel.  See *Trace log* and *Rewind* for how to enable scripts there. See the *Scripting Reference* to find out what functions the different objects supports.
+Some features of snestistics can only be reached from scripts. Currently snestistics only supports scripts written in the scripting language squirrel. See *Trace log* and *Rewind* for how to enable scripts there. See the *Scripting Reference* to find out what functions the different objects supports.
 
 Trace Log
 =========

@@ -302,17 +302,25 @@ void AnnotationResolver::load(std::istream &input, const std::string &error_file
 		}
 		else if (buf[0] == '#') {
 			useComment = &buf[2];
-		} else if (sscanf(buf, "trace %06X %s %d", &start, (char*)&name, &size) > 0) {
-			TraceAnnotation ta;
-			if (strcmp(name, "push_return")==0) {
-				ta.type = TraceAnnotation::PUSH_RETURN;
-			} else if (strcmp(name, "pop_return")==0) {
-				ta.type = TraceAnnotation::POP_RETURN;
-			} else if (strcmp(name, "jmp_is_jsr")==0) {
-				ta.type = TraceAnnotation::JMP_IS_JSR;
+		} else if (sscanf(buf, "hint %06X %s", &start, (char*)&name) > 0) {
+
+			Hint ta;
+			if (strcmp(name, "jump_is_jsr")==0) {
+				ta.type = Hint::JUMP_IS_JSR;
+			} else if (strcmp(name, "jump_is_jsr_ish")==0) {
+				ta.type = Hint::JUMP_IS_JSR_ISH;
+			} else if (strcmp(name, "jsr_is_jmp")==0) {
+				ta.type = Hint::JSR_IS_JMP;
+			} else if (strcmp(name, "branch_always") == 0) {
+				ta.type = Hint::BRANCH_ALWAYS;
+			} else if (strcmp(name, "branch_never") == 0) {
+				ta.type = Hint::BRANCH_NEVER;
+			} else if (strcmp(name, "predict_merge") == 0) {
+				ta.type = Hint::PREDICT_MERGE;
+			} else {
+				printf("Unknown hint '%s'\n", name);
 			}
 			ta.location = start;
-			ta.optional_parameter = size;
 			_trace_annotations.push_back(ta);
 			continue;
 		} else if (sscanf(buf, "trace %s", (char*)&name) > 0) {
@@ -456,13 +464,13 @@ void AnnotationResolver::finalize() {
 		}
 	}
 	
-	_trace_annotation_for_adress.init(k);
-	_trace_annotation_for_adress.fill(-1);
+	_hint_for_adress.init(k);
+	_hint_for_adress.fill(-1);
 
 	std::sort(_trace_annotations.begin(), _trace_annotations.end());
 	for (uint32_t i = 0; i < _trace_annotations.size(); ++i) {
-		const TraceAnnotation &ta = _trace_annotations[i];
-		_trace_annotation_for_adress[ta.location] = i;
+		const Hint &ta = _trace_annotations[i];
+		_hint_for_adress[ta.location] = i;
 	}
 
 	if (resolve_annotation(0x808406, nullptr, nullptr) == 0) {
@@ -613,10 +621,10 @@ void AnnotationResolver::load(const std::vector<std::string> & filenames) {
 	finalize();
 }
 
-const TraceAnnotation * AnnotationResolver::trace_annotation(const Pointer pc) const {
+const Hint * AnnotationResolver::hint(const Pointer pc) const {
 	if (pc >= _annotation_for_adress.size())
 		return nullptr;
-	int tai = _trace_annotation_for_adress[pc];
+	int tai = _hint_for_adress[pc];
 	if (tai == -1) return nullptr;
 	return &_trace_annotations[tai];
 }

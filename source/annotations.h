@@ -24,19 +24,20 @@ struct AnnotationPos {
 };
 
 // Annotations to help the trace log
-struct TraceAnnotation {
+struct Hint {
 	enum Type {
-		PUSH_RETURN,
-		POP_RETURN,
-		JMP_IS_JSR,
+		JUMP_IS_JSR,
+		JUMP_IS_JSR_ISH,
+		JSR_IS_JMP,
+		BRANCH_ALWAYS,
+		BRANCH_NEVER,
+		PREDICT_MERGE,
 	} type;
 	Pointer location;
-	int optional_parameter = 0;
 
-	bool operator<(const TraceAnnotation &o) const {
+	bool operator<(const Hint &o) const {
 		if (location != o.location) return location < o.location;
 		if (type != o.type) return type < o.type;
-		if (optional_parameter != o.optional_parameter) return optional_parameter < o.optional_parameter;
 		return false;
 	}
 };
@@ -76,9 +77,9 @@ public:
 	
 	void load(const std::vector<std::string> & filenames);
 	std::vector<Annotation> _annotations;
-	std::vector<TraceAnnotation> _trace_annotations;
+	std::vector<Hint> _trace_annotations;
 
-	const TraceAnnotation* trace_annotation(const Pointer pc) const;
+	const Hint* hint(const Pointer pc) const;
 
 	Pointer find_last_free_before_or_at(const Pointer p, const Pointer stop) const {
 		// TODO: We could binary search annotations for stop instead to avoid linear search
@@ -127,6 +128,6 @@ private:
 	void load(std::istream &input, const std::string &error_file); // Can be called many times, end with finalize
 	void finalize();
 
-	Array<int> _annotation_for_adress, _trace_annotation_for_adress;
+	Array<int> _annotation_for_adress, _hint_for_adress;
 };
 }
