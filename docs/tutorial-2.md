@@ -230,10 +230,10 @@ This doesn't help us much. But if we actually investigated a function that we do
 
 What is a function?
 ===================
-Our current concept is a function. We realize that since the games are not written in a high-level language that have consistent calling conventions this might not be a good fit for all games. This is an area where we are constantly trying to come up with new concepts for and each new game will probably push us to improve here.
+Our current concept is that a function is a continuous range. We realize that since the games are not written in a high-level language that have consistent calling conventions this might not be a good fit for all games. This is an area where we are trying to come up with new concepts for and each new game will probably push us to improve here. The next step is probably that a function is a collection of ranges but that will not be enough!
 
 Closing words
 =============
-Working iteratively with labels is extremely powerful. The auto-annotator is very fun to play around with and when it works it saved so much work.
+Working iteratively with labels is extremely powerful.
 
-[Here](code/tutorial2.labels) is the full labels file if you want to experiment with it.
+[Here](code/tutorial2.labels) is the full labels file if you want to experiment with it. We will post a new one after each tutorial step so that you can follow along!

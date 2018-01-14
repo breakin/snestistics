@@ -1,0 +1,7 @@
+Name | Short | Type | Description
+:----|-------|:-----|:-----------
+*labelsfile* | l | input file name | A file containing annotations. Custom file format.
+*autolabelsfile* | al | input/output file name | A file containing annotations. It will be regenerated if missing or if *autoannotate* is specified.
+*autoannotate* | aa | boolean | A file where automatically generated annotations are stored. Automatically generate labels in free space (not used by symbols from regular *labelsfile*-files) space and save to *autolabelsfile*. This will also happen if the file specified by *autolabelsfile* is missing.<br>default: false
+*symbolfmaoutfile* | sf | output file name | Generate symbols file in FMA format compatible with bsnes-plus.
+

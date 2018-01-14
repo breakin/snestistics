@@ -27,7 +27,6 @@ struct Options {
 	std::string                  rewind_out_file;
 	std::string                  report_out_file;
 	std::string                  asm_out_file;
-	PredictEnum                  predict = PRD_FUNCTIONS;
 	std::string                  asm_header_file;
 	bool                         asm_print_pc = true;
 	bool                         asm_print_bytes = true;
@@ -36,6 +35,7 @@ struct Options {
 	bool                         asm_print_dp = true;
 	bool                         asm_lower_case_op = true;
 	bool                         asm_correct_wla = false;
+	PredictEnum                  predict = PRD_FUNCTIONS;
 };
 
 void parse_options(const int argc, const char * const argv[], Options &options);

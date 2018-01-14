@@ -51,8 +51,6 @@ namespace {
 		printf(" -reportoutfile (--rp) <filename>               Generate assembly report.\n");
 		printf("                                                Companion file to -asmoutfile.\n");
 		printf(" -asmoutfile (--a) <filename>                   Generate assembly listing.\n");
-		printf(" -predict (--p) <never|*functions*|everywhere>  This setting specify where snestistics is allowed to predict code.\n");
-		printf("                                                This is currently only used for assembly listing.\n");
 		printf(" -asmheaderfile (--ah) <filename>               File content will be included in assembly listing.\n");
 		printf(" -asmprintpc (--apc) <true|false>               Print program counter in assembly source listing.\n");
 		printf(" -asmprintbytes (--ab) <true|false>             Print opcode bytes in assembly source listing.\n");
@@ -61,6 +59,8 @@ namespace {
 		printf(" -asmprintdp (--adp) <true|false>               Print direct page in assembly source listing.\n");
 		printf(" -asmlowercaseop <true|false>                   Print lower-case opcode in assembly source listing.\n");
 		printf(" -asmcorrectwla <true|false>                    Make sure generated source compiled in WLA DX.\n");
+		printf(" -predict (--p) <never|*functions*|everywhere>  This setting specify where snestistics is allowed to predict code.\n");
+		printf("                                                This is currently only used for assembly listing.\n");
 	}
 }
 
@@ -128,12 +128,6 @@ void parse_options(const int argc, const char * const argv[], Options &options) 
 			options.asm_out_file = opt;
 			need_trace = true;
 			k++;
-		} else if (strcmp(cmd, "predict")==0 || strcmp(cmd, "-p")==0) {
-			if (strcmp(opt, "never")==0) options.predict = Options::PRD_NEVER;
-			if (strcmp(opt, "functions")==0) options.predict = Options::PRD_FUNCTIONS;
-			if (strcmp(opt, "everywhere")==0) options.predict = Options::PRD_EVERYWHERE;
-			need_trace = true;
-			k++;
 		} else if (strcmp(cmd, "asmheaderfile")==0 || strcmp(cmd, "-ah")==0) {
 			options.asm_header_file = opt;
 			k++;
@@ -157,6 +151,12 @@ void parse_options(const int argc, const char * const argv[], Options &options) 
 			k++;
 		} else if (strcmp(cmd, "asmcorrectwla")==0 || strcmp(cmd, "-")==0) {
 			options.asm_correct_wla = parse_bool(opt, error);
+			k++;
+		} else if (strcmp(cmd, "predict")==0 || strcmp(cmd, "-p")==0) {
+			if (strcmp(opt, "never")==0) options.predict = Options::PRD_NEVER;
+			if (strcmp(opt, "functions")==0) options.predict = Options::PRD_FUNCTIONS;
+			if (strcmp(opt, "everywhere")==0) options.predict = Options::PRD_EVERYWHERE;
+			need_trace = true;
 			k++;
 		} else {
 			printf("Switch '%s' not recognized\n", cmd);

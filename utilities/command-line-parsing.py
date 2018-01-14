@@ -23,7 +23,7 @@ options=[
 	Option("tracelog",   "NmiFirst",         "n0", "uint",    "0",     "First NMI to consider for trace log"),
 	Option("tracelog",   "NmiLast",          "n1", "uint",    "0",     "Last NMI to consider for trace log"),
 	Option("tracelog",   "TraceLog",         "tl", "output",  "",      "Generate trace log. Nmi range can be controlled using ${NmiFirst} and ${NmiLast}. Custom printing can be done using scripting"),
-	Option("tracelog",   "Script",           "s",  "input",   "",      "A squirrel script. See user guide for scripting reference"),
+	Option("scripting",  "Script",           "s",  "input",   "",      "A squirrel script. See user guide for scripting reference"),
 	Option("annotation", "Labels",           "l",  "input*",  "",      "A file containing annotations. Custom file format"),
 	Option("annotation", "AutoLabels",       "al", "inout",   "",      "A file containing annotations. It will be regenerated if missing or if ${AutoAnnotate} is specified"),
 	Option("annotation", "AutoAnnotate"    , "aa", "bool",    "false", "A file where automatically generated annotations are stored"),
@@ -31,7 +31,6 @@ options=[
 	Option("rewind",     "Rewind",           "rw", "output",  "",      "Generate rewind report in dot file format. Use graphviz to generate PDF/PNG report"),
 	Option("asm",        "Report",           "rp", "output",  "",      "Generate assembly report. Companion file to ${Asm}"),
 	Option("asm",        "Asm",              "a",  "output",  "",      "Generate assembly listing"),
-	Option("asm",        "Predict",          "p",  "enum",    "functions",      "This setting specify where snestistics is allowed to predict code. This is currently only used for assembly listing"),
 	Option("asm",        "AsmHeader",        "ah", "input",   "",      "File content will be included in assembly listing"),
 	Option("asm",        "AsmPrintPc",            "apc", "bool",    "true",  "Print program counter in assembly source listing"),
 	Option("asm",        "AsmPrintBytes",         "ab", "bool",    "true",  "Print opcode bytes in assembly source listing"),
@@ -41,8 +40,7 @@ options=[
 	Option("asm",        "AsmPrintDp",                "adp",   "bool", "true",  "Print direct page in assembly source listing"),
 	Option("asm",        "AsmLowerCaseOp",       "",   "bool", "true",  "Print lower-case opcode in assembly source listing"),
 	Option("asm",        "AsmCorrectWla",        "",   "bool", "false", "Make sure generated source compiled in WLA DX"),
-	# Future
-	# We could add an option to specify the format of the symbol file, but being able to export multiple in one go might be nice too
+	Option("predict",    "Predict",          "p",  "enum",    "functions",      "This setting specify where snestistics is allowed to predict code. This is currently only used for assembly listing"),
 ]
 
 # These are only used for the user guide
@@ -66,9 +64,20 @@ enums_prefix = {"RomHeader":"RH", "RomMode":"RM", "Predict":"PRD"}
 
 # Do not add meaningless but ok dependencies (such as asm-pc needing asm)
 needs={
-	"trace"        : set(["Asm", "TraceLog", "Rewind", "Regenerate", "Predict"]),
-	"single_trace" : set(["TraceLog", "Rewind"]),
-	"rom"          : set(["Trace"]),
+	"trace" : set([
+		"Asm",
+		"TraceLog",
+		"Rewind",
+		# "Regenerate",
+	 	"Predict"
+	 ]),
+	"single_trace" : set([
+		"TraceLog", 
+		"Rewind"
+	]),
+	"rom" : set([
+		"Trace"
+	]),
 }
 
 options_by_name = {}
@@ -177,7 +186,7 @@ def string_to_snake(s):
 			r = r + a
 	return r
 
-def write_documentation(file, section_prefix = "##"):
+def write_documentation(destination_prefix, section_prefix = "##"):
 
 	nice_types = {
 		"input"  : "input file name",
@@ -188,23 +197,19 @@ def write_documentation(file, section_prefix = "##"):
 		"enum"   : "enumeration"
 	}
 
-	sections=[
-		("rom", "Rom"),
-		("trace", "Trace"),
-		("asm", "Assembly Listing"),
-		("tracelog", "Trace Log"),
-		("annotation", "Annotations"),
-		("report", "Reports"),
-		("rewind", "Rewind"),
-	]
+	sections = set([])
+
+	for option in options:
+		sections.add(option.group)
 
 	for section in sections:
-		file.write(section_prefix + " " + section[1] + "\n")
+
+		file = open(destination_prefix + section + ".html", "wt")
 		file.write("Name | Short | Type | Description\n")
 		file.write(":----|-------|:-----|:-----------\n")
 
 		for option in options:
-			if option.group != section[0]:
+			if option.group != section:
 				continue
 
 			(name, type, multiple) = stripped_name_type(option)
@@ -244,7 +249,9 @@ def write_documentation(file, section_prefix = "##"):
 					else:
 						file.write("<br>**" + m.name +"**: " + m.description)
 			file.write("\n")
+
 		file.write("\n")
+		file.close()
 
 def generate_parser_header(file):
 
@@ -469,9 +476,7 @@ def generate_parser_source(file):
 					file.write("\t\t\tneed_" + need + " = true;\n")
 			file.write("\t\t\tk++;\n")
 
-file = open("../docs/_includes/generated-command-line-reference.html", "wt")
-write_documentation(file, "##")
-file.close()
+write_documentation("../docs/_includes/generated-cmd-")
 
 file2 = open("../source/options.h", "wt")
 generate_parser_header(file2)
