@@ -10,5 +10,4 @@ These are the current posts in the tutorial series. More are incoming!
 2. [Generating Trace and Assembly Listing](tutorial-first-asm)
 3. [Annotations](tutorial-annotations)
 4. [Code Prediction](tutorial-predict)
-5. [Auto Annotations](tutorial-auto)
-6. [Back to the game!](tutorial-re1)
+5. [Back to the game!](tutorial-re1)
