@@ -1,0 +1,89 @@
+<html>
+	<head>
+		<title>Snestistics: {{ title }}</title>
+		<style>
+			body {
+				background-color: #999999;
+				padding: 0px;
+				margin: 0px;
+				border: 0px;
+				vertical-align: baseline;
+				display: block;
+			}
+			#logo {
+				text-align: center;
+				font-size: 400%;
+				padding: 16px;
+			}
+			#logo a:visited { color: #FFF; text-decoration: none; font-weight: bold;}
+			#logo a:link { color: #FFF; text-decoration: none; font-weight: bold;}
+			#logo a:hover { color: #FFF; text-decoration: none; font-weight: bold;}
+			#logo a:active { color: #FFF; text-decoration: none; font-weight: bold;}
+			#header {
+				background-color: #0063A6;
+				width: 100%;
+				padding: 0px;
+				
+			}
+			#content {
+				background-color: #FFF;
+				padding: 10px;
+			}
+			#nav {
+				background-color: #0090D2;
+				padding: 10px;
+				font-size: 130%;
+			}
+			#footer {
+
+			}
+			#title {
+				text-align: center;
+				font-size: 150%;
+				padding: 8px;
+				color: #EEE;
+			}
+			div.inner {
+				max-width: 1400px;
+				margin-left: auto;
+				margin-right: auto;
+				margin-top: 0px;
+				margin-bottom: 0px;
+			}
+			#nav a:visited { color: #EEE; text-decoration:  none;}
+			#nav a:link { color: #EEE; text-decoration:  none;}
+			#nav a:hover { color: #FFF; text-decoration:  none;}
+			#nav a:active { color: #FFF; text-decoration:  none; }
+		</style>
+	</head>
+	<body>
+		<div id="header">
+			<div class="inner">
+				<div id="logo">
+					<a href="index">Snestistics</a><br>
+				</div>
+				<div id="title">
+					{{ title }}
+				</div>
+				<div id="nav">
+					<a href="index">home</a>
+					<a href="user-guide">user guide</a>
+					<a href="tutorial">tutorial</a>
+					<a href="history">history</a>
+					<a href="about">about</a>
+					<a href="https://github.com/breakin/snestistics">github</a>
+				</div>
+			</div>
+		</div>
+
+		<div id="main" class="inner">
+			<div id="content">
+				{{ content }}
+			</div>
+		</div>
+
+		<div id="footer" class="inner">
+			&nbsp;
+		</div>
+	</body>
+</html>

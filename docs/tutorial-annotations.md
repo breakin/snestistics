@@ -1,8 +1,7 @@
 ---
 title: Tutorial 2: Annotations (WIP)
+layout: default
 ---
-Introduction
-============
 So we have our assembler source. Now starts a cycle of reading assembler, understanding _something_ (small or big) and then to annotate the assembler source so we don't have to remember it all. In snestistics we have a file called a labels file where annotations can be added. Let's revisit the function from the first [tutorial](tutorial-1) that interacted with the joypad:
 
 ~~~~~~~~~~~~~~~~
@@ -234,6 +233,4 @@ Our current concept is that a function is a continuous range. We realize that si
 
 Closing words
 =============
-Working iteratively with labels is extremely powerful.
-
-[Here](code/tutorial2.labels) is the full labels file if you want to experiment with it. We will post a new one after each tutorial step so that you can follow along!
+Working iteratively with labels is extremely powerful. [Here](code/tutorial2.labels) is the full labels file if you want to experiment with it. We will post a new one after each tutorial step so that you can follow along! In the [next post](tutorial-predict) we will look how we can make the assembly listing even more beautiful.

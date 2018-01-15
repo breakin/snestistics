@@ -1,3 +1,7 @@
+---
+title: History
+layout: default
+---
 All text here is written by Anders Lindqvist (breakin).
 
 Before Early days (early 2013)
@@ -68,7 +72,7 @@ WIP.
 
 Adding emulation
 ================
-WIP.
+In the beginning snestistics was quite simple. The emulator knew about how the Snes CPU works and ran the code. It simply saved down at what program counters operations existed at and also the flags that affects instruction sizes/interpretation. This was very simple and worked for all games. Later when adding features such as the trace log snestistics needed to be able to actually replay the stream of operations. That is it needed to know the order they were executed in. To support this - and some other cool upcoming features - a CPU-emulator was added to snestistics. It is not complete yet and some features are missing, but thanks to this it is now possible to do tracelogs, change annotations and then generate a new tracelog quickly without involving the emulator.
 
 Adding a scripting language
 ===========================

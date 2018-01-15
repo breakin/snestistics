@@ -1,5 +1,6 @@
 ---
-title: default
+title: Tutorial 3: Dissecting the Game
+layout: default
 ---
 Introduction
 ============

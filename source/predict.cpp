@@ -56,14 +56,24 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 		Pointer target_jump, target_no_jump;
 		bool branch_or_jump = decode_static_jump(opcode, rom, pc, &target_jump, &target_no_jump);
 
-		if (!branch_or_jump || target_jump == INVALID_POINTER)
-			continue;
+		const Hint *hint = annotations.hint(pc);
+		if (hint && hint->has_hint(Hint::BRANCH_ALWAYS)) {
+			target_no_jump = INVALID_POINTER;
+		}
+		if (hint && hint->has_hint(Hint::BRANCH_NEVER)) {
+			target_jump = INVALID_POINTER;
+		}
 
-		trace.labels.set_bit(target_jump);
+		if (!branch_or_jump)
+			continue;
 
 		const Annotation *source_annotation = nullptr, *target_annotation = nullptr;
 		annotations.resolve_annotation(pc,          &source_annotation);
-		annotations.resolve_annotation(target_jump, &target_annotation);
+
+		if (target_jump != INVALID_POINTER) {
+			trace.labels.set_bit(target_jump);
+			annotations.resolve_annotation(target_jump, &target_annotation);
+		}
 
 		if (source_annotation || !limit_to_functions) {
 			PredictBranch p;
@@ -72,7 +82,7 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 			p.DB = example.DB;
 			p.DP = example.DP;
 			p.P  = example.P;
-			if (target_annotation == source_annotation || !limit_to_functions) {
+			if (target_jump != INVALID_POINTER && (target_annotation == source_annotation || !limit_to_functions)) {
 				p.pc = target_jump;
 				CUSTOM_ASSERT(target_jump != INVALID_POINTER);
 				predict_brances.push_back(p);
@@ -103,6 +113,11 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 		bool P_unknown = false;
 
 		if (inside_op[pc]) {
+			if (writer) {
+				sb.clear();
+				sb.format("Predicted jump at %06X jumped inside instruction at %06X. Consider adding a \"hint branch_always/branch_never %06X\" annotation.", pc, pb.from_pc, pb.from_pc);
+				writer->writeComment(sb);
+			}
 			printf("Warning; predicted jump went inside instruction at %06X (from %06X)\n", pc, pb.from_pc);
 		}
 
@@ -215,10 +230,14 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 				if (i != 0) inside_op.set_bit(bank_add(pc, i));
 			}
 
+			const Hint *hint = annotations.hint(pc);
+			if (hint && hint->has_hint(Hint::BRANCH_NEVER)) {
+				target_jump = INVALID_POINTER;
+			}
+
 			bool is_jsr = opcode == 0x20||opcode==0x22||opcode==0xFC;
 
-			const Hint *ta = annotations.hint(pc);
-			if (ta && ta->has_hint(Hint::JUMP_IS_JSR)) {
+			if (hint && hint->has_hint(Hint::JUMP_IS_JSR)) {
 				 is_jump_or_branch = false;
 				 is_jsr = true;
 			}
@@ -248,6 +267,12 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 					npb.pc = target_jump;
 					predict_brances.push_back(npb);
 				}
+
+				if (hint && hint->has_hint(Hint::BRANCH_ALWAYS)) {
+					// Never continoue after this op since it always diverges control flow
+					continue;
+				}
+
 			} else if (opcode == 0xE2) {
 				//	TODO:
 				//	* When we get a REP or SEP parts or P become known again. We could track unknown per the three flags and update.
@@ -273,7 +298,7 @@ void predict(Options::PredictEnum mode, ReportWriter *writer, const RomAccessor 
 					sb.clear();
 					sb.format("Not following jump with subroutine (opcode %02X) at %06X", opcode, pc);
 					if (pb.annotation)
-						sb.format("in %s.", pb.annotation->name.c_str());
+						sb.format(" in %s.", pb.annotation->name.c_str());
 					writer->writeComment(sb);
 				}
 			} else if (opcode == 0x40 || opcode == 0x6B || opcode == 0x60) {

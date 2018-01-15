@@ -1,5 +1,5 @@
-Welcome to Snestistics!
-=======================
-* [User Guide](user-guide)
-* [Tutorial](tutorial)
-* [History](history)
+---
+layout: default
+title: Snestistics
+---
+Welcome to snestistics.
