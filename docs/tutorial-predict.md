@@ -124,4 +124,4 @@ Prediction follow branches, long branches and jumps. For branches it also tries 
 
 Closing Word
 ============
-Code prediction is very powerful since it clean up a lot of small things that catch your eye and burden you with thought. The prediction report is very useful to catch the places where it fails. Sometimes it is hard to see where the incorrect prediction started and it can take some time and practice to get it right! Now it is high time we went back to our game and that is what we will do in the [next post](tutorial-re1).
+Code prediction is very powerful since it clean up a lot of small things that catch your eye and burden you with thought. The prediction report is very useful to catch the places where it fails. Sometimes it is hard to see where the incorrect prediction started and it can take some time and practice to get it right! In the [next post](tutorial-auto) we will look at the auto-annotation feature that is really handy if you hate doing boring work!
