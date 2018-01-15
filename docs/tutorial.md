@@ -7,5 +7,7 @@ Welcome to a tutorial series for snestistics. While snestistics itself is writte
 These are the current posts in the tutorial series. More are incoming!
 
 1. [Introduction](tutorial-1)
-2. [Annotations](tutorial-2)
-3. [Dissecting the Game](tutorial-3)
+2. [Dissecting the Game](tutorial-3)
+3. [Generating Trace and Assembly Listing](tutorial-first-asm)
+4. [Annotations](tutorial-annotations)
+5. [Code Prediction](tutorial-predict)
