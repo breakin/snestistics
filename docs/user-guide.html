@@ -1,18 +1,17 @@
 ---
-title: Snestistics User Guide
+title: User Guide
 layout: markdeep_api
 ---
-**Snestistics User Guide**
-
-Introduction
-============
-Snestistics is a tool that helps the user reverse engineer games for the Super Nintendo. In general snestistics wants a ROM-file (in .SMC/.SFC-format) and a trace-file. The [first entry](tutorial-1) in the [tutorial series](tutorial) shows how to create a trace file and how to make snestistics generate assembly listing.
+Snestistics is a tool that helps the user reverse engineer games for the Super Nintendo. In general snestistics wants a ROM-file (in .SMC/.SFC-format) and a trace-file. The [first entry](tutorial-1) in the tutorial series shows how to create a trace file and how to make snestistics generate assembly listing.
 
 Snestistics is an "emulator-guided" disassembler. This helps it beat other disassemblers doing only static analysis. Because of this one (or multiple) sessions must first be "recorded" in an emulator. Each such session yields a .trace-file that represent a particular run of the game.
 
 Command Line Reference
 ======================
-Each feature of snestistics has a few command line options of their own. These are shown in a table in the relevant section.
+Each feature of snestistics has a few command line options of their own. These are shown in a table in the relevant section. An example command line is as follows:
+~~~~~~~~~~~~~~
+snestistics -romfile myrom.sfc -autoannotate true -nmifirst 12 -nmilast 24 -asmoutfile output.asm
+~~~~~~~~~~~~~~
 
 ROM support
 ===========
@@ -93,6 +92,8 @@ Lines starting with @ are ignored. They are handy when writing notes to yourself
 ~~~~~~~~~~~~~~
 
 ## Hints
+
+WIP: Not all hints work yet.
 
 Hints is very similar to comments but they are structured. By having structured comments snestistics can read and understand them and use the information to make better choices during prediction of instruction that was not part of a trace, of relationships between functions during trace log as well as guiding auto-annotation of labels.
 ~~~~~~~~~~~~

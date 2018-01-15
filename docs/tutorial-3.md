@@ -1,5 +1,6 @@
 ---
 title: Tutorial 3: Dissecting the Game (WIP)
+layout: default
 ---
 Introduction
 ============

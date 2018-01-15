@@ -1,9 +1,10 @@
 ---
 title: Tutorial 1 - Introduction
+layout: default
 ---
 Introduction
 ============
-In order to do the [Super Famicon Wars (SFW) translation](http://www.romhacking.net/translations/3354) we had to start by understanding how to game worked. Once this was done an equally hard task was to change the game. But understanding came first. In order to understand we needed to reverse engineer! The tool [snestistics](https://github.com/breakin/snestistics) is what we used to solve this task. In order to complete it we had to add a lot of new features but it was worth it! [Here](history) is a detailed history on snestistics with discussion on why it works like it does. In this blog series we will simply show what you can do with snestistics and not compare it to other tools and approaches. When we started SFW snestistics was not very mature at all. A lot of tedious tasks we had to do by hand and writing a straightforward tutorial like this would not be possible!
+In order to do the [Super Famicon Wars (SFW) translation](http://www.romhacking.net/translations/3354) we had to start by understanding how to game worked. Once this was done an equally hard task was to change the game. But understanding came first. In order to understand we needed to reverse engineer! The tool [snestistics](https://github.com/breakin/snestistics) is what we used to solve this task. In order to complete it we had to add a lot of new features but it was worth it! [Here](about) is a detailed history on snestistics with discussion on why it works like it does. In this tutorial series we will simply show what you can do with snestistics and not compare it to other tools and approaches. When we started SFW snestistics was not very mature at all. A lot of tedious tasks we had to do by hand and writing a straightforward tutorial like this would not be possible!
 
 We assume that if you actually want to understand the code presented here in depth you will know some 65816 assembly and have a high-level understanding of the SNES.
 
@@ -53,7 +54,7 @@ Note that traces currently end up in the _current working directory_ so if you s
 
 Only the .trace-file is important and the other ones can be deleted.
 
-In a future post we will give more tips'n'trics to make things even better with regards to trace file creation in snes9x. For more information on why we are using an emulator and why it happens to currently be snes9x see [here](history).
+In a future post we will give more tips'n'trics to make things even better with regards to trace file creation in snes9x. For more information on why we are using an emulator and why it happens to currently be snes9x see [here](about).
 
 Running snestistics
 ===================

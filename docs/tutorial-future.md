@@ -8,7 +8,7 @@ We've tried it on other games with worse results and this is a feature I imagine
 SHOW COMMAND LINES FOR GENERATION AND FOR USAGE (BOTH MODES)
 ~~~~~~~
 
-See [manual](COMMAND LINE DOCS) for more command line options.
+See [user-guide](user-guide) for more command line options.
 
 Lets see how it fares on .Battle Pinball_.
 

@@ -1,5 +1,6 @@
 ---
 title: Tutorial 2: Annotations (WIP)
+layout: default
 ---
 Introduction
 ============

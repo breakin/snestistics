@@ -376,7 +376,9 @@ void AnnotationResolver::finalize() {
 	for (auto a : _annotations) {
 		largest_adress = std::max(largest_adress, a.endOfRange);
 	}
-
+	for (auto a : _hints) {
+		largest_adress = std::max(largest_adress, a.location);
+	}
 	uint32_t k = largest_adress + 1;
 	_annotation_for_adress.init(k);
 	_annotation_for_adress.fill(-1);

@@ -1,3 +1,7 @@
+---
+title: History
+layout: default
+---
 All text here is written by Anders Lindqvist (breakin).
 
 Before Early days (early 2013)
