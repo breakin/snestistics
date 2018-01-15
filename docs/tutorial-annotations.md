@@ -32,7 +32,7 @@ label_8083F0:
     /* Mi 80      80840A 60          */ rts
 ~~~~~~~~~~~~~~~~
 
-We hand-craft the following annotations and put them in the file _tutorial2.labels_.
+We hand-craft the following annotations and put them in a file called _pinball.labels_.
 ~~~~~~~~~~
 @ Preliminary functions. This line is only to make the .labels-file easier to work with.
 @ Good place to add TODO that you can search for.
@@ -54,7 +54,7 @@ snestistics
   -romfile battle_pinball.sfc
   -tracefile trace0.trace
   -asmoutfile pinball.asm
-  -labelsfile tutorial2.labels
+  -labelsfile pinball.labels
   -reportoutfile pinball_report.txt
 ~~~~~~~~~~~~~~~~
 
@@ -152,7 +152,7 @@ label_8082EA:
     /* mI 80      808304 60          */ rts
 ~~~~~~~~~~
 
-Well we don't know what it does (yet) and it is often hard to say without context, but what we can say is that it looks like a function. Let's add an annotation for it just for fun in tutorial2.labels:
+Well we don't know what it does (yet) and it is often hard to say without context, but what we can say is that it looks like a function. Let's add an annotation for it just for fun in pinball.labels:
 
 ~~~~~~~~~~
 function 8082CC 808304 Unknown1
@@ -233,4 +233,4 @@ Our current concept is that a function is a continuous range. We realize that si
 
 Closing words
 =============
-Working iteratively with labels is extremely powerful. [Here](code/tutorial2.labels) is the full labels file if you want to experiment with it. We will post a new one after each tutorial step so that you can follow along! In the [next post](tutorial-predict) we will look how we can make the assembly listing even more beautiful.
+Working iteratively with labels is extremely powerful. [Here](code/tutorial-annotations.labels) is the "finished" labels file if you want to experiment with it. We will post a new one after each tutorial step so that you can follow along! In the [next post](tutorial-predict) we will look how we can make the assembly listing even more beautiful.

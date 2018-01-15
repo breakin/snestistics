@@ -1,10 +1,8 @@
 ---
-title: Tutorial: Back to the game!
+title: Tutorial - Back to reverse engineering!
 layout: default
 ---
-Back to snestistics
--------------------
-Searching for the PC address where our tile map breakpoint hit in the disassembly, and using a bit of 65816 knowledge it seems likely that this range is a self contained function that takes care of writing tile map data to VRAM:
+This post continues where the [first post](tutorial-intro) left off. Now we have gained a lot of knowledge about how snestistics works and we have access to assembly listing for out game. Searching for the PC address where our tile map breakpoint hit in the disassembly, and using a bit of 65816 knowledge it seems likely that this range is a self contained function that takes care of writing tile map data to VRAM:
 ```
 Auto0005:
     /* m* 80      80820C E2 20       */ sep.b #$20
@@ -141,5 +139,5 @@ _NMI_vram_memcpy_done:
 With a bit of experience it's quite easy to determine the structure of the data at `$0100`, but we'll leave that excerise to the reader for now!
 
 Next steps
-----------
+==========
 We've now discovered the function responsible for copying characters to VRAM from an array at `$0100`. Elsewhere in the program data has to be read from ROM, possible undergo some kind of transformation, and get written to that array. Putting a write breakpoint at CPU memory location `$0100` should give some answers!
