@@ -8,3 +8,4 @@ These are the current posts in the tutorial series. More are incoming!
 
 1. [Introduction](tutorial-1)
 2. [Annotations](tutorial-2)
+3. [Dissecting the Game](tutorial-3)

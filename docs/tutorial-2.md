@@ -233,6 +233,4 @@ Our current concept is that a function is a continuous range. We realize that si
 
 Closing words
 =============
-Working iteratively with labels is extremely powerful.
-
-[Here](code/tutorial2.labels) is the full labels file if you want to experiment with it. We will post a new one after each tutorial step so that you can follow along!
+Working iteratively with labels is extremely powerful. [Here](code/tutorial2.labels) is the full labels file if you want to experiment with it. We will post a new one after each tutorial step so that you can follow along! In the [next post](tutorial-3) we will start looking at actually doing something with _Battle Pinball_.
