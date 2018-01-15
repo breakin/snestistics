@@ -2,6 +2,8 @@
 title: Tutorial X - Predict
 layout: default
 ---
+This tutorial post will go in-depth in the assembly listing to clean it up. Feel free to skip it or save it for later; it is optional!
+
 By now you've might have looked a bit at the source code and you might have noticed something strange. Something annoying. Lets take a look.
 In the generated assembler listing we can find short spurs of data in the middle of code. Something like this
 ~~~~~~~~~~~~~~~~
