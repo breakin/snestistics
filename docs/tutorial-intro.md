@@ -2,25 +2,25 @@
 title: Tutorial 1 - Introduction
 layout: default
 ---
-In order to do the [Super Famicon Wars (SFW) translation](http://www.romhacking.net/translations/3354) we had to start by understanding how to game worked. Once this was done an equally hard task was to change the game. But understanding came first. In order to understand it we used the tool [snestistics](https://github.com/breakin/snestistics). In order to complete it we had to add a lot of new features as well but it was worth it! [Here](about) is a detailed history on snestistics with discussion on why it works like it does. In this tutorial series we will simply show what you can do with snestistics and not compare it to other tools and approaches. When we started SFW snestistics was not very mature at all. A lot of tedious tasks we had to do by hand and writing a straightforward tutorial like this would not be possible!
+In order to do the [Super Famicon Wars (SFW) translation](http://www.romhacking.net/translations/3354) we had to start by understanding how to game worked. Once this was done an equally hard task was to modify the game. But understanding came first. In order to understand it we used [snestistics](https://github.com/breakin/snestistics). Lots of new features were added during this process, but it was worth it! [Here](about) is a detailed history on snestistics with discussion on why it works like it does. 
 
-We assume that if you actually want to understand the code presented here in depth you will know some 65816 assembly and have a high-level understanding of the SNES.
+In this tutorial series we will simply show what you can do with snestistics and not compare it to other tools and approaches. When we started SFW snestistics was not very mature at all. A lot of tedious tasks we had to do by hand and writing a straightforward tutorial like this would not be possible!
+
+We assume that if you actually want to understand the code presented here in depth you will know some 65816 assembly and have a high-level understanding of the SNES. Martin Korth's [fullsnes](http://problemkaputt.de/fullsnes.htm) document is a great reference on all parts that make the SNES tick.
 
 The Game
 ========
-The game we are going to take a closer look at is the japanese game [Battle Pinball](https://www.youtube.com/watch?v=VKIM2FrK2zY), spin-off game in the [Compati Hero Series](https://en.wikipedia.org/wiki/Compati_Hero_Series).
+The game we are going to take a closer look at is the japanese game [Battle Pinball](https://www.youtube.com/watch?v=VKIM2FrK2zY), a spin-off game in the [Compati Hero Series](https://en.wikipedia.org/wiki/Compati_Hero_Series).
 
-While not sure we will actually attain anything specific with this game, two possible ideas is to add SaveRAM support for the high score list and translate the pretty minimal amount of Japanese text on display to English. As you can see the intro and the level selector is in Japanese while in-game text is a mix of English and Japanese. When we were doing SFW we worked in secret mode until we *knew* we could do it. This time we just start pulling on some threads in public to see where we end up. No promises!
+While not sure if we'll actually attain anything specific with this game, two possible ideas is to add SaveRAM support for the high score list and translate the pretty minimal amount of Japanese text on display to English. As you can see the intro and the level selector is in Japanese while in-game text is a mix of English and Japanese. When we were doing SFW we worked in secret mode until we *knew* we could do it. This time we just start pulling on some threads in public to see where we end up. No promises!
 
-While we own a physical copy of the game and have dumped it ourselves we are not allowed to share the ROM and also not allowed to share the source code for the ROM even though we've dissassemblied it myself. Thus you, the reader, will only see glimps and for the full picture (text really!) you will need to run snestistics on a ROM you've obtained yourself. Furthermore snestistics is constantly being updated/improved so the snippets shown here might not be fully accurate. We will try to update this tutorial series when snestistics is changed so that it is current.
+While we own a physical copy of the game and have dumped it ourselves we are not allowed to share the ROM and also not allowed to share the full source code for the ROM. Thus you, the reader, will only see some glimpses here and for the full picture (text really!) you will need to run snestistics on a ROM you've obtained yourself. Furthermore snestistics is constantly being updated/improved so the snippets shown here might not be fully accurate. We will try to update this tutorial series as snestistics changes so it remains correct.
 
-Dissecting the game
-===================
+Pulling it apart
+================
 Now let's focus in on the parts of Battle Pinball we want to understand! An emulator with debugging features is an essential tool in this process. We'll be using [bsnes+](https://github.com/devinacker/bsnes-plus) for this task.
 
 As previously mentioned we thought it'd be fun to translate the little text there is, as well as add SRAM serialization of the High Score Table. A high quality translation usually means a pretty invasive rewriting of the text system, preferably including a so called Variable Width Font routine to render typographically pleasing text. For this game we won't be so fancy, but look forward to the open source release of our Super Famicom Wars translation for more details on our take on that!
-
-`TODO: Add paragraph about "skill level" and links to some useful resources`
 
 Title Screen
 ------------
@@ -42,7 +42,7 @@ Pressing `START` we arrive at a cut scene of sorts featuring a text writer.
 
 ![Text Writer](/images/tutorial-3/intro_text.png)
 
-Taking a peek at the VRAM contents this time we discover that a 16x16 pixel Hiragana font is used, with some Katakana thrown in for good measure.
+Taking a peek at the VRAM contents this time we discover that a 16x16 pixel font is used, featuring a [Hiragana](https://en.wikipedia.org/wiki/Hiragana) subset with some [Katakana](https://en.wikipedia.org/wiki/Katakana) thrown in for good measure.
 
 ![Text Writer BG3 Tiles](/images/tutorial-3/intro_text_bg3_tiles.png)
 
@@ -67,7 +67,7 @@ I've also selected the upper left tile of the 5th glyph, and the inspector panel
 
 ![Text Writer VRAM Breakpoint](/images/tutorial-3/intro_text_vram_breakpoint.png)
 
-A-ha! To my surprise DMA is not involved. Instead we discover a routine writing values to VRAM by directly banging register `$2218`, the VRAM data port. The little glimpse of code visible in the Disassembly view reveals that source data is located in RAM location `$0104` indexed by X, and that the VRAM destination is stored just before the tile data at address `$0102`.
+A-ha! Surprisingly DMA is not involved. Instead we discover a routine writing values to VRAM by directly banging register `$2218`, the VRAM data port. The little glimpse of code visible in the Disassembly view reveals that source data is located in RAM location `$0104` indexed by X, and that the VRAM destination is stored just before the tile data at address `$0102`.
 
 To get a better view of this routine and the code around it helps to have a nice assembly listing of the full game, something that snestistics can give us. Lets find out how in the [next post](tutorial-first-asm).
 
