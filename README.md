@@ -1,8 +1,6 @@
-Emulation guided disassembler for Super Nintendo games.
-It is aimed at helping user understand what happens on the Snes CPU for a given game.
+Emulation guided disassembler for Super Nintendo games. Aimed at helping user understand Snes games in order to change them!
 
-Snestistics works by saving data while emulating a play session in an emulator. Using this data snestistics itself can quickly generate assembler source and other useful reports.
-Annotations can be added to make the assembler source code more readable. This enables a very quick iterative workflow where you can read the assembler source, add/change annotations and then re-generate the source. 
+It works by saving data during a emulator play session. Using this data snestistics can quickly generate assembler source. Annotations about functions and data can be added to make the assembler source code more readable. This enables a very quick iterative work-flow where you can read the assembler source, add/change annotations and then re-generate the source.
 
 Building on Windows
 ===================

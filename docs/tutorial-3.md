@@ -2,8 +2,6 @@
 title: Tutorial 3: Dissecting the Game (WIP)
 layout: default
 ---
-Introduction
-============
 In parts 1 and 2 we introduced how snestistics is used to iteratively build an annotated disassembly of a SNES ROM. Now let's focus in on the parts of Battle Pinball we want to understand! An emulator with debugging features is an essential tool in this process. We'll be using [bsnes+](https://github.com/devinacker/bsnes-plus) for this task.
 
 As previously mentioned we thought it'd be fun to translate the little text there is, as well as add SRAM serialization of the High Score Table. A high quality translation usually means a pretty invasive rewriting of the text system, preferably including a so called Variable Width Font routine to render typographically pleasing text. For this game we won't be so fancy, but look forward to the open source release of our Super Famicom Wars translation for more details on our take on that!
