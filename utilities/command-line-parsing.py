@@ -205,8 +205,8 @@ def write_documentation(destination_prefix, section_prefix = "##"):
 	for section in sections:
 
 		file = open(destination_prefix + section + ".html", "wt")
-		file.write("Name | Short | Type | Description\n")
-		file.write(":----|-------|:-----|:-----------\n")
+		file.write("Switch Name | Short | Type | Description\n")
+		file.write(":-----------|-------|:-----|:-----------\n")
 
 		for option in options:
 			if option.group != section:
