@@ -39,4 +39,5 @@ For a full history of snestistics see the [history](history) page.
 Contact
 =======
 Feel free to engage with me at [twitter](https://twitter.com/anders_breakin)!
+
 NOTE: We will not provide ROMs. All ROMs we've used has been extracted from cartridges that we own.
