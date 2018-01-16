@@ -1,5 +1,5 @@
 ---
-title: Tutorial X - Predict
+title: Tutorial 4: Code Prediction
 layout: default
 ---
 This tutorial post will go in-depth in the assembly listing to clean it up. Feel free to skip it or save it for later; it is optional!

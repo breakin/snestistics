@@ -1,5 +1,5 @@
 ---
-title: Tutorial - Back to reverse engineering!
+title: Tutorial 6: Back to reverse engineering!
 layout: default
 ---
 This post continues where the [first post](tutorial-intro) left off. Now we have gained a lot of knowledge about how snestistics works and we have access to assembly listing for out game. Searching for the PC address where our tile map breakpoint hit in the disassembly, and using a bit of 65816 knowledge it seems likely that this range is a self contained function that takes care of writing tile map data to VRAM:

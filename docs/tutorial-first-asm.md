@@ -1,5 +1,5 @@
 ---
-title: Tutorial - Generating Trace and Assembly Listing
+title: Tutorial 2: Generating Trace and Assembly Listing
 layout: default
 ---
 Here we start to actually use snestistics.
@@ -10,19 +10,19 @@ The first step to obtain the disassembly is to use the special version of snes9x
 
 First start our version of snes9x (snes9x-snestistics.exe). Note the _Snestistics_ menu right next to the help menu.
 
-![Booting up our Snes9x](/images/tutorial-1/startup.png)
+![Booting up our Snes9x](/images/tutorial-first-asm/startup.png)
 
 Now we load the _Battle Pinball_ ROM and let the game start. Here is an image from the intro:
 
-![Intro for the game](/images/tutorial-1/intro.png)
+![Intro for the game](/images/tutorial-first-asm/intro.png)
 
 Now when we are satisfied we select _Snestistics->Save trace and exit..._:
 
-![Saving trace](/images/tutorial-1/saving-trace.png)
+![Saving trace](/images/tutorial-first-asm/saving-trace.png)
 
 The trace can now be found in the _Roms_ directory and the files can look something like this:
 
-![Locating trace](/images/tutorial-1/trace-file.png)
+![Locating trace](/images/tutorial-first-asm/trace-file.png)
 
 Note that traces currently end up in the _current working directory_ so if you start a movie playback in snes9x the traces will end up in the directory of the movie instead. This will probably be fixed in a future version of snes9x-snestistics.
 
@@ -203,4 +203,4 @@ The short story is that the source code is almost WLA-DX compatible and provided
 
 Closing words
 =============
-That was all! In the [next post](tutorial-annotations) we will look at how you can start annotating the source code once you start to discover what things do.
+That was all! It might seem clunky with raw assembler source code now that we live in the future but we promise that once you get it into a proper text editor (such as Sublime Text that we use) it is very easy to jump around and search for label names and other things of interest. In the [next post](tutorial-annotations) we will look at how you can start annotating the source code once you start to discover what things do.

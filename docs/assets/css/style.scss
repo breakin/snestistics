@@ -1,0 +1,19 @@
+---
+---
+@import "{{ site.theme }}";
+
+.wrapper {
+	width: 1200px;
+}
+
+footer {
+	width: 1200px;
+}
+
+navigation {
+	padding: 5px 0px;
+	display: block;
+	text-align: center;
+	font-weight: 500;
+	font-size: 130%;
+}

@@ -1,5 +1,5 @@
 ---
-title: Tutorial X - Auto Annotations
+title: Tutorial 5: Auto Annotations
 layout: default
 ---
 There are many small functions that does _something_. Often we don't need to know what they all do, but some of the tools in snestistics such as the trace log wants all program counters that are executed during a trace log session to be in annotated functions. When we did the SFW translation Anders did 1000s of functions manually (mostly since he wanted to help David out and he was procrastinating on the next feature for snestistics). Then one day he said enough and wrote an auto-detector that worked really well for SFW. It found an additional 500 functions and then there was no more manual work to be done.
@@ -17,7 +17,7 @@ snestistics
 ~~~~~~~~~~~~~~~~~~~~~~~
 See [user-guide](user-guide) for more command line options.
 
-Lets see how it fares on .Battle Pinball_.
+Lets see how it fares on _Battle Pinball_.
 
 Before auto-annotate:
 ~~~~~~~~~~~~~~~~~~~~~~~

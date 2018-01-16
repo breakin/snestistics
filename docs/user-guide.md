@@ -1,6 +1,6 @@
 ---
 title: User Guide
-layout: markdeep_api
+layout: default
 ---
 Snestistics is a tool that helps the user reverse engineer games for the Super Nintendo. In general snestistics wants a ROM-file (in .SMC/.SFC-format) and a trace-file. The [first entry](tutorial-1) in the tutorial series shows how to create a trace file and how to make snestistics generate assembly listing.
 
@@ -172,99 +172,63 @@ These are the operations that can be performed on an instance of the Replay clas
 replay.set_breakpoint(pc)
     integer pc: the program counter to set a break point at
     returns: nothing
-~~~~~~
 
-~~~~~~
 replay.set_breakpoint_range(pc_start, pc_end)
     integer pc_start: the first program counter to set a break point at
     integer pc_end: the last program counter to set a break point at
     returns: nothing
-~~~~~~
 
-~~~~~~
 replay.read_byte(address)
     integer address: 24-bit address specifying where to read a byte (8-bit)
     returns: integer
-~~~~~~
 
-~~~~~~
 replay.read_word(address)
     integer address: 24-bit address specifying where to read a byte (16-bit)
     returns: integer
-~~~~~~
 
-~~~~~~
 replay.read_long(address)
     integer address: 24-bit address specifying where to read a byte (24-bit)
     returns: integer
-~~~~~~
 
-~~~~~~
 replay.pc()
     returns: current program counter
-~~~~~~
 
-~~~~~~
 replay.a()
     returns: current value of register a (16-bit)
-~~~~~~
 
-~~~~~~
 replay.al()
     returns: current low byte of register a (8-bit)
-~~~~~~
 
-~~~~~~
 replay.ah()
     returns: current high byte of register a (8-bit)
-~~~~~~
 
-~~~~~~
 replay.x()
     returns: current value of register x (16-bit)
-~~~~~~
 
-~~~~~~
 replay.xl()
     returns: current low byte of register x (8-bit)
-~~~~~~
 
-~~~~~~
 replay.xh()
     returns: current high byte of register x (8-bit)
-~~~~~~
 
-~~~~~~
 replay.y()
     returns: current value of register y (16-bit)
-~~~~~~
 
-~~~~~~
 replay.yl()
     returns: current low byte of register y (8-bit)
-~~~~~~
 
-~~~~~~
 replay.yh()
     returns: current high byte of register y (8-bit)
-~~~~~~
 
-~~~~~~
 replay.p()
     returns: current value of status register (16-bit)
-~~~~~~
 
-~~~~~~
 replay.s()
     returns: current value of stack register (16-bit)
-~~~~~~
 
-~~~~~~
 replay.dp()
     returns: current value of direct page register (16-bit)
-~~~~~~
 
-~~~~~~
 replay.db()
     returns: current value of data bank register (8-bit)
 ~~~~~~

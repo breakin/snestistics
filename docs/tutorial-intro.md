@@ -1,5 +1,5 @@
 ---
-title: Tutorial 1 - Introduction
+title: Tutorial 1: Introduction
 layout: default
 ---
 In order to do the [Super Famicon Wars (SFW) translation](http://www.romhacking.net/translations/3354) we had to start by understanding how to game worked. Once this was done an equally hard task was to modify the game. But understanding came first. In order to understand it we used [snestistics](https://github.com/breakin/snestistics). Lots of new features were added during this process, but it was worth it! [Here](about) is a detailed history on snestistics with discussion on why it works like it does. 
@@ -26,11 +26,11 @@ Title Screen
 ------------
 The first Japanese text appears on the title screen.
 
-![Title Screen](/images/tutorial-3/title_screen.png)
+![Title Screen](/images/tutorial-intro/title_screen.png)
 
 The logo is pretty neat as is with its English subtitle, so we probably won't look into replacing that. The list of credited copyright holders could be nice to make legible for English players, though. Let's see how its graphics are organized.
 
-![Title Screen BG3 Tiles](/images/tutorial-3/title_screen_bg3_tiles.png)
+![Title Screen BG3 Tiles](/images/tutorial-intro/title_screen_bg3_tiles.png)
 
 Using bsnes+'s Tile Viewer we can see that the credits are not rendered with a font, but instead are composed using "pre-baked" 2-bit tiles. So all hacking needed to change this screen is to find how those tiles get transferred to VRAM. If the data is compressed, which is the norm on SNES, we will need to either reverse engineer the compression algorithm or make up more space in ROM and store a modified tile set uncompressed. 
 
@@ -40,11 +40,11 @@ Intro "Cut Scene"
 -----------------
 Pressing `START` we arrive at a cut scene of sorts featuring a text writer.
 
-![Text Writer](/images/tutorial-3/intro_text.png)
+![Text Writer](/images/tutorial-intro/intro_text.png)
 
 Taking a peek at the VRAM contents this time we discover that a 16x16 pixel font is used, featuring a [Hiragana](https://en.wikipedia.org/wiki/Hiragana) subset with some [Katakana](https://en.wikipedia.org/wiki/Katakana) thrown in for good measure.
 
-![Text Writer BG3 Tiles](/images/tutorial-3/intro_text_bg3_tiles.png)
+![Text Writer BG3 Tiles](/images/tutorial-intro/intro_text_bg3_tiles.png)
 
 There's only 48 glyphs available without increasing the number of tiles used. So we can either go for an ALL-CAPS latin replacement font, or we could try spilling over to what looks like the half-overwritten remains of an 8x8 pixel latin+katakana font. In any case the two tasks involved to translate this screen is:
 
@@ -57,7 +57,7 @@ Intro Text Printer
 ------------------
 We already found out, via bsnes+'s excellent Tile Viewer, that the tiles used for the intro text are assigned to the 2-bit per pixel BG3 layer. The next logical step is to find out where in VRAM the tile map data is allocated, and then follow the trail from there. 
 
-![Text Writer BG3 Map](/images/tutorial-3/intro_text_bg3_map.png)
+![Text Writer BG3 Map](/images/tutorial-intro/intro_text_bg3_map.png)
 
 Opening the Tile Map viewer and switching it to view BG3 reveals that the map base address is `0xb800`. We can also note that the programmers have opted to use 8x8 tiles instead of 16x16 tiles. In theory the latter option would also work and would be slightly more convenient, but then the 8 pixel space between lines of text would need to be accomplished with HDMA or IRQ trickery instead. 
 
@@ -65,7 +65,7 @@ I've also selected the upper left tile of the 5th glyph, and the inspector panel
 
 > Note: All VRAM locations are written as byte addresses.
 
-![Text Writer VRAM Breakpoint](/images/tutorial-3/intro_text_vram_breakpoint.png)
+![Text Writer VRAM Breakpoint](/images/tutorial-intro/intro_text_vram_breakpoint.png)
 
 A-ha! Surprisingly DMA is not involved. Instead we discover a routine writing values to VRAM by directly banging register `$2218`, the VRAM data port. The little glimpse of code visible in the Disassembly view reveals that source data is located in RAM location `$0104` indexed by X, and that the VRAM destination is stored just before the tile data at address `$0102`.
 

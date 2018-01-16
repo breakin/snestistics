@@ -1,5 +1,5 @@
 ---
-title: Tutorial 2: Annotations (WIP)
+title: Tutorial 3: Adding Annotations
 layout: default
 ---
 So we have our assembler source. Now starts a cycle of reading assembler, understanding _something_ (small or big) and then to annotate the assembler source so we don't have to remember it all. In snestistics we have a file called a labels file where annotations can be added. Let's revisit the function from the first [tutorial](tutorial-1) that interacted with the joypad:
