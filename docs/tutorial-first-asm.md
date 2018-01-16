@@ -1,5 +1,5 @@
 ---
-title: Tutorial 2: Generating Trace and Assembly Listing
+title: Tutorial 2 - Generating Trace and Assembly Listing
 layout: default
 ---
 Here we start to actually use snestistics.

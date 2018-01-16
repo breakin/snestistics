@@ -2,6 +2,8 @@
 title: About
 layout: default
 ---
+Welcome to Snestistics. If you find any errors on this home page or in snestistics itself, feel free to [open an issue on github](https://github.com/breakin/snestistics/issues) or to reach out to me on [twitter](https://twitter.com/anders_breakin).
+
 Features
 ========
 * Generate Assembler source
@@ -21,8 +23,8 @@ Current Limitations
 * Emulator has bugs; if you are working on a game and want to try snestistics, just ask me and I (breakin) will help you fix the emulation errors for that particular game. This helps me prioritize things that are actually needed by someone.
 * Doesn't know about extension cartridges but it might work. Ask me if you want to try this.
 * No support for games where code is executed from RAM (bank $7e or $7f)
-* No idea how it will work if there are extension cartridges!
 * No emulation of PPU memory
+* See [bugs on github](https://github.com/breakin/snestistics/labels/bug)
 
 Claim to Fame
 =============

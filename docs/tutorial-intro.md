@@ -1,5 +1,5 @@
 ---
-title: Tutorial 1: Introduction
+title: Tutorial 1 - Introduction
 layout: default
 ---
 In order to do the [Super Famicon Wars (SFW) translation](http://www.romhacking.net/translations/3354) we had to start by understanding how to game worked. Once this was done an equally hard task was to modify the game. But understanding came first. In order to understand it we used [snestistics](https://github.com/breakin/snestistics). Lots of new features were added during this process, but it was worth it! [Here](about) is a detailed history on snestistics with discussion on why it works like it does. 
