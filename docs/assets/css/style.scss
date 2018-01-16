@@ -17,3 +17,7 @@ navigation {
 	font-weight: 500;
 	font-size: 130%;
 }
+
+ul > * > ul {
+	margin: 0;
+}
