@@ -2,7 +2,7 @@ Emulation guided disassembler for Super Nintendo games. Aimed at helping user un
 
 It works by saving data during a emulator play session. Using this data snestistics can quickly generate assembler source. Annotations about functions and data can be added to make the assembler source code more readable. This enables a very quick iterative work-flow where you can read the assembler source, add/change annotations and then re-generate the source.
 
-For more information see the project page at [https://github.com/breakin/snestistics](https://github.com/breakin/snestistics).
+For more information see the project page at [https://breakin.github.io/snestistics](https://breakin.github.io/snestistics).
 
 Building on Windows
 ===================
