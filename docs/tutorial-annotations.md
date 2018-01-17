@@ -1,8 +1,8 @@
 ---
-title: Tutorial 3 - Adding Annotations
+title: Tutorial 3 • Adding Annotations
 layout: default
 ---
-So we have our assembler source. Now starts a cycle of reading assembler, understanding _something_ (small or big) and then to annotate the assembler source so we don't have to remember it all. In snestistics we have a file called a labels file where annotations can be added. Let's revisit the function from the second [tutorial](tutorial-first-asm) that interacted with the joypad:
+So we have our assembler source. Now starts a cycle of reading assembler, understanding _something_ (small or big) and then to annotate the assembler source so we don't have to remember it all. In snestistics we have a file called a labels file where annotations can be added. Let's revisit the function from the [previous post](tutorial-first-asm) that interacted with the joypad:
 
 ~~~~~~~~~~~~~~~~
 label_8083DF:
@@ -96,8 +96,8 @@ So that looks nicer! As you investigate the source comments can be added and cha
 
 Are there any other benefits to adding annotations besides comments? I'm glad you asked!
 
-Jumps to annotated function
----------------------------
+Jumps to an annotated function
+------------------------------
 So let's search for the word JoyPad1 in the generated assembly source. We only get one hit (not counting the annotated function itself):
 ~~~~~~~~~~
 label_8082C5:
@@ -233,4 +233,6 @@ Our current concept is that a function is a continuous range. We realize that si
 
 Closing words
 =============
-Working iteratively with labels is extremely powerful. [Here](code/tutorial-annotations.labels) is the "finished" labels file if you want to experiment with it. We will post a new one after each tutorial step so that you can follow along! In the [next post](tutorial-predict) we will look how we can make the assembly listing even more beautiful.
+Working iteratively with labels is extremely powerful. [Here](code/tutorial-annotations.labels) is the "finished" labels file if you want to experiment with it. We will post a new one after each tutorial step so that you can follow along!
+
+In the [next post](tutorial-predict) we will look how we can make the assembly listing even more beautiful.

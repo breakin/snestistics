@@ -1,12 +1,10 @@
 ---
-title: Tutorial 4 - Code Prediction
+title: Tutorial 4 • Code Prediction
 layout: default
 ---
 This tutorial post will go in-depth in the assembly listing to clean it up. Feel free to skip it or save it for later; it is optional!
 
-By now you've might have looked a bit at the source code and you might have noticed something strange. Something annoying. Let's take a look.
-
-In the generated assembler listing we can find short spurs of data in the middle of code. Something like this
+By now you've might have looked a bit at the source code and you might have noticed something strange. Something annoying. Let's take a look. In the generated assembler listing we can find short spurs of data in the middle of code. Something like this:
 ~~~~~~~~~~~~~~~~
 label_80821
     /* *I 80      80821E E2 20       */ sep.b #$20
@@ -26,7 +24,7 @@ label_80822A:
     /* MI 80      808234 BD 02 01    */ lda.w $0102,x
     /* MI 80      808237 8D 16 21    */ sta.w REG_VMADDL
 ~~~~~~~~~~~~~~~~
-What is that about? Well in this case there is code at the address after the instruction at 808227 but it was never run as part of our emulation session. Luckily the primitive prediction heuristic built into snestistics can mitigate this. Let's test a new command line option!
+What is that about? Well in this case there is code at the address after the instruction at `808227` but it was never run as part of our emulation session. Luckily the primitive prediction heuristic built into snestistics can mitigate this. Let's test a new command line option!
 ~~~~~~~~~~~~~~~~
 snestistics
   -romfile battle_pinball.sfc
@@ -54,7 +52,7 @@ label_80822A:
     /* MI 80      808234 BD 02 01    */ lda.w $0102,x
     /* MI 80      808237 8D 16 21    */ sta.w REG_VMADDL
 ~~~~~~~~~~~~~~~~
-The *p* before the instruction at 808229 means *predicted*. In this case snestistics just predicted that the bpl at 808227 sometime can not jump even though that didn't happen in this session. What happens when this assumption is faulty? From the report file *pinball_report.txt* we can find the following in the prediction report:
+The *p* before the instruction at `808229` means *predicted*. In this case snestistics just predicted that the `bpl` at `808227` sometime can not jump even though that didn't happen in this session. What happens when this assumption is faulty? From the report file *pinball_report.txt* we can find the following in the prediction report:
 ~~~~~~~~~~~~~~~~
 Predicted jump at 81E914 jumped inside instruction at 81E8F7. Consider adding a "hint branch_always/branch_never 81E8F7" annotation.
 Predicted jump at 81E932 jumped inside instruction at 81E907. Consider adding a "hint branch_always/branch_never 81E907" annotation.
@@ -98,7 +96,7 @@ label_8186DC:
     /*pmi 81 0B00 8186E4 3A          */ dec A
     ...
 ~~~~~~~~~~~~~~~~
-The *brk* instruction feels very weird. It could be debug code though so who knows? The prediction report suggest adding the following line to the labels-file:
+The `brk` instruction feels very weird. It could be debug code though so who knows? The prediction report suggest adding the following line to the labels-file:
 ~~~~~~~~~~~~~~~~
 hint 8186C0 branch_always
 ~~~~~~~~~~~~~~~~
@@ -123,6 +121,8 @@ Some words about the heuristic
 ==============================
 Prediction follow branches, long branches and jumps. For branches it also tries to fall-through case (except for the BRA-branch of course which never can fall through). Whenever a return of some form (RTI, RTS, RTL) is found prediction stops. Whenever it needs to determine the size of the instruction that needs the instruction sizes and it is unsure about instruction sizes it gives up.
 
-Closing Word
-============
-Code prediction is very powerful since it clean up a lot of small things that catch your eye and burden you with thought. The prediction report is very useful to catch the places where it fails. Sometimes it is hard to see where the incorrect prediction started and it can take some time and practice to get it right! In the [next post](tutorial-auto) we will look at the auto-annotation feature that is really handy if you hate doing boring work! The labels file for this tutorial post can be found [here](code/tutorial-predict.labels). Remember that multiple labels file can be loaded at the same time using multiple *-labels* statements.
+Closing Words
+=============
+Code prediction is very powerful since it clean up a lot of small things that catch your eye and burden you with thought. The prediction report is very useful to catch the places where it fails. Sometimes it is hard to see where the incorrect prediction started and it can take some time and practice to get it right! The labels file for this tutorial post can be found [here](code/tutorial-predict.labels). Remember that multiple labels file can be loaded at the same time using multiple *-labels* statements.
+
+In the [next post](tutorial-auto) we will look at the auto-annotation feature that is really handy if you hate doing boring work! 

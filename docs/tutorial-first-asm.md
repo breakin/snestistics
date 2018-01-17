@@ -1,5 +1,5 @@
 ---
-title: Tutorial 2 - Generating Trace and Assembly Listing
+title: Tutorial 2 • Generating Trace and Assembly Listing
 layout: default
 ---
 Here we start to actually use snestistics.
@@ -203,4 +203,6 @@ The short story is that the source code is almost WLA-DX compatible and provided
 
 Closing words
 =============
-That was all! It might seem clunky with raw assembler source code now that we live in the future but we promise that once you get it into a proper text editor (such as Sublime Text that we use) it is very easy to jump around and search for label names and other things of interest. In the [next post](tutorial-annotations) we will look at how you can start annotating the source code once you start to discover what things do.
+That was all! It might seem clunky with raw assembler source code now that we live in the future but we promise that once you get it into a proper text editor (such as [Sublime Text](https://www.sublimetext.com), which we use) it is very easy to jump around and search for label names and other things of interest. 
+
+In the [next post](tutorial-annotations) we will look at how you can start annotating the source code once you start to discover what things do.

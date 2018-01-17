@@ -2,18 +2,18 @@
 title: User Guide
 layout: default
 ---
-Snestistics is a tool that helps the user reverse engineer games for the Super Nintendo. In general snestistics wants a ROM-file (in .SMC/.SFC-format) and a trace-file. The [first entry](tutorial-1) in the tutorial series shows how to create a trace file and how to make snestistics generate assembly listing.
+Snestistics is a tool that helps the user reverse engineer games for the Super Nintendo. In general snestistics needs a ROM file (.sfc/.smc) and a custom trace file. The [introduction](tutorial-1) of the tutorial series shows how to create a trace file and how to make snestistics generate assembly listing.
 
 Snestistics is an "emulator-guided" disassembler. This helps it beat other disassemblers doing only static analysis. Because of this one (or multiple) sessions must first be "recorded" in an emulator. Each such session yields a .trace-file that represent a particular run of the game.
 
 Command Line Reference
 ======================
-Each feature of snestistics has a few command line options of their own. These are shown in a table in the relevant section. An example command line is as follows:
+Each feature of snestistics has a few command line options of their own. These are shown in a table in the relevant section. A typical command line invokation looks like this:
 ~~~~~~~~~~~~~~
 snestistics -romfile myrom.sfc -autoannotate true -nmifirst 12 -nmilast 24 -asmoutfile output.asm
 ~~~~~~~~~~~~~~
 
-ROM support
+ROM Support
 ===========
 Almost all command requires a ROM file to be specified. Most of the time it is enough to supply the name of the ROM file and the rest should be inferred from other files (such as the trace file or by doing auto-detection based on content in the ROM-file):
 
@@ -25,7 +25,7 @@ A trace file describes what happened during a session in an emulator with a part
 
 {% include generated-cmd-trace.html %}
 
-Assembly listing
+Assembly Listing
 ================
 If you supply a ROM-file and a trace-file (written by snes9x-snestistics) you can generate an assembly listing of the program. See the command line reference for relevant switches. Then annotations can be be added to beautify the assembly listing. The idea is to work with the assembler listing and the annotations in an iterative way, progressively building up an understand of the inner workings of the game.
 
@@ -41,8 +41,8 @@ In most games there are thousands of unknown pieces of code. In order to use the
 
 {% include generated-cmd-annotation.html %}
 
-Labels file format
-==================
+Labels Markup
+=============
 ## Functions
 A function is composed of a range with a starting address and an end address. These are easy to find from the assembly listing. Comments can be added with ; on lines before the function keyword. The line starting with # specifies a *use comment* that is special. It is used as a summary that is written whenever someone references this function (say a jump). That way you get a summary at the site of the jump.
 ~~~~~~~~~~~~~~

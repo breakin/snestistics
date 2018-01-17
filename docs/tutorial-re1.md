@@ -1,5 +1,5 @@
 ---
-title: Tutorial 6 - Back to reverse engineering!
+title: Tutorial 6 • Back to Reverse Engineering!
 layout: default
 ---
 This post continues where the [first post](tutorial-intro) left off. Now we have gained a lot of knowledge about how snestistics works and we have access to a rough assembly listing of our game. 
@@ -64,7 +64,7 @@ Inspecting this code in a bit more detail we can observe a couple of things:
 - `808216`: A 16-bit value is loaded from `$028E`. If zero the function will exit.
 - Then a loop indexing data at `$0100` runs, with an exit condition at `808225`.
 
-Based on these observations we now know that code running elsewhere, and probably not in vertical blanking, will add entries to an array at `$0100` and setting some "data available"-flags at `$0280` and/or `$028E`. The entries will then be written to VRAM the next time the NMI handler runs.
+Based on these observations we now know that code running elsewhere, and probably not in vertical blanking, will add entries to an array at `$0100` and set some "data available"-flags at `$0280` and/or `$028E`. Added entries will be written to VRAM the next time the NMI handler runs.
 
 All this follows typical SNES coding conventions; at the start of the vertical blanking (vblank) interval an NMI interrupt is fired, and in its interrupt handler all PPU RAM (VRAM as well as object and color RAM) is updated. A while into vblank the CPU has also put new data in the joypad registers, so it's common practice to read out that data after some other task inside the NMI handler is finished.
 
