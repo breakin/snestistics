@@ -2,7 +2,12 @@
 title: About
 layout: default
 ---
-Welcome to snestistics. The source code can be at [GitHub](https://github.com/breakin/snestistics). If you find any errors on this home page or in snestistics itself, feel free to [open an issue on GitHub](https://github.com/breakin/snestistics/issues) or to reach out to me on [Twitter](https://twitter.com/anders_breakin).
+Welcome to snestistics!
+
+If you find any errors on this home page or in snestistics itself, feel free to [open an issue on GitHub](https://github.com/breakin/snestistics/issues) or to reach out to me on [Twitter](https://twitter.com/anders_breakin).
+
+* Binaries: [https://github.com/breakin/snestistics/releases](https://github.com/breakin/snestistics/releases) 
+* Source: [https://github.com/breakin/snestistics](https://github.com/breakin/snestistics)
 
 Features
 ========
@@ -16,7 +21,7 @@ See [user-guide](user-guide) for a description on how to use the features!
 
 Current Limitations
 ===================
-* For now you need to build snestistics yourself (works on windows, osx and linux using cmake). An pre-build binary of the emulator for Windows can be found in /deps in the source code.
+* Windows only (snestistics build on windows, osx and linux but snes9x only on windows)
 * Only supports "LoROM" games.
 * Non-CPU->CPU DMA not currently supported
 	* Also DMA not supported at all by rewind
@@ -33,7 +38,7 @@ Claim to Fame
 Contributors
 ============
 * snestistics is written by Anders "breakin" Lindqvist.
-* David "optiroc" Lindecrantz has been a huge source of ideas and motivation and has also helped greatly with the tutorial series on this page.
+* David "optiroc" Lindecrantz has been a huge source of ideas and motivation and has also helped greatly with this homepage (including co-authoring the tutorial and writing CSS)
 * Huge inspiration was drawn from the snes9x code base, both the possibility to build/change/use it but also in looking at the source to understand Super Nintendo quirks
 
 For a full history of snestistics see the [history](history) page.
