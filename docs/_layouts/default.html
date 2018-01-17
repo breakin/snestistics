@@ -1,51 +1,34 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="{{ site.lang | default: "en-US" }}">
   <head>
-    <meta charset="utf-8">
+    <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
 
 {% seo %}
-
-    <link href='https://fonts.googleapis.com/css?family=Lato:300italic,700italic,300,700' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
-    <script src="{{ '/assets/js/scale.fix.js' | relative_url }}"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
   </head>
+
   <body>
-    <div class="wrapper">
-      <header class="without-description">
-        <h1>SNESTISTICS - {{ page.title }}</h1>
-        <ul>
-          <li><a href="{{ site.github.repository_url }}">Source On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
 
-      <navigation>
-          <strong>
-            <a href="user-guide">user-guide</a>
-            <a href="tutorial">tutorial</a>
-            <a href="history">history</a>
-            <a href="index">about</a>
-          </strong>
-      </navigation>
+    <header>
+      <div class="container">
+        <h1>snestistics</h1>
+        <h2> {{ page.title }} </h2>
+        <navigation>
+          <a href="user-guide">user-guide</a>
+          <a href="tutorial">tutorial</a>
+          <a href="history">history</a>
+          <a href="index">about</a>
+        </navigation>
+      </div>
+    </header>
 
-      <section>
-
-      {{ content }}
-
+    <div class="container">
+      <section id="main_content">
+        {{ content }}
       </section>
     </div>
-    <footer>
-    {% if site.github.is_project_page %}
-      <p>Maintained by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a></p>
-    {% endif %}
-      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
-    </footer>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
 
     {% if site.google_analytics %}
       <script type="text/javascript">

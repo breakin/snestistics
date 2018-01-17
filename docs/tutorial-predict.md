@@ -4,7 +4,8 @@ layout: default
 ---
 This tutorial post will go in-depth in the assembly listing to clean it up. Feel free to skip it or save it for later; it is optional!
 
-By now you've might have looked a bit at the source code and you might have noticed something strange. Something annoying. Lets take a look.
+By now you've might have looked a bit at the source code and you might have noticed something strange. Something annoying. Let's take a look.
+
 In the generated assembler listing we can find short spurs of data in the middle of code. Something like this
 ~~~~~~~~~~~~~~~~
 label_80821
@@ -25,7 +26,7 @@ label_80822A:
     /* MI 80      808234 BD 02 01    */ lda.w $0102,x
     /* MI 80      808237 8D 16 21    */ sta.w REG_VMADDL
 ~~~~~~~~~~~~~~~~
-What is that about? Well in this case there is code at the address after the instruction at 808227 but it was never run as part of our emulation session. The branch Luckily the primitive prediction heuristic built into snestistics can mitigate this. Lets test a new command line option!
+What is that about? Well in this case there is code at the address after the instruction at 808227 but it was never run as part of our emulation session. Luckily the primitive prediction heuristic built into snestistics can mitigate this. Let's test a new command line option!
 ~~~~~~~~~~~~~~~~
 snestistics
   -romfile battle_pinball.sfc
@@ -34,7 +35,7 @@ snestistics
   -reportoutfile pinball_report.txt
   -predict everywhere
 ~~~~~~~~~~~~~~~~
-The default for predict is *functions* which only predicts within annotated function. But sometimes the missing code can be annoying when you are annotating things since it can leave you unsure about some data before or after a function. Is it code? Is it data? Is it part of my function? Lets see what happened:
+The default for predict is *functions* which only predicts within annotated function. But sometimes the missing code can be annoying when you are annotating things since it can leave you unsure about some data before or after a function. Is it code? Is it data? Is it part of my function? Let's see what happened:
 ~~~~~~~~~~~~~~~~
 label_80821E:
     /* *I 80      80821E E2 20       */ sep.b #$20
@@ -65,7 +66,7 @@ Predicted jump at 9DDEAA jumped inside instruction at 9DDEFF. Consider adding a 
 Predicted jump at 9DDF23 jumped inside instruction at 9DDF19. Consider adding a "hint branch_always/branch_never 9DDF19" annotation.
 Predicted jump at 9FFF67 jumped inside instruction at 9FFEE7. Consider adding a "hint branch_always/branch_never 9FFEE7" annotation.
 ~~~~~~~~~~~~~~~~
-This means that the prediction heuristic chickened out a few times because it seems like taking a jump led to a weird situation. Lets investigate the 3rd and 4th of these.
+This means that the prediction heuristic chickened out a few times because it seems like taking a jump led to a weird situation. Let's investigate the 3rd and 4th of these.
 
 First we have a branch that is always taken in the emulated session. The predictor tries to not take it but all of the predicted ops looks like broken code:
 ~~~~~~~~~~~~~~~~
@@ -116,7 +117,7 @@ label_8186DA:
     /* mi 81 0B00 8186DA 28          */ plp
     /* mi 81 0B00 8186DB 60          */ rts
 ~~~~~~~~~~~~~~~~
-We might never know what are contained in those bytes for now lets keep them as data. If we for some reason *know* that they are data we can also add a data annotation there. That way they will not be predicted as code either.
+We might never know what are contained in those bytes for now let's keep them as data. If we for some reason *know* that they are data we can also add a data annotation there. That way they will not be predicted as code either.
 
 Some words about the heuristic
 ==============================

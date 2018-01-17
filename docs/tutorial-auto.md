@@ -6,7 +6,7 @@ There are many small functions that does _something_. Often we don't need to kno
 
 We've tried it on other games with worse results and this is a feature I imagine will be rewritten a lot. When an *autolabelsfile* is specified auto annotation will run and the file will be saved. If that file is still part of the command line it will be reused, unless -autoannotate is specified. It is up to the user if he/she want the auto labels file to remain auto (by keeping it as a autolabelsfile) or if they simply want to treat it as a regular labels file after it has been generated. This enabled manual editing to fix up "broken" functions. We recommend putting it in a labels file of its own either way such that it can be regenerated if needed later.
 
-Lets look at this feature then! Here is a command line:
+Let's look at this feature then! Here is a command line:
 ~~~~~~~~~~~~~~~~
 snestistics
   -romfile battle_pinball.sfc
@@ -17,7 +17,7 @@ snestistics
 ~~~~~~~~~~~~~~~~~~~~~~~
 See [user-guide](user-guide) for more command line options.
 
-Lets see how it fares on _Battle Pinball_.
+Let's see how it fares on _Battle Pinball_.
 
 Before auto-annotate:
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -89,7 +89,7 @@ function 808200 80820B Auto0004
 function A28907 A2898F Auto0530
 function A28990 A2899E Auto0531
 ~~~~~~~~~~~~~~~~~~~~~~~
-That is 532 ranges that have been given a name of *AutoXXXX*. Lets see how the assembly looks now:
+That is 532 ranges that have been given a name of *AutoXXXX*. Let's see how the assembly looks now:
 ~~~~~~~~~~~~~~~~~~~~~~~
 ; Vector: Emulation RESET
 Auto0000:

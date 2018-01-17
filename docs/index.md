@@ -2,7 +2,7 @@
 title: About
 layout: default
 ---
-Welcome to Snestistics. If you find any errors on this home page or in snestistics itself, feel free to [open an issue on github](https://github.com/breakin/snestistics/issues) or to reach out to me on [twitter](https://twitter.com/anders_breakin).
+Welcome to Snestistics. The source code can be at [github](https://github.com/breakin/snestistics). If you find any errors on this home page or in snestistics itself, feel free to [open an issue on github](https://github.com/breakin/snestistics/issues) or to reach out to me on [twitter](https://twitter.com/anders_breakin).
 
 Features
 ========
@@ -28,7 +28,7 @@ Current Limitations
 
 Claim to Fame
 =============
-* Used in the [Super Famicon Wars translation project](https://www.romhacking.net/translations/3354/)
+* Used in the [Super Famicom Wars translation project](https://www.romhacking.net/translations/3354/)
 
 Contributors
 ============

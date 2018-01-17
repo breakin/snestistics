@@ -2,7 +2,9 @@
 title: Tutorial 6 - Back to reverse engineering!
 layout: default
 ---
-This post continues where the [first post](tutorial-intro) left off. Now we have gained a lot of knowledge about how snestistics works and we have access to assembly listing for out game. Searching for the PC address where our tile map breakpoint hit in the disassembly, and using a bit of 65816 knowledge it seems likely that this range is a self contained function that takes care of writing tile map data to VRAM:
+This post continues where the [first post](tutorial-intro) left off. Now we have gained a lot of knowledge about how snestistics works and we have access to a rough assembly listing of our game. 
+
+The tile map VRAM breakpoint we set hit at PC `80823D`. Searching for that address in the disassembly we discover an auto annotated function ranging from `80820C` to `808250`:
 ```
 Auto0005:
     /* m* 80      80820C E2 20       */ sep.b #$20
@@ -53,20 +55,20 @@ _Auto0005_80824B:
     /* MI 80      80824D 9C 8E 02    */ stz.w $028E                     ; 7E028E [DB=80]
     /* MI 80      808250 60          */ rts
 ```
-> Note: Your disassembly may look quite different since snestistics is very much in active development! The code quoted above comes from a disassembly using "auto annotate", but with no labels file supplied.
+> Note: Your disassembly may look slightly different since snestistics is very much in active development! The code quoted above comes from a disassembly using "auto annotate", but with no labels file supplied.
 
-Since this function writes to VRAM, it must be called during the vertical blanking interval (or when the screen is forced blank). Searching for where `Auto0005` is called reveals that it is only used in `Auto0004` just above it. `Auto004` is in turn part of a small set of functions called in the NMI handler. This is also where the previously inspected joypad readout function is found. 
+Armed with a bit of 65816 knowledge it seems likely that this range is a self contained function that takes care of writing tile map data to VRAM. As such it must be called during the vertical blanking interval (or when the screen is forced blank), so it is likely part of the NMI handler. Searching for where `Auto0005` is called reveals that it is only used in `Auto0004` just above it. And browsing the listing a bit more reveals that `Auto004` is indeed part of a small set of functions called in the NMI handler. This is also where the previously inspected joypad readout function is found. 
 
-Without inspecting this code too closely, we can observe a couple of things:
+Inspecting this code in a bit more detail we can observe a couple of things:
 - `80820E`: An 8-bit value is loaded from `$0280`. If the most significant bit (minus sign) is set the function will exit immediately. 
 - `808216`: A 16-bit value is loaded from `$028E`. If zero the function will exit.
 - Then a loop indexing data at `$0100` runs, with an exit condition at `808225`.
 
-Based on these observations we now know that code running elsewhere, and probably not in vertical blanking, will add entries to an array at `$0100` and setting some "data available"-flags at `$0280` and `$028E`. The entries will then be written to VRAM the next time the NMI handler runs.
+Based on these observations we now know that code running elsewhere, and probably not in vertical blanking, will add entries to an array at `$0100` and setting some "data available"-flags at `$0280` and/or `$028E`. The entries will then be written to VRAM the next time the NMI handler runs.
 
 All this follows typical SNES coding conventions; at the start of the vertical blanking (vblank) interval an NMI interrupt is fired, and in its interrupt handler all PPU RAM (VRAM as well as object and color RAM) is updated. A while into vblank the CPU has also put new data in the joypad registers, so it's common practice to read out that data after some other task inside the NMI handler is finished.
 
-The next step is to put breakpoints at `$0100`, `$0280` and `$028E` to see how the array of VRAM writes get populated. But first let's add a function range and some labels to our labels-file to make this function more readable:
+The next step is to set breakpoints at `$0100`, `$0280` and `$028E` to see how the array of VRAM writes get populated. But first let's add a function range and some labels to our labels-file to make this function more readable:
 ```
 ; Copy data to VRAM
 ;   Called during NMI
@@ -141,3 +143,5 @@ With a bit of experience it's quite easy to determine the structure of the data 
 Next steps
 ==========
 We've now discovered the function responsible for copying characters to VRAM from an array at `$0100`. Elsewhere in the program data has to be read from ROM, possible undergo some kind of transformation, and get written to that array. Putting a write breakpoint at CPU memory location `$0100` should give some answers!
+
+*To be continued...*

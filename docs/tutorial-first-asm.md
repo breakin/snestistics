@@ -26,9 +26,9 @@ The trace can now be found in the _Roms_ directory and the files can look someth
 
 Note that traces currently end up in the _current working directory_ so if you start a movie playback in snes9x the traces will end up in the directory of the movie instead. This will probably be fixed in a future version of snes9x-snestistics.
 
-Only the .trace-file is important and the other ones can be deleted.
+Only the .trace-file is important and the other ones can be deleted. We commend running once with the .trace_helper file since it usually tells you weather the emulation worked or not. If you want to submit a bug the .trace and the .trace_helper file are both needed. We also highly recommend that you use a snes9x movie (.SMV) that contains your play session. That way you can recreate the .trace-file whenever the file format of the .trace-file changes. If you do this the .trace-file might end up in the directory where the .SMV-file is located. Everytime the emulator is reset (loading movie, loading new ROM) the previous trace file will be closed and a new one will be opened, named trace1.trace etc.
 
-In a future post we will give more tips'n'trics to make things even better with regards to trace file creation in snes9x. For more information on why we are using an emulator and why it happens to currently be snes9x see [here](about).
+For more information on why we are using an emulator and why it happens to currently be snes9x see [here](about).
 
 Running snestistics
 ===================

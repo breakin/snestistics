@@ -2,7 +2,7 @@
 title: Tutorial 3 - Adding Annotations
 layout: default
 ---
-So we have our assembler source. Now starts a cycle of reading assembler, understanding _something_ (small or big) and then to annotate the assembler source so we don't have to remember it all. In snestistics we have a file called a labels file where annotations can be added. Let's revisit the function from the first [tutorial](tutorial-1) that interacted with the joypad:
+So we have our assembler source. Now starts a cycle of reading assembler, understanding _something_ (small or big) and then to annotate the assembler source so we don't have to remember it all. In snestistics we have a file called a labels file where annotations can be added. Let's revisit the function from the second [tutorial](tutorial-first-asm) that interacted with the joypad:
 
 ~~~~~~~~~~~~~~~~
 label_8083DF:
@@ -210,7 +210,7 @@ function 80E460 80E460 JumpFunction1
 function 80E63E 80E6FC JumpFunction2
 ~~~~~~~~~~
 
-Our indirect jump example from the [first](tutorial-1) tutorial now looks like this:
+Our indirect jump example from the [second](tutorial-first-asm) tutorial now looks like this:
 ~~~~~~~~~~
 Trampoline:
     /* mI 80 0900 80E412 C2 30       */ rep.b #$30
