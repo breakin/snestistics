@@ -2,22 +2,22 @@
 title: Tutorial 1 • Introduction
 layout: default
 ---
-In order to do the [Super Famicom Wars (SFW) translation](http://www.romhacking.net/translations/3354) we had to start by understanding how to game worked. Once this was done an equally hard task was to modify the game. But understanding came first. In order to understand it we used [snestistics](https://github.com/breakin/snestistics). Lots of new features were added during this process, but it was worth it! [Here](about) is a detailed history on snestistics with discussion on why it works like it does. 
+In order to do the [Super Famicom Wars (SFW) translation](http://www.romhacking.net/translations/3354) we had to start by figuring out how *(parts of)* the game worked. Once this was underway an equally hard task was to modify the game. But understanding came first. [snestistics](https://github.com/breakin/snestistics) was a key part of this process, and lots of functionality was added to the tool as we went along. [Here](about) is a detailed history on snestistics with discussion on why it works like it does. 
 
-In this tutorial series we will simply show what you can do with snestistics and not compare it to other tools and approaches. When we started SFW snestistics was not very mature at all. A lot of tedious tasks we had to do by hand and writing a straightforward tutorial like this would not be possible!
+In this tutorial series we will simply show what you can do with snestistics and not compare it to other tools and approaches. When we started SFW snestistics was not very mature at all. A lot of tedious tasks had to be done by hand and writing a straightforward tutorial like this would not be possible!
 
 We assume that if you actually want to understand the code presented here in depth you will know some 65816 assembly and have a high-level understanding of the SNES. Martin Korth's [fullsnes](http://problemkaputt.de/fullsnes.htm) document is a great reference on all parts that make the SNES tick.
 
 The Game
 ========
-The game we are going to take a closer look at is the japanese game [Battle Pinball](https://www.youtube.com/watch?v=VKIM2FrK2zY), a spin-off game in the [Compati Hero Series](https://en.wikipedia.org/wiki/Compati_Hero_Series).
+The game we are going to take a closer look at is [Battle Pinball](https://www.youtube.com/watch?v=VKIM2FrK2zY), a spin-off game in the [Compati Hero Series](https://en.wikipedia.org/wiki/Compati_Hero_Series) only released in Japan.
 
-While not sure if we'll actually attain anything specific with this game, two possible ideas is to add SaveRAM support for the high score list and translate the pretty minimal amount of Japanese text on display to English. As you can see the intro and the level selector is in Japanese while in-game text is a mix of English and Japanese. When we were doing SFW we worked in secret mode until we *knew* we could do it. This time we just start pulling on some threads in public to see where we end up. No promises!
+While not sure if we'll actually attain anything specific with this game, two possible ideas is to add SaveRAM support for the high score list and translate the pretty minimal amount of Japanese text on display to English. As you can see in the linked video, the intro and the level selector is in Japanese while in-game text is a mix of English and Japanese. When we were doing SFW we worked in secret mode until we *knew* we could do it. This time we just start pulling on some threads in public to see where we end up. No promises!
 
 While we own a physical copy of the game and have dumped it ourselves we are not allowed to share the ROM and also not allowed to share the full source code for the ROM. Thus you, the reader, will only see some glimpses here and for the full picture (text really!) you will need to run snestistics on a ROM you've obtained yourself. Furthermore snestistics is constantly being updated/improved so the snippets shown here might not be fully accurate. We will try to update this tutorial series as snestistics changes so it remains correct.
 
-Pulling it apart
-================
+Initial Inspection
+==================
 Now let's focus in on the parts of Battle Pinball we want to understand! An emulator with debugging features is an essential tool in this process. We'll be using [bsnes+](https://github.com/devinacker/bsnes-plus) for this task.
 
 As previously mentioned we thought it'd be fun to translate the little text there is, as well as add SRAM serialization of the High Score Table. A high quality translation usually means a pretty invasive rewriting of the text system, preferably including a so called Variable Width Font routine to render typographically pleasing text. For this game we won't be so fancy, but look forward to the open source release of our Super Famicom Wars translation for more details on our take on that!
