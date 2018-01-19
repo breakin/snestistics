@@ -26,7 +26,7 @@ namespace  {
 		}
 	#endif
 
-	void check_diff(uint64_t current_op, const snestistics::TraceRegisters &test, const snestistics::TraceRegisters &b, const snestistics::TraceRegisters &a, const EmulateRegisters &regs, uint16_t P_before_op, const char * const str) {
+	bool check_diff(uint64_t current_op, const snestistics::TraceRegisters &test, const snestistics::TraceRegisters &b, const snestistics::TraceRegisters &a, const EmulateRegisters &regs, uint16_t P_before_op, const char * const str) {
 		// b=before, a=after
 		bool has_diff = 
 			test.pc_bank != (regs._PC>>16) ||
@@ -42,24 +42,37 @@ namespace  {
 			test.DP != regs._DP;
 
 		if (has_diff) {
-			printf("Found diff %s at op %d\n", str, (uint32_t)current_op); // TODO: How to print 64-bit cross platform?
-			printf("P  %04X %04X %04X\n", b.P,  a.P, regs._P);
+			printf("\n");
+			printf("ERROR!\n");
+			printf("------\n");
+			printf("When re-emulating the trace a difference was found when comparing with the content of the .trace_helper file.\n");
+			printf("This means that the snestistics emulator can't emulate this game yet.\n");
+			printf("\n");
+			printf("You can still use snestistics but only for NMIs (frame number) below where this emulation bug occured.\n");
+			printf("Be warned that incorrect details might be found in the assembly listing.\n");
+			printf("\n");
+			printf("Feel free to add an issue to github at https://github.com/breakin/snestistics/issues!\n");
+			printf("\n");
+			printf("DETAILS:\n");
+			printf("--------\n");
+			printf("  Found diff %s at op %d\n", str, (uint32_t)current_op); // TODO: How to print 64-bit cross platform?
+			printf("  P  %04X %04X %04X\n", b.P, a.P, regs._P);
 			debug_P(b.P);
 			debug_P(a.P);
 			debug_P(P_before_op);
 			debug_P(regs._P);
-			printf("A    %04X %04X %04X\n", b.A,  a.A,  regs._A);
-			printf("X    %04X %04X %04X\n", b.X,  a.X,  regs._X);
-			printf("Y    %04X %04X %04X\n", b.Y,  a.Y,  regs._Y);
-			printf("S    %04X %04X %04X\n", b.S,  a.S,  regs._S);
-			printf("DB   %02X %02X %02X\n", b.DB, a.DB, regs._DB);
-			printf("DP   %04X %04X %04X\n", b.DP, a.DP, regs._DP);
-			printf("PC   %02X%04X %02X%04X %06X\n", b.pc_bank, b.pc_address, a.pc_bank, a.pc_address, regs._PC);
-			printf("WRAM %02X%04X %02X%04X %06X\n", b.wram_bank, b.wram_address, a.wram_bank, a.wram_address, regs._WRAM);
-			printf("This means that the snestistics emulator can't emulate this game yet.\n");
-			printf("This diff is done against .trace_helper which codifies some state that is tested against\n");
-			exit(1);
+			printf("  A    %04X %04X %04X\n", b.A, a.A, regs._A);
+			printf("  X    %04X %04X %04X\n", b.X, a.X, regs._X);
+			printf("  Y    %04X %04X %04X\n", b.Y, a.Y, regs._Y);
+			printf("  S    %04X %04X %04X\n", b.S, a.S, regs._S);
+			printf("  DB   %02X %02X %02X\n", b.DB, a.DB, regs._DB);
+			printf("  DP   %04X %04X %04X\n", b.DP, a.DP, regs._DP);
+			printf("  PC   %02X%04X %02X%04X %06X\n", b.pc_bank, b.pc_address, a.pc_bank, a.pc_address, regs._PC);
+			printf("  WRAM %02X%04X %02X%04X %06X\n", b.wram_bank, b.wram_address, a.wram_bank, a.wram_address, regs._WRAM);
+			printf("\n");
+			return false;
 		}
+		return true;
 	}
 }
 /*
@@ -271,7 +284,10 @@ bool Replay::next() {
 
 	#ifdef VERIFY_OPS
 		if (_trace_helper._file && do_event != Events::RESET) {
-			check_diff(_current_op, h.registers_before, h.registers_before, h.registers_after, regs, P_before_op, "BEFORE");
+			bool ok = check_diff(_current_op, h.registers_before, h.registers_before, h.registers_after, regs, P_before_op, "BEFORE");
+			if (!ok) {
+				return false;
+			}
 		}
 	#endif
 
@@ -320,7 +336,10 @@ bool Replay::next() {
 
 	#ifdef VERIFY_OPS
 		if (_trace_helper._file) {
-			check_diff(_current_op, h.registers_after, h.registers_before, h.registers_after, regs, P_before_op, "AFTER");
+			bool ok = check_diff(_current_op, h.registers_after, h.registers_before, h.registers_after, regs, P_before_op, "AFTER");
+			if (!ok) {
+				return false;
+			}
 		}
 	#endif
 	_current_op++;
