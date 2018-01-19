@@ -509,6 +509,7 @@ void execute_op(EmulateRegisters &regs) {
 		memory_mode = MemoryAccessType::STACK_RELATIVE;
 	} else {
 		printf("** Adressing mode not implemented! %d\n", (int)info.mode);
+		printf("Please create an issue for this at https://github.com/breakin/snestistics/issues\n");
 		exit(1);
 	}
 
@@ -981,6 +982,7 @@ void execute_op(EmulateRegisters &regs) {
 		if (!regs._debug)
 			printf("Op %s (%s) %02X at %06X i%d m%d %s %s %s%s %d\n", Operation_names[(int)info.op], mnemonic_names[opcode_], opcode_, pc_before, regs.P((uint16_t)ProcessorStatusFlag::IndexFlag)==0?16:8, regs.P((uint16_t)ProcessorStatusFlag::MemoryFlag)==0?16:8, Operand_names[(int)info.mode], InstructionSize_names[(int)info.size], wide?"wide":"small", info.load_operand?" load":"", regs._debug_number);
 		printf("* Unsupported op %02X\n", opcode_);
+		printf("Please create an issue for this at https://github.com/breakin/snestistics/issues\n");
 		exit(1);
 	}
 }
@@ -1076,9 +1078,13 @@ void execute_dma(EmulateRegisters & regs, uint8_t channels) {
 		// Also filter invalid source for 2180 target (7E or 7F)
 		if (a_bank == 0x7E || a_bank == 0x7F || b_address != 0x80 || reverse_transfer)
 			continue;
+		bool skip_wram_dma = (!(a_bank & 0x40) && a_address < 0x2000);
+		if (skip_wram_dma)
+			continue;
 
 		if (reverse_transfer) {
 			printf("Error! Emulator does not support DMA from PPU->CPU!\n");
+			printf("Progress of this feature is tracked in https://github.com/breakin/snestistics/issues/9\n");
 			exit(1);
 		}
 
