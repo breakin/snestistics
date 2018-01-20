@@ -6,7 +6,7 @@ Welcome to snestistics!
 
 If you find any errors on this home page or in snestistics itself, feel free to [open an issue on GitHub](https://github.com/breakin/snestistics/issues) or to reach out to me on [Twitter](https://twitter.com/anders_breakin).
 
-* Binaries: [https://github.com/breakin/snestistics/releases](https://github.com/breakin/snestistics/releases) 
+* Binaries: [https://github.com/breakin/snestistics/releases](https://github.com/breakin/snestistics/releases)
 * Source: [https://github.com/breakin/snestistics](https://github.com/breakin/snestistics)
 
 Features
@@ -21,15 +21,18 @@ See [user-guide](user-guide) for a description on how to use the features!
 
 Current Limitations
 ===================
-* Windows only (snestistics build on windows, osx and linux but snes9x only on windows)
+* Windows only (snestistics builds on windows/osx/linux but snes9x-snestistics only on windows)
 * Only supports "LoROM" games.
 * Non-CPU->CPU DMA not currently supported
 	* Also DMA not supported at all by rewind
 * Emulator has bugs; if you are working on a game and want to try snestistics, just ask me and I (breakin) will help you fix the emulation errors for that particular game. This helps me prioritize things that are actually needed by someone.
-* Doesn't know about extension cartridges but it might work. Ask me if you want to try this.
+* Doesn't know about extension cartridges but it might work. Ask me if you need this.
 * No support for games where code is executed from RAM (bank $7e or $7f)
 * No emulation of PPU memory
-* See [bugs on github](https://github.com/breakin/snestistics/labels/bug)
+* No emulation of SRAM (affects ability to inspect SRAM memory in trace log)
+* Aloso see [bugs on github](https://github.com/breakin/snestistics/labels/bug)
+
+Snestistics is far from ready but instead of keeping it a secret until it is properly finished (no bugs and all games working) I'm trying a different approach by putting it up as it is. The reason is that the audience for a tool like this is quite small so I rather give it out now and give priority to features/bugs that are affecting actual users! That way more people can enjoy snestistics. If you [file an issue](https://github.com/breakin/snestistics/issues) I will try to fix the bugs that are blocking you - an actual user - or at least give them higher priority.
 
 Claim to Fame
 =============
