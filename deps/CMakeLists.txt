@@ -10,7 +10,3 @@ set_target_properties(squirrel_static PROPERTIES FOLDER deps-squirrel)
 
 set(DISABLE_DYNAMIC)
 set(SQ_DISABLE_INSTALLER)
-
-if(WIN32)
-	install(FILES snes9x-snestistics.exe DESTINATION run_snes9x)
-endif(WIN32)
