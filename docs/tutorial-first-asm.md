@@ -22,11 +22,9 @@ Now when we are satisfied we select _Snestistics->Save trace and exit..._:
 
 The trace can now be found in the _Roms_ directory and it is named _trace0.trace_. If you loaded many games or reset the game there will be multiple trace files (_trace1.trace_ etc).
 
-Note that trace files currently end up in the _current working directory_ so if you start a movie playback in snes9x the traces will end up in the directory of the movie instead. This will probably be fixed in a future version of snes9x-snestistics.
+Note that trace files currently end up in the _current working directory_ so if you start a movie playback in snes9x the traces will end up in the directory of the movie instead. This will probably be fixed in a future version of snes9x-snestistics. Every time the emulator is reset (loading movie, loading new ROM) the previous trace file will be closed and a new one will be opened, named trace1.trace etc.
 
-Only the .trace-file is important and the other ones can be deleted. We commend running once with the .trace_helper file since it usually tells you weather the emulation worked or not. If you want to submit a bug the .trace and the .trace_helper file are both needed. We also highly recommend that you use a snes9x movie (.SMV) that contains your play session. That way you can recreate the .trace-file whenever the file format of the .trace-file changes. If you do this the .trace-file might end up in the directory where the .SMV-file is located. Everytime the emulator is reset (loading movie, loading new ROM) the previous trace file will be closed and a new one will be opened, named trace1.trace etc.
-
-For more information on why we are using an emulator and why it happens to currently be snes9x see [here](about).
+The *Save trace helper* option enabled saving of an additional file named ._trace_helper_. It can be currently be very big but it will help the emulator know if it has meesed up. If recommend you to use it once when starting up with a new game to make sure the emulator supports all the features of the game. Then it can be turned off. If you want to submit a bug the .trace and the .trace_helper file are both needed. We also **highly recommend** that you use a snes9x movie (.SMV) that contains your play session. That way you can recreate the .trace-file whenever the file format of the .trace-file changes. Yes we are planning a change of this format!. If you do this the .trace-file might end up in the directory where the .SMV-file is located.
 
 Running snestistics
 ===================
