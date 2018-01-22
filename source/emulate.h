@@ -132,9 +132,15 @@ struct EmulateRegisters {
 		return v;
 	}
 
-	inline uint8_t read_byte(uint32_t address, MemoryAccessType reason) const {
-		uint32_t r = remap(address);
-		uint8_t result = _memory[r];
+	inline uint8_t read_byte(uint32_t address, MemoryAccessType reason) {
+        uint32_t r;
+        if (address == 0x2180) {
+            r = 0x7E0000 + _WRAM;
+			_WRAM = (_WRAM + 1) & 0x1ffff;
+        } else {
+            r = remap(address);
+        }
+		const uint8_t result = _memory[r];
 		if(_read_function)
 			(*_read_function)(_callback_context, address, r, result, 1, reason);
 		return result;

@@ -22,6 +22,8 @@ set(SOURCES
 	replay.cpp
 	replay.h
 	api.h
+	options.h
+	options.cpp
 	report_writer.cpp
 	report_writer.h
 	rewind.cpp
@@ -40,8 +42,6 @@ SET(GENERATED_SOURCE
 	instruction_tables_generate.py
 	instruction_tables.h
 	instruction_tables.cpp
-	options.cpp
-	options.h
 	../utilities/command-line-parsing.py
 )
 

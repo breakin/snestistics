@@ -4,9 +4,3 @@
 [submodule "deps/snes9x"]
 	path = deps/snes9x
 	url = https://github.com/breakin/snes9x
-[submodule "deps/zlib"]
-	path = deps/zlib
-	url = https://github.com/madler/zlib.git
-[submodule "deps/libpng"]
-	path = deps/libpng
-	url = https://github.com/glennrp/libpng.git
