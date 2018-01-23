@@ -144,4 +144,4 @@ Next steps
 ==========
 We've now discovered the function responsible for copying characters to VRAM from an array at `$0100`. Elsewhere in the program data has to be read from ROM, possible undergo some kind of transformation, and get written to that array. Putting a write breakpoint at CPU memory location `$0100` should give some answers!
 
-*To be continued...*
+Next post: [Tutorial 7 • Digging for Strings](tutorial-re2)
