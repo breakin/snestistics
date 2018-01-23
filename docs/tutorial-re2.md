@@ -76,7 +76,7 @@ Following the Thread
 --------------------
 Now let's step out of the `Auto0015` function and see where we end up!
 
-![Stepping Out](/images/tutorial-re2/stepping_out.png)
+![Stepping Out](/images/tutorial-re2/stepping_out.png){:class="img-retina"}
 > Pro-Tip! Notice that the same labels we know from the snestistics disassembly are also visible in the bsnes+ debugger? Wonderful, right? Use the `-symbolfmaoutfile` option to generate a symbol file that will automatically be used by the debugger, if it's in the same directory as the ROM file and has the same base name.
 
 What's immediatly striking is that the subroutine call we returned from wasn't `Auto0015` at `808A70`, but rather another auto-generated function at `80FF66`. Let's quickly consult our disassembly to see what's up there:
@@ -120,7 +120,7 @@ _Auto0501_9DD3C3:
     /* MI 9D 0900 9DD3CC C6 0E       */ dec.b $0E                       ; 7E090E [DP=900]
     /* MI 9D 0900 9DD3CE D0 F3       */ bne.b _Auto0501_9DD3C3
     /* MI 9D 0900 9DD3D0 22 69 FF 80 */ jsl.l Auto0120
-````
+```
 
 Remember that `Auto0119->Auto0015` returned with X indexing right after the two word values it had written at `$0100` and `$0102`? The short loop that follows will read values indirectly from `($02),y` and write them to `$0100,x`, calling `Auto0120->Auto0016` when done.
 
@@ -137,11 +137,11 @@ Breakpoint 3 hit (2)
 9dd3c5 sta $0100,x   [9d0106] A:200b X:0006 Y:0002 S:1bc8 D:0900 DB:9d nvmxdIzc V:248 H:1060 F:55
 Breakpoint 3 hit (3)
 9dd3c3 lda ($02),y   [9df2c4] A:0002 X:0004 Y:0000 S:1bc8 D:0900 DB:9d nvmxdIZc V:248 H: 794 F:11
-````
+```
 
 Ladies and gentlemen, we have ROM reads! Let's immediately take a peek at ROM around `9df2c0` in the Memory Editor of the debugger.
 
-![ROM Data](/images/tutorial-re2/rom_data.png)
+![ROM Data](/images/tutorial-re2/rom_data.png){:class="img-retina"}
 
 Et Voilà! It's not common to get this much information from a single peek in memory, but here the "text" storage is pretty much laid out in front of our eyes. Note that the data rendered in blue are addresses read or written at this point in the debugging session.
 
