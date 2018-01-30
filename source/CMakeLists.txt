@@ -32,6 +32,8 @@ set(SOURCES
 	symbol_export.h
 	utils.cpp
 	utils.h
+	state_compression.h
+	state_compression.cpp
 )
 
 # Actually trigger re-generation from here
@@ -43,6 +45,12 @@ SET(GENERATED_SOURCE
 	options.cpp
 	options.h
 	../utilities/command-line-parsing.py
+)
+
+# TODO: Move into project?
+SET(EXTERNAL
+	../deps/lz4/lib/lz4.c
+	../deps/lz4/lib/lz4.h
 )
 
 SET(DATA
@@ -60,7 +68,7 @@ add_custom_command(
 	COMMENT "Generating instruction_tables.h"
 )
 
-add_executable(snestistics ${SOURCES} ${GENERATED_SOURCE} ${DATA} ${TESTDATA})
+add_executable(snestistics ${SOURCES} ${GENERATED_SOURCE} ${DATA} ${TESTDATA} ${EXTERNAL}) 
 target_compile_definitions(snestistics PRIVATE _CRT_SECURE_NO_WARNINGS)
 
 target_link_libraries(snestistics squirrel_static)
@@ -71,5 +79,6 @@ source_group("source" FILES ${SOURCES})
 source_group("generate" FILES ${GENERATED_SOURCE})
 source_group("data" FILES ${DATA})
 source_group("testdata" FILES ${TESTDATA})
+source_group("external" FILES ${EXTERNAL})
 
 install(TARGETS snestistics DESTINATION "bin-$<PLATFORM_ID>-$<CONFIG>")

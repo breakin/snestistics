@@ -10,3 +10,6 @@
 [submodule "deps/libpng"]
 	path = deps/libpng
 	url = https://github.com/glennrp/libpng.git
+[submodule "deps/lz4"]
+	path = deps/lz4
+	url = https://github.com/lz4/lz4.git

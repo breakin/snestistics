@@ -1,0 +1,1 @@
+add_subdirectory(state_compression_test)
