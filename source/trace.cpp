@@ -161,7 +161,7 @@ void save_trace(const snestistics::Trace &trace, BigFile &dest) {
 	const uint32_t num_memory_accesses = (uint32_t)trace.memory_accesses.size();
 	dest.write(num_memory_accesses);
 	if (num_memory_accesses!=0) {
-		dest.write(trace.memory_accesses[0]);
+		dest.write(&trace.memory_accesses[0], sizeof(Trace::MemoryAccess)*num_memory_accesses);
 	}
 
 	// Write DMA-transfers
@@ -401,6 +401,7 @@ bool load_trace_cache(const std::string &trace_file_name, Trace &trace) {
 
 	// Read DMA-transfers
 	uint32_t num_dma_transfers = 0;
+
 	source.read(num_dma_transfers);
 	trace.dma_transfers.resize(num_dma_transfers);
 	if (num_dma_transfers!=0) {
