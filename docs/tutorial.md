@@ -13,6 +13,7 @@ Posts
 4. [Code Prediction](tutorial-predict)
 5. [Auto Annotations](tutorial-auto)
 6. [Back to Reverse Engineering!](tutorial-re1)
+7. [Digging for Strings](tutorial-re2)
 
 Topics for future posts
 =======================

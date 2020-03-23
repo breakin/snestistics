@@ -6,7 +6,7 @@ In order to do the [Super Famicom Wars (SFW) translation](http://www.romhacking.
 
 In this tutorial series we will simply show what you can do with snestistics and not compare it to other tools and approaches. When we started SFW snestistics was not very mature at all. A lot of tedious tasks had to be done by hand and writing a straightforward tutorial like this would not be possible!
 
-We assume that if you actually want to understand the code presented here in depth you will know some 65816 assembly and have a high-level understanding of the SNES. Martin Korth's [fullsnes](http://problemkaputt.de/fullsnes.htm) document is a great reference on all parts that make the SNES tick.
+We assume that if you actually want to understand the code presented here in depth you will know some 65816 assembly and have a high-level understanding of the SNES. Martin Korth's [fullsnes](http://problemkaputt.de/fullsnes.htm) document is a great reference on all parts that make the Super Nintendo tick. Also make sure to check out [Retro Game Mechanics Explained](https://www.youtube.com/watch?v=57ibhDU2SAI&list=PLHQ0utQyFw5KCcj1ljIhExH_lvGwfn6GV) for a wonderful video series on how all SNES graphics rendering work.
 
 The Game
 ========
