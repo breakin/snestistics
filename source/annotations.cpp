@@ -339,9 +339,13 @@ void AnnotationResolver::load(std::istream &input, const std::string &error_file
 				a.endOfRange = a.startOfRange;
 			} else if (sscanf(buf, "comment %06X \"%[^\"]", &a.startOfRange, mycomment) > 0) {
 				a.type = ANNOTATION_LINE;
-				a.comment = mycomment;
-				a.comment_is_multiline = false;
-				a.useComment = "";
+				if (comment.empty()) {
+					comment = mycomment;
+				} else {
+					comment = comment + "\n" + mycomment;
+					comment_is_multiline = true;
+				}
+				useComment = "";
 				a.endOfRange = a.startOfRange;
 			} else if (sscanf(buf, "label %06X %s", &a.startOfRange, name) > 0) {
 				a.type = ANNOTATION_LINE;
@@ -352,6 +356,7 @@ void AnnotationResolver::load(std::istream &input, const std::string &error_file
 				printf("%s:%d: Not supported format!\n\t'%s'\n", error_file.c_str(), line_number, buf);
 				exit(99);
 			}
+
 
 			a.useComment = useComment;
 			a.comment = comment;
@@ -369,7 +374,6 @@ void AnnotationResolver::load(std::istream &input, const std::string &error_file
 }
 
 void AnnotationResolver::finalize() {
-
 	Profile profile("finalize annotations", true);
 
 	Pointer largest_adress = 0;
@@ -435,6 +439,13 @@ void AnnotationResolver::finalize() {
 
 		// This means to choose the one from the function/data
 		b.endOfRange = std::max(a.endOfRange, b.endOfRange);
+
+		// This is a special case where you have comments on a line without a label and then a function
+		// Probably only happens for things that are commented by snestistics itself
+		if (a.type == ANNOTATION_FUNCTION) {
+			b.type = a.type;
+		}
+
 		a.type = ANNOTATION_NONE;
 	}
 
@@ -471,10 +482,6 @@ void AnnotationResolver::finalize() {
 		const Hint &ta = _hints[i];
 		_hint_for_adress[ta.location] = i;
 	}
-
-	if (resolve_annotation(0x808406, nullptr, nullptr) == 0) {
-		int A=9;
-	}
 }
 
 static void write_comment(FILE *output, const std::string &comment) {
@@ -493,7 +500,6 @@ static void write_comment(FILE *output, const std::string &comment) {
 }
 
 void AnnotationResolver::line_info(const Pointer p, std::string * label_out, std::string * comment_out, std::string * use_comment_out, bool force_label) const {
-
 	const Annotation *function, *data;
 	const Annotation *line_annotation = resolve_annotation(p, &function, &data);
 

@@ -434,8 +434,12 @@ int main(const int argc, const char * const argv[]) {
 		}
 
 		if (!options.symbol_fma_out_file.empty()) {
-			// false here is to disable multiline comments since bsnes-plus does not support them
 			symbol_export_fma(annotations, options.symbol_fma_out_file, false);
+		}
+
+		if (!options.symbol_mesen_out_file.empty()) {
+			// false here is to disable multiline comments since bsnes-plus does not support them
+			symbol_export_mesen(annotations, options.symbol_mesen_out_file);
 		}
 
 		// Make sure this happens after create_trace so skip file is fresh
