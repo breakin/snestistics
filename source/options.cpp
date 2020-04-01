@@ -46,7 +46,7 @@ namespace {
 		printf("                                                It will be regenerated if missing or if -autoannotate is specified.\n");
 		printf(" -autoannotate (--aa) <true|false>              A file where automatically generated annotations are stored.\n");
 		printf(" -symbolfmaoutfile (--sf) <filename>            Generate symbols file in FMA format compatible with bsnes-plus.\n");
-		printf(" -symbolmesenoutfile (--sm) <filename>          Generate symbols file in Mesen format compatible with Mesen emulator.\n");
+		printf(" -symbolmesensoutfile (--sm) <filename>          Generate symbols file in Mesen format compatible with Mesen emulator.\n");
 		printf(" -rewindoutfile (--rw) <filename>               Generate rewind report in dot file format.\n");
 		printf("                                                Use graphviz to generate PDF/PNG report.\n");
 		printf(" -reportoutfile (--rp) <filename>               Generate assembly report.\n");
@@ -117,8 +117,8 @@ void parse_options(const int argc, const char * const argv[], Options &options) 
 		} else if (strcmp(cmd, "symbolfmaoutfile")==0 || strcmp(cmd, "-sf")==0) {
 			options.symbol_fma_out_file = opt;
 			k++;
-		} else if (strcmp(cmd, "symbolmesenoutfile")==0 || strcmp(cmd, "-sm")==0) {
-			options.symbol_mesen_out_file = opt;
+		} else if (strcmp(cmd, "symbolmesensoutfile")==0 || strcmp(cmd, "-sm")==0) {
+			options.symbol_mesen_s_out_file = opt;
 			k++;
 		} else if (strcmp(cmd, "rewindoutfile")==0 || strcmp(cmd, "-rw")==0) {
 			options.rewind_out_file = opt;

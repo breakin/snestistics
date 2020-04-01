@@ -23,9 +23,8 @@ void mesen_write_comment(FILE *f, const std::string &s) {
 	}
 }
 
-void symbol_export_mesen(const AnnotationResolver &annotations, const std::string &filename) {
+void symbol_export_mesen_s(const AnnotationResolver &annotations, const std::string &filename) {
 	FILE *f = fopen(filename.c_str(), "wb");
-
 
 	for (size_t i=0; i<annotations._annotations.size(); i++) {
 		const bool last_annotation = i+1 == annotations._annotations.size();

@@ -134,9 +134,14 @@ struct EmulateRegisters {
 
 	inline uint8_t read_byte(uint32_t address, MemoryAccessType reason) {
         uint32_t r;
-        if (address == 0x2180) {
-            r = 0x7E0000 + _WRAM;
-			_WRAM = (_WRAM + 1) & 0x1ffff;
+        if ((address & 0xFFFF) == 0x2180) {
+			uint8_t bank = address>>16;
+			if (bank == 0x7E || bank == 0x7F) {
+				r = remap(address);
+			} else {
+				r = 0x7E0000 + _WRAM;
+				_WRAM = (_WRAM + 1) & 0x1ffff;
+			}
         } else {
             r = remap(address);
         }

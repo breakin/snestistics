@@ -24,7 +24,7 @@ struct Options {
 	std::string                  auto_labels_file;
 	bool                         auto_annotate = false;
 	std::string                  symbol_fma_out_file;
-	std::string                  symbol_mesen_out_file;
+	std::string                  symbol_mesen_s_out_file;
 	std::string                  rewind_out_file;
 	std::string                  report_out_file;
 	std::string                  asm_out_file;

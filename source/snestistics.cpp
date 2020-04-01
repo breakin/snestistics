@@ -56,7 +56,7 @@ void dma_report(ReportWriter &writer, const Trace &trace, const AnnotationResolv
 				if (from) {
 					sb.format("%s", from->name.c_str());
 				} else {
-					sb.format("(unannotated)", from->name.c_str());
+					sb.format("(unannotated)");
 				}
 			}
 
@@ -437,9 +437,9 @@ int main(const int argc, const char * const argv[]) {
 			symbol_export_fma(annotations, options.symbol_fma_out_file, false);
 		}
 
-		if (!options.symbol_mesen_out_file.empty()) {
+		if (!options.symbol_mesen_s_out_file.empty()) {
 			// false here is to disable multiline comments since bsnes-plus does not support them
-			symbol_export_mesen(annotations, options.symbol_mesen_out_file);
+			symbol_export_mesen_s(annotations, options.symbol_mesen_s_out_file);
 		}
 
 		// Make sure this happens after create_trace so skip file is fresh
