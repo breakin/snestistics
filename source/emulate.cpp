@@ -1066,6 +1066,7 @@ void execute_dma(EmulateRegisters & regs, uint8_t channels) {
 			d.channel = channel;
 			d.pc = regs._PC_before;
 			d.flags = 0;
+			d.wram= regs._WRAM;
 			
 			if (decrement) d.flags |= DmaTransfer::A_ADDRESS_DECREMENT;
 			if (fixed) d.flags |= DmaTransfer::A_ADDRESS_FIXED;

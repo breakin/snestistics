@@ -543,6 +543,8 @@ namespace snestistics {
 void asm_writer(ReportWriter &report, const Options &options, Trace &trace, const AnnotationResolver &annotations, const RomAccessor &rom_accessor) {
 	AsmWriteWLADX writer(report, options, rom_accessor);
 
+	int next_dma_event = 0;
+
 	for (const Annotation &a : annotations._annotations) {
 		if (a.type == ANNOTATION_FUNCTION || (a.type == ANNOTATION_LINE && !a.name.empty()))
 			trace.labels.set_bit(a.startOfRange);
@@ -948,6 +950,16 @@ void asm_writer(ReportWriter &report, const Options &options, Trace &trace, cons
 
 				writer.writeComment(pc, ss.c_str(), 0, 10);
 			}
+		}
+
+		while (next_dma_event < trace.dma_transfers.size() && trace.dma_transfers[next_dma_event].pc == pc) {
+			const DmaTransfer &d = trace.dma_transfers[next_dma_event++];
+			StringBuilder ss;
+			bool reverse = d.flags & DmaTransfer::REVERSE_TRANSFER;
+			int num_bytes = d.transfer_bytes == 0 ? 0x10000 : d.transfer_bytes;
+			assert(d.b_address == 0x80); // So we can detect that we've enabled more and can improve
+			ss.format("dma-event $%02X:%04X %s $%02X:%04X (via $2180), $%X/%d bytes%s%s", d.a_bank, d.a_address, reverse ? "<-" : "->", d.wram>>16, d.wram&0xFFFF, num_bytes, num_bytes, d.flags & DmaTransfer::A_ADDRESS_DECREMENT ?" (decrease A)":"", d.flags & DmaTransfer::A_ADDRESS_FIXED ? " (A fixed)":"");
+			writer.writeComment(pc, ss.c_str(), 0, 10);
 		}
 	}
 }

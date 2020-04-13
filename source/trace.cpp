@@ -175,11 +175,11 @@ void save_trace(const snestistics::Trace &trace, BigFile &dest) {
 
 namespace snestistics {
 
-void create_trace(const Options &options, const int trace_file_index, const RomAccessor &rom_accessor, Trace &trace) {
+void create_trace(const std::string &trace_filename, const RomAccessor &rom_accessor, Trace &trace) {
 	BigFile emu_cache;
 	const uint32_t nmi_per_skip = 10;
 
-	emu_cache._file = fopen((options.trace_files[trace_file_index] + ".emulation_cache").c_str(), "wb");
+	emu_cache._file = fopen((trace_filename + ".emulation_cache").c_str(), "wb");
 	CUSTOM_ASSERT(emu_cache._file);
 	snestistics::TraceCacheHeader cache_header;
 	cache_header.version = TRACE_CACHE_VERSION;
@@ -196,7 +196,7 @@ void create_trace(const Options &options, const int trace_file_index, const RomA
 	std::set<OpRecord> op_trace;
 	CallbackContext memory_accesses;
 
-	Replay replay(rom_accessor, options.trace_files[trace_file_index].c_str());
+	Replay replay(rom_accessor, trace_filename.c_str());
 
 	memcpy(cache_header.trace_file_content_guid, replay._trace_content_guid, 8);
 
@@ -296,6 +296,8 @@ void create_trace(const Options &options, const int trace_file_index, const RomA
 				op_trace.insert(o);
 			}
 		}
+
+		printf("Emulated %d NMIs\n", nmi);
 
 		cache_header.num_nmis = nmi;
 	}

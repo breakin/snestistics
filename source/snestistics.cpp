@@ -65,7 +65,12 @@ void dma_report(ReportWriter &writer, const Trace &trace, const AnnotationResolv
 		}
 
 		sb.column(20); sb.format("%d", d.channel);
-		sb.column(24); sb.format("$%05X $%02X:$%04X %s $21%02X (mode=$%02X)%s%s", d.transfer_bytes == 0 ? 0x10000 : d.transfer_bytes, d.a_bank, d.a_address, d.flags & DmaTransfer::REVERSE_TRANSFER ? "<-":"->", d.b_address, d.transfer_mode, d.flags & DmaTransfer::A_ADDRESS_DECREMENT ?" (dec)":" (inc)", d.flags & DmaTransfer::A_ADDRESS_FIXED ? " (fixed)":"");
+
+		Pointer target = 0x2100|d.b_address;
+		if (d.b_address == 0x80) {
+			target = d.wram;
+		}
+		sb.column(24); sb.format("$%05X $%02X:$%04X %s $%02X:%04X (mode=$%02X)%s%s", d.transfer_bytes == 0 ? 0x10000 : d.transfer_bytes, d.a_bank, d.a_address, d.flags & DmaTransfer::REVERSE_TRANSFER ? "<-":"->", target, target, d.transfer_mode, d.flags & DmaTransfer::A_ADDRESS_DECREMENT ?" (dec)":" (inc)", d.flags & DmaTransfer::A_ADDRESS_FIXED ? " (fixed)":"");
 
 		if (print_pc) {
 			sb.column(86);  sb.format("at pc=$%06X", d.pc);
@@ -74,7 +79,7 @@ void dma_report(ReportWriter &writer, const Trace &trace, const AnnotationResolv
 	}
 }
 
-void data_report(ReportWriter &writer, const Trace &trace, const AnnotationResolver &annotations) {
+void data_report(ReportWriter &writer, const Trace &trace, const AnnotationResolver &annotations, const bool include_hwregs = true, const bool include_7e7f = true) {
 	StringBuilder sb;
 
 	Profile profile("Data report", true);
@@ -101,6 +106,21 @@ void data_report(ReportWriter &writer, const Trace &trace, const AnnotationResol
 	for (uint32_t p = 0; p < trace.memory_accesses.size(); ) {
 		const Trace::MemoryAccess ra = trace.memory_accesses[p];
 		Pointer adress = ra.adress;
+
+		// This code ignores data reads from WRAM and/or hardware registers (if requested)
+		{
+			const uint8_t bank = adress>>16;
+			const uint32_t bank_less_adress = adress&0xFFFF;
+			if (bank == 0x7E || bank == 0x7F) {
+				if (!include_7e7f) {
+					p++;
+					continue;
+				}
+			} else if (!include_hwregs && bank_less_adress >= 0x2000 && bank_less_adress <= 0x43FF) {
+				p++;
+				continue;
+			}
+		}
 
 		const Annotation *data = nullptr;
 
@@ -365,6 +385,132 @@ void entry_point_report(ReportWriter &writer, const Trace &trace, const Annotati
 */
 }
 
+enum class KeepMode {
+	UNION, DIFFERENCE, A_MINUS_B
+};
+
+std::vector<Trace::MemoryAccess> fix_memory_accesses(const std::vector<Trace::MemoryAccess> &a, const std::vector<Trace::MemoryAccess> &b, KeepMode mode, bool ignore_pc = false) {
+	auto it_a = a.begin();
+	auto it_b = b.begin();
+
+	std::vector<Trace::MemoryAccess> result;
+	result.reserve(std::max(a.size(), b.size()));
+
+	while (it_a != a.end() && it_b != b.end()) {
+		bool a_less_b = ignore_pc ? (it_a->adress < it_b->adress) : *it_a < *it_b;
+		bool b_less_a = ignore_pc ? (it_b->adress < it_a->adress) : *it_b < *it_a;
+
+		// Since are increasing (not becoming <) when increasing the iterator an element that is smaller has to be unique
+
+		if (a_less_b) {
+			// We know that A is unique
+			if (mode == KeepMode::A_MINUS_B || mode == KeepMode::DIFFERENCE) {
+				result.push_back(*it_a);
+			}
+			it_a++;
+		} else if (b_less_a) {
+			// We know that B is unique
+			if (mode == KeepMode::DIFFERENCE) {
+				result.push_back(*it_a);
+			}
+			it_b++;
+		} else {
+			if (mode == KeepMode::UNION) {
+				result.push_back(*it_a);
+			}
+			it_a++;
+			it_b++;
+		}
+	}
+	return result;
+}
+
+int main2(const int argc, const char * const argv[]) {
+	try {
+		initLookupTables();
+
+		Options options;
+		parse_options(argc, argv, options);
+
+		printf("Loading ROM '%s'\n", options.rom_file.c_str());
+
+		// TODO: TraceHeader has rom_size and rom_mode (lorom/hirom) so lets read them!
+		RomAccessor rom_accessor(options.rom_size);
+		{
+			Profile profile("Load ROM data");
+			rom_accessor.load(options.rom_file);
+		}
+
+
+		Trace intro;
+		Trace level1;
+		Trace level2;
+		Trace level3;
+
+		#pragma omp parallel for
+		for (int k=0; k<4; k++) {
+			if (k == 0) create_or_load_trace("diff_trace/intro.trace",  rom_accessor, intro);
+			if (k == 1) create_or_load_trace("diff_trace/level1.trace", rom_accessor, level1);
+			if (k == 2) create_or_load_trace("diff_trace/level2.trace", rom_accessor, level2);
+			if (k == 3) create_or_load_trace("diff_trace/level3.trace", rom_accessor, level3);
+		}
+
+		level1.memory_accesses = fix_memory_accesses(level1.memory_accesses, intro.memory_accesses, KeepMode::A_MINUS_B);
+		level2.memory_accesses = fix_memory_accesses(level2.memory_accesses, intro.memory_accesses, KeepMode::A_MINUS_B);
+		level3.memory_accesses = fix_memory_accesses(level3.memory_accesses, intro.memory_accesses, KeepMode::A_MINUS_B);
+
+		const Trace level1_full = level1, level2_full = level2, level3_full = level3;
+
+		level1.memory_accesses = fix_memory_accesses(level1.memory_accesses, level2_full.memory_accesses, KeepMode::A_MINUS_B);
+		level1.memory_accesses = fix_memory_accesses(level1.memory_accesses, level3_full.memory_accesses, KeepMode::A_MINUS_B);
+
+		level2.memory_accesses = fix_memory_accesses(level2.memory_accesses, level1_full.memory_accesses, KeepMode::A_MINUS_B);
+		level2.memory_accesses = fix_memory_accesses(level2.memory_accesses, level3_full.memory_accesses, KeepMode::A_MINUS_B);
+
+		level3.memory_accesses = fix_memory_accesses(level3.memory_accesses, level1_full.memory_accesses, KeepMode::A_MINUS_B);
+		level3.memory_accesses = fix_memory_accesses(level3.memory_accesses, level2_full.memory_accesses, KeepMode::A_MINUS_B);
+		
+		// We need a "only" keep same... now we have remove same
+
+		AnnotationResolver annotations;
+		{
+			Profile profile("Loading game annotations");
+			annotations.add_mmio_annotations();
+			annotations.add_vector_annotations(rom_accessor);
+			if (options.auto_labels_file.empty()) {
+				// Don't load the auto-labels file if we are re-generating it
+				annotations.load(options.labels_files);
+			} else {
+				std::vector<std::string> copy(options.labels_files);
+				copy.push_back(options.auto_labels_file);
+				annotations.load(copy);
+			}
+		}
+
+		std::unique_ptr<ReportWriter> report_writer;
+		if (!options.report_out_file.empty())
+			report_writer.reset(new ReportWriter(options.report_out_file.c_str()));
+
+		report_writer->writeSeperator("Level1");
+		data_report(*report_writer, level1, annotations, false, false);
+
+		report_writer->writeSeperator("Level2 only");
+		data_report(*report_writer, level2, annotations, false, false);
+
+		report_writer->writeSeperator("Level3 only");
+		data_report(*report_writer, level3, annotations, false, false);
+
+	} catch (const std::runtime_error &e) {
+		printf("error: %s\n", e.what());
+		return 1;
+	} catch (const std::exception &e) {
+		printf("error: %s\n", e.what());
+		return 1;
+	}
+
+	return 0;
+}
+
 int main(const int argc, const char * const argv[]) {
 	try {
 		initLookupTables();
@@ -394,7 +540,7 @@ int main(const int argc, const char * const argv[]) {
 
 			if (generate) {
 				Profile profile("Create trace using emulation");
-				create_trace(options, k, rom_accessor, local_trace); // Will automatically save new cache
+				create_trace(options.trace_files[k], rom_accessor, local_trace); // Will automatically save new cache
 			}
 
 			if (k != 0) {

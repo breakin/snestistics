@@ -5,8 +5,8 @@
 #include <map>
 #include <vector>
 #include <set>
+#include <string>
 
-struct Options;
 namespace snestistics {
 
 class RomAccessor;
@@ -59,6 +59,7 @@ struct DmaTransfer {
 	uint8_t	b_address;
 	uint8_t	a_bank;
 	uint8_t channel;
+	uint32_t wram;
 	enum Flags {
 		REVERSE_TRANSFER=1,
 		A_ADDRESS_FIXED=2,
@@ -74,6 +75,7 @@ struct DmaTransfer {
 		if (transfer_mode != o.transfer_mode) return transfer_mode<o.transfer_mode;
 		if (a_bank != o.a_bank) return a_bank<o.a_bank;
 		if (flags != o.flags) return flags < o.flags;
+		if (wram != o.wram) return wram < o.wram;
 		return false;
 	}
 };
@@ -111,9 +113,16 @@ struct Trace {
 	LargeBitfield is_predicted;
 };
 
-void create_trace(const Options &options, const int trace_file_index, const RomAccessor &rom_accessor, Trace &trace);
+void create_trace(const std::string &trace_filename, const RomAccessor &rom_accessor, Trace &trace);
 void merge_trace(Trace &dest, const Trace &add);
 
 // Since emulation takes time we can save/load traces (caching)
 bool load_trace_cache(const std::string &trace_file, Trace &trace);
+
+inline void create_or_load_trace(const std::string &trace_filename, const RomAccessor &rom_accessor, Trace &trace) {
+	bool loaded = load_trace_cache(trace_filename, trace);
+	if (!loaded) {
+		create_trace(trace_filename, rom_accessor, trace);
+	}
+}
 }
