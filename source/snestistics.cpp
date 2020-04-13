@@ -64,13 +64,13 @@ void dma_report(ReportWriter &writer, const Trace &trace, const AnnotationResolv
 			reported_pc = d.pc;
 		}
 
-		sb.column(20); sb.format("%d", d.channel);
+		sb.column(30); sb.format("%d", d.channel);
 
 		Pointer target = 0x2100|d.b_address;
 		if (d.b_address == 0x80) {
 			target = d.wram;
 		}
-		sb.column(24); sb.format("$%05X $%02X:$%04X %s $%02X:%04X (mode=$%02X)%s%s", d.transfer_bytes == 0 ? 0x10000 : d.transfer_bytes, d.a_bank, d.a_address, d.flags & DmaTransfer::REVERSE_TRANSFER ? "<-":"->", target, target, d.transfer_mode, d.flags & DmaTransfer::A_ADDRESS_DECREMENT ?" (dec)":" (inc)", d.flags & DmaTransfer::A_ADDRESS_FIXED ? " (fixed)":"");
+		sb.column(24); sb.format("$%05X $%02X:$%04X %s $%02X:%04X (mode=$%02X)%s%s", d.transfer_bytes == 0 ? 0x10000 : d.transfer_bytes, d.a_bank, d.a_address, d.flags & DmaTransfer::REVERSE_TRANSFER ? "<-":"->", target>>16, target&0xFFFF, d.transfer_mode, d.flags & DmaTransfer::A_ADDRESS_DECREMENT ?" (dec)":" (inc)", d.flags & DmaTransfer::A_ADDRESS_FIXED ? " (fixed)":"");
 
 		if (print_pc) {
 			sb.column(86);  sb.format("at pc=$%06X", d.pc);
